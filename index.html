@@ -245,7 +245,7 @@ function closeLogin(){document.getElementById('login-modal').classList.add('hidd
 function doLogin(){isManager=true;closeLogin();renderNav();renderTop();renderPage();}
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════
-async function pgDash(c){
+async async function pgDash(c){
   const today=new Date();
   const upcoming=await DB.list(iso(today),iso(addD(today,7)));
   const todayStr=today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -270,6 +270,7 @@ async function pgDash(c){
     mc.appendChild(dv({cls:'row gap2 mb2',st:{alignItems:'flex-start'}},bdg(m.pinned?'PINNED':m.priority,m.pinned?'amber':m.priority==='Urgent'?'red':m.priority==='High'?'orange':'blue'),dv({},dv({cls:'fw6 tsm'},m.title),dv({cls:'txs muted'},m.author+' · '+ago(m.createdAt)))));
   });
   r2.appendChild(mc);c.appendChild(r2);
+  await renderDashboardCompliance(c);
   const dc=dv({cls:'card'});dc.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'🚛 Upcoming Deliveries'),dv({cls:'card-sub'},'Next 7 days')),linkBtn('Full schedule →',()=>go('delivery'))));
   if(!upcoming.length)dc.appendChild(dv({cls:'empty'},'No deliveries in the next 7 days'));
   else{
@@ -324,41 +325,8 @@ function showMsgForm(c){
 }
 
 // ══ SAFETY ═══════════════════════════════════════════════════════════
-let selSafe=null;
-function pgSafe(c){
-  c.appendChild(dv({cls:'row jb mb4'},dv({},h('h1',{cls:'page-title'},'Safety'),dv({cls:'page-sub'},'Alerts and documentation')),isManager&&btn('+ New Alert','btn-p',()=>showSafetyForm(c))));
-  renderSafetyList(c);
-}
-function renderSafetyList(c){
-  let w=c.querySelector('#sl');if(!w){w=dv({id:'sl'});c.appendChild(w);}w.innerHTML='';
-  const layout=dv({cls:'row gap3',st:{alignItems:'flex-start'}});
-  const list=dv({st:{flex:'1',display:'flex',flexDirection:'column',gap:'10px'}});
-  safety.forEach(function(doc){
-    const row=dv({st:{padding:'12px 14px',borderRadius:'10px',border:'1px solid '+(selSafe===doc.id?'var(--green)':'var(--border)'),background:selSafe===doc.id?'#f0fdf4':'#fff',cursor:'pointer'},onclick:()=>{selSafe=selSafe===doc.id?null:doc.id;renderSafetyList(c);}});
-    row.appendChild(dv({cls:'row jb gap2'},
-      dv({},dv({cls:'row gap2 mb2'},sp({cls:'txs muted',st:{fontFamily:'monospace'}},doc.refNo),doc.pinned&&bdg('📌','amber')),dv({cls:'fw6 tsm'},doc.title),dv({cls:'txs muted'},doc.dept+' · '+doc.category+' · '+ago(doc.createdAt))),
-      bdg(doc.priority,doc.priority==='Critical'?'red':doc.priority==='High'?'orange':doc.priority==='Medium'?'amber':'green')
-    ));
-    list.appendChild(row);
-  });
-  layout.appendChild(list);
-  if(selSafe){
-    const doc=safety.find(d=>d.id===selSafe);
-    if(doc){
-      const det=dv({cls:'card',st:{width:'340px',flexShrink:'0'}});
-      det.appendChild(dv({cls:'row jb mb3'},h('h2',{st:{fontSize:'15px',fontWeight:'700'}},doc.title),h('button',{st:{background:'none',border:'none',fontSize:'18px',cursor:'pointer'},onclick:()=>{selSafe=null;renderSafetyList(c);}},'×')));
-      det.appendChild(dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}},bdg(doc.priority,doc.priority==='Critical'?'red':doc.priority==='High'?'orange':'amber'),bdg(doc.category,'gray'),bdg(doc.dept,'blue')));
-      det.appendChild(h('p',{st:{fontSize:'14px',lineHeight:'1.6',color:'#374151',marginBottom:'12px'}},doc.content));
-      det.appendChild(dv({cls:'txs muted'},'Ref: '+doc.refNo+' · '+ago(doc.createdAt)));
-      if(isManager)det.appendChild(dv({cls:'row gap2 mt3',st:{borderTop:'1px solid #f3f4f6',paddingTop:'12px'}},
-        btn(doc.pinned?'Unpin':'📌 Pin','btn-o btn-sm',()=>{safety=safety.map(x=>x.id===doc.id?Object.assign({},x,{pinned:!x.pinned}):x);renderSafetyList(c);}),
-        btn('🗑 Delete','btn-d btn-sm',()=>{if(confirm('Delete?')){safety=safety.filter(x=>x.id!==doc.id);selSafe=null;renderSafetyList(c);}})
-      ));
-      layout.appendChild(det);
-    }
-  }
-  w.appendChild(layout);
-}
+// pgSafe now defined in compliance section above
+
 function showSafetyForm(c){
   if(c.querySelector('#sf'))return;
   const f=dv({cls:'card mb4',id:'sf'});
@@ -799,6 +767,466 @@ function openDelForm(existing,preDate){
   document.body.appendChild(overlay);
 }
 
+
+// ══ COMPLIANCE DB ════════════════════════════════════════════════════
+const CDB = {
+  async getMembers(){
+    try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}
+  },
+  async getAssessors(){
+    try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&is_assessor=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}
+  },
+  async getSWPs(){
+    try{const r=await fetch(SB+'/rest/v1/safe_work_practices?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}
+  },
+  async getSignoffs(){
+    try{const r=await fetch(SB+'/rest/v1/signoffs?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}
+  },
+  async createSignoff(data){
+    const r=await fetch(SB+'/rest/v1/signoffs',{method:'POST',headers:SH(),body:JSON.stringify(data)});
+    const d=await r.json();return Array.isArray(d)?d[0]:d;
+  },
+  async updateSignoff(id,data){
+    const r=await fetch(SB+'/rest/v1/signoffs?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});
+    const d=await r.json();return Array.isArray(d)?d[0]:d;
+  }
+};
+
+// Status helpers
+function complianceStatus(signoff,swp){
+  if(!signoff||!signoff.self_signed_at)return 'unsigned';
+  if(!signoff.assessor_signed_at)return 'self-only';
+  const exp=new Date(signoff.expires_at);
+  const now=new Date();
+  const daysLeft=(exp-now)/(1000*60*60*24);
+  if(daysLeft<0)return 'overdue';
+  if(daysLeft<60)return 'due-soon';
+  return 'current';
+}
+function statusColor(s){return{current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#d1d5db'}[s]||'#d1d5db';}
+function statusLabel(s){return{current:'Current','due-soon':'Due Soon',overdue:'OVERDUE','self-only':'Awaiting Assessor',unsigned:'Not Signed'}[s]||'Unknown';}
+
+// ══ SAFETY PAGE (REBUILT WITH COMPLIANCE) ════════════════════════════
+async function pgSafe(c){
+  c.appendChild(dv({cls:'row jb mb4'},
+    dv({},h('h1',{cls:'page-title'},'Safety & Compliance'),dv({cls:'page-sub'},'Safety alerts, documentation and SWP sign-offs')),
+    dv({cls:'row gap2'},
+      isManager&&btn('+ New Alert','btn-p',()=>showSafetyForm(c))
+    )
+  ));
+
+  // Sub-navigation tabs
+  const tabBar=dv({st:{display:'flex',gap:'4px',marginBottom:'20px',borderBottom:'2px solid var(--border)',paddingBottom:'0'}});
+  let activeTab='compliance';
+  const tabs=[{id:'compliance',label:'Compliance Matrix'},{id:'alerts',label:'Safety Alerts'},{id:'signoffs',label:'Sign-off Log'}];
+  
+  const tabContent=dv({id:'safe-tab-content'});
+  c.appendChild(tabBar);
+  c.appendChild(tabContent);
+
+  function renderTabs(){
+    tabBar.innerHTML='';
+    tabs.forEach(function(t){
+      const tb=h('button',{
+        st:{padding:'8px 16px',border:'none',background:'none',cursor:'pointer',fontSize:'13px',fontWeight:activeTab===t.id?'700':'500',color:activeTab===t.id?'var(--green)':'var(--muted)',borderBottom:activeTab===t.id?'2px solid var(--green)':'2px solid transparent',marginBottom:'-2px',transition:'all 0.12s'},
+        onclick:function(){activeTab=t.id;renderTabs();renderTabContent();}
+      },t.label);
+      tabBar.appendChild(tb);
+    });
+  }
+
+  async function renderTabContent(){
+    tabContent.innerHTML='';
+    if(activeTab==='compliance') await renderComplianceMatrix(tabContent);
+    else if(activeTab==='alerts') renderSafetyAlerts(tabContent);
+    else await renderSignoffLog(tabContent);
+  }
+
+  renderTabs();
+  await renderTabContent();
+}
+
+// ── COMPLIANCE MATRIX ────────────────────────────────────────────────
+async function renderComplianceMatrix(c){
+  const loading=dv({cls:'empty'},'Loading compliance data...');c.appendChild(loading);
+  const [members,swps,signoffs]=await Promise.all([CDB.getMembers(),CDB.getSWPs(),CDB.getSignoffs()]);
+  loading.remove();
+
+  // Build lookup: [memberId][swpId] = latest signoff
+  const lookup={};
+  signoffs.forEach(function(s){
+    const key=s.team_member_id+'_'+s.swp_id;
+    if(!lookup[key]||new Date(s.created_at)>new Date(lookup[key].created_at))lookup[key]=s;
+  });
+
+  // Stats
+  const total=members.length*swps.length;
+  let current=0,overdue=0,dueSoon=0,unsigned=0;
+  members.forEach(function(m){swps.forEach(function(s){
+    const so=lookup[m.id+'_'+s.id];
+    const st=complianceStatus(so,s);
+    if(st==='current')current++;
+    else if(st==='overdue')overdue++;
+    else if(st==='due-soon')dueSoon++;
+    else unsigned++;
+  });});
+  const pct=total>0?Math.round(current/total*100):0;
+
+  // Stat cards
+  const stats=dv({cls:'g4 mb4'});
+  [{v:pct+'%',l:'Compliance Rate',col:'#22c55e'},{v:overdue,l:'Overdue',col:'#ef4444'},{v:dueSoon,l:'Due Soon',col:'#f59e0b'},{v:unsigned,l:'Not Signed',col:'#d1d5db'}].forEach(function(x){
+    stats.appendChild(dv({cls:'stat-card'},dv({cls:'stat-val',st:{color:x.col}},''+x.v),dv({cls:'stat-lbl'},x.l)));
+  });
+  c.appendChild(stats);
+
+  // Matrix
+  const matCard=dv({cls:'card'});
+  matCard.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'Sign-off Matrix'),dv({cls:'card-sub'},'Click any cell to view or record a sign-off · ★ = Authorised Assessor')),btn('Export CSV','btn-o btn-sm',function(){exportComplianceCSV(members,swps,lookup);})));
+
+  // Scrollable table wrapper
+  const tableWrap=dv({st:{overflowX:'auto'}});
+  const tbl=document.createElement('table');
+  tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12px;min-width:700px';
+
+  // Header row
+  const thead=document.createElement('thead');
+  const hrow=document.createElement('tr');
+  hrow.appendChild(h('th',{st:{padding:'8px 10px',textAlign:'left',fontWeight:'600',color:'var(--muted)',fontSize:'11px',background:'#f9fafb',borderBottom:'1px solid var(--border)',minWidth:'130px'}},'Employee'));
+  swps.forEach(function(swp){
+    const th=document.createElement('th');
+    th.style.cssText='padding:6px 4px;text-align:center;font-weight:600;color:var(--muted);font-size:10px;background:#f9fafb;border-bottom:1px solid var(--border);max-width:80px;min-width:70px';
+    th.innerHTML='<div style="writing-mode:vertical-rl;transform:rotate(180deg);height:90px;display:flex;align-items:center;justify-content:center;padding:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:90px">'+swp.title+'</div>';
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  tbl.appendChild(thead);
+
+  // Body rows
+  const tbody=document.createElement('tbody');
+  members.forEach(function(member,mi){
+    const row=document.createElement('tr');
+    row.style.background=mi%2?'#fafaf9':'#fff';
+    // Name cell
+    const nameTd=document.createElement('td');
+    nameTd.style.cssText='padding:8px 10px;font-weight:600;font-size:12px;border-bottom:1px solid #f3f4f6;white-space:nowrap';
+    const initials=member.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+    nameTd.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+initials+'</div>'+member.name+(member.is_assessor?'<span style="font-size:10px;color:#f59e0b;margin-left:2px" title="Authorised Assessor">★</span>':'')+'</div>';
+    row.appendChild(nameTd);
+
+    // SWP cells
+    swps.forEach(function(swp){
+      const so=lookup[member.id+'_'+swp.id];
+      const st=complianceStatus(so,swp);
+      const col=statusColor(st);
+      const td=document.createElement('td');
+      td.style.cssText='padding:4px;text-align:center;border-bottom:1px solid #f3f4f6;cursor:pointer';
+      td.title=statusLabel(st)+(so&&so.expires_at?' — Expires: '+new Date(so.expires_at).toLocaleDateString('en-AU'):'');
+      
+      const dot=dv({st:{width:'28px',height:'28px',borderRadius:'50%',background:col,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',color:'#fff',fontWeight:'700',transition:'transform 0.1s'}});
+      if(st==='current')dot.innerHTML='✓';
+      else if(st==='overdue')dot.innerHTML='!';
+      else if(st==='due-soon')dot.innerHTML='~';
+      else if(st==='self-only')dot.innerHTML='½';
+      td.appendChild(dot);
+      td.onclick=function(){openSignoffModal(member,swp,so,function(){renderComplianceMatrix(c);});};
+      td.onmouseenter=function(){dot.style.transform='scale(1.2)';};
+      td.onmouseleave=function(){dot.style.transform='scale(1)';};
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+  tbl.appendChild(tbody);
+  tableWrap.appendChild(tbl);
+  matCard.appendChild(tableWrap);
+
+  // Legend
+  const leg=dv({st:{display:'flex',gap:'16px',marginTop:'12px',paddingTop:'10px',borderTop:'1px solid #f3f4f6',flexWrap:'wrap'}});
+  [['#22c55e','✓ Current'],['#3b82f6','½ Awaiting Assessor'],['#f59e0b','~ Due Soon (<60 days)'],['#ef4444','! Overdue'],['#d1d5db','○ Not Signed']].forEach(function(x){
+    leg.appendChild(dv({st:{display:'flex',alignItems:'center',gap:'6px'}},
+      dv({st:{width:'20px',height:'20px',borderRadius:'50%',background:x[0],display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',color:'#fff',fontWeight:'700'}},x[1][0]==='○'?'':x[1][0]),
+      sp({cls:'txs muted'},x[1])
+    ));
+  });
+  matCard.appendChild(leg);
+  c.appendChild(matCard);
+}
+
+// ── SIGN-OFF MODAL ────────────────────────────────────────────────────
+function openSignoffModal(member,swp,existingSignoff,onSave){
+  document.getElementById('so-modal')&&document.getElementById('so-modal').remove();
+  const overlay=dv({id:'so-modal',cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'540px'}});
+  
+  // Header
+  modal.appendChild(dv({cls:'modal-title'},swp.title));
+  modal.appendChild(dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}},
+    bdg(swp.category,'blue'),
+    bdg('12 month renewal','gray'),
+    bdg(member.name,'purple')
+  ));
+
+  // SWP description
+  modal.appendChild(dv({st:{padding:'10px 12px',background:'#f8faf7',borderRadius:'8px',fontSize:'12px',color:'var(--muted)',lineHeight:'1.5',marginBottom:'16px'}},swp.description||''));
+
+  const so=existingSignoff||{};
+  const selfSigned=!!so.self_signed_at;
+  const assessorSigned=!!so.assessor_signed_at;
+
+  // ── SELF SIGN-OFF SECTION ──
+  const selfSection=dv({st:{padding:'14px',borderRadius:'10px',border:'1px solid '+(selfSigned?'#bbf7d0':'var(--border)'),background:selfSigned?'#f0fdf4':'#fff',marginBottom:'12px'}});
+  selfSection.appendChild(dv({cls:'row jb mb2'},
+    dv({},dv({cls:'fw6',st:{fontSize:'13px'}},'1. Employee Self-Assessment'),selfSigned?bdg('✓ Signed','green'):bdg('Required','amber')
+    ),sp({cls:'txs muted'},'Employee declares they have read and understood the SWP')
+  ));
+  if(selfSigned){
+    selfSection.appendChild(dv({cls:'txs muted'},
+      'Signed by '+so.self_signed_initials+' on '+new Date(so.self_signed_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})+' at '+new Date(so.self_signed_at).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})
+    ));
+    if(isManager){
+      selfSection.appendChild(dv({cls:'mt2'},btn('Revoke Self Sign-off','btn-d btn-sm',async function(){
+        if(!confirm('Revoke self sign-off for '+member.name+'?'))return;
+        await CDB.updateSignoff(so.id,{self_signed_at:null,self_signed_initials:null,status:'pending',assessor_signed_at:null,assessor_signed_initials:null,assessor_name:null,expires_at:null});
+        overlay.remove();onSave();
+      })));
+    }
+  } else {
+    // Self sign-off form
+    const declaration=dv({st:{padding:'10px',background:'#fffbeb',borderRadius:'6px',fontSize:'11.5px',color:'#92400e',marginBottom:'10px',lineHeight:'1.6'}},
+      'I, '+member.name+', declare that I have read and understood the Safe Work Practice for "'+swp.title+'" and agree to follow these procedures at all times.'
+    );
+    selfSection.appendChild(declaration);
+    const initialsIn=h('input',{type:'text',placeholder:'Your initials (e.g. TS)',st:{maxWidth:'160px',marginBottom:'8px',textTransform:'uppercase'}});
+    selfSection.appendChild(dv({cls:'fg mb2',st:{maxWidth:'200px'}},h('label',{},'Your initials to sign'),initialsIn));
+    selfSection.appendChild(btn('Sign Self-Assessment','btn-p',async function(){
+      const ini=initialsIn.value.trim().toUpperCase();
+      if(!ini)return alert('Please enter your initials');
+      if(!confirm('By clicking OK, '+member.name+' confirms they have read and understood this SWP.'))return;
+      const now=new Date().toISOString();
+      if(so.id){
+        await CDB.updateSignoff(so.id,{self_signed_at:now,self_signed_initials:ini,status:'self-signed'});
+      } else {
+        await CDB.createSignoff({team_member_id:member.id,swp_id:swp.id,self_signed_at:now,self_signed_initials:ini,status:'self-signed'});
+      }
+      overlay.remove();onSave();
+    }));
+  }
+  modal.appendChild(selfSection);
+
+  // ── ASSESSOR SIGN-OFF SECTION ──
+  const assessorSection=dv({st:{padding:'14px',borderRadius:'10px',border:'1px solid '+(assessorSigned?'#bbf7d0':selfSigned?'var(--border)':'#f3f4f6'),background:assessorSigned?'#f0fdf4':selfSigned?'#fff':'#fafafa',marginBottom:'16px',opacity:selfSigned?'1':'0.6'}});
+  assessorSection.appendChild(dv({cls:'row jb mb2'},
+    dv({},dv({cls:'fw6',st:{fontSize:'13px'}},'2. Assessor / Manager Competency Check'),assessorSigned?bdg('✓ Verified','green'):bdg(selfSigned?'Awaiting':'Self-sign first','gray')
+    ),sp({cls:'txs muted'},'Authorised person verifies competency')
+  ));
+  if(assessorSigned){
+    assessorSection.appendChild(dv({cls:'txs muted'},
+      'Verified by '+so.assessor_name+' ('+so.assessor_signed_initials+') on '+new Date(so.assessor_signed_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})
+    ));
+    const exp=new Date(so.expires_at);
+    assessorSection.appendChild(dv({cls:'txs muted mt2',st:{color:'#16a34a'}},'Expires: '+exp.toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})));
+    if(isManager){
+      assessorSection.appendChild(dv({cls:'mt2'},btn('Revoke Assessor Sign-off','btn-d btn-sm',async function(){
+        if(!confirm('Revoke assessor sign-off?'))return;
+        await CDB.updateSignoff(so.id,{assessor_signed_at:null,assessor_signed_initials:null,assessor_name:null,expires_at:null,status:'self-signed'});
+        overlay.remove();onSave();
+      })));
+    }
+  } else if(selfSigned&&isManager){
+    const aNotesIn=h('input',{type:'text',placeholder:'Optional notes'});
+    // Load assessors dynamically
+    const assessorDropWrap=dv({cls:'fg mb2'});
+    assessorDropWrap.appendChild(h('label',{},'Select Assessor'));
+    const assessorDrop=h('select',{});
+    assessorDrop.appendChild(h('option',{value:''},'Loading assessors...'));
+    assessorDropWrap.appendChild(assessorDrop);
+    assessorSection.appendChild(assessorDropWrap);
+    CDB.getAssessors().then(function(assessors){
+      assessorDrop.innerHTML='';
+      assessorDrop.appendChild(h('option',{value:''},'-- Select assessor --'));
+      assessors.forEach(function(a){
+        // Block self sign-off
+        if(a.id===member.id)return;
+        assessorDrop.appendChild(h('option',{value:a.id+'|'+a.name},''+a.name+(a.role?' ('+a.role+')':'')));
+      });
+    });
+    const aInitIn=h('input',{type:'text',placeholder:'Assessor initials',st:{maxWidth:'160px',textTransform:'uppercase'}});
+    assessorSection.appendChild(dv({cls:'fg mb2'},h('label',{},'Assessor initials to sign'),aInitIn));
+    assessorSection.appendChild(dv({cls:'fg mb2'},h('label',{},'Notes (optional)'),aNotesIn));
+    assessorSection.appendChild(btn('Confirm Competency Verified','btn-p',async function(){
+      const selVal=assessorDrop.value;
+      if(!selVal)return alert('Please select an assessor');
+      const name=selVal.split('|')[1];
+      const ini=aInitIn.value.trim().toUpperCase();
+      if(!ini)return alert('Please enter assessor initials');
+      // Double-check not self-signing
+      const assessorId=parseInt(selVal.split('|')[0]);
+      if(assessorId===member.id)return alert('An employee cannot be their own assessor.');
+      if(!confirm('Confirm that '+name+' has verified competency for '+member.name+' on "'+swp.title+'"?'))return;
+      const now=new Date();
+      const exp=new Date(now);exp.setMonth(exp.getMonth()+(swp.renewal_months||12));
+      await CDB.updateSignoff(so.id,{assessor_signed_at:now.toISOString(),assessor_signed_initials:ini,assessor_name:name,expires_at:exp.toISOString(),status:'current',notes:aNotesIn.value||null});
+      overlay.remove();onSave();
+    }));
+  } else if(selfSigned&&!isManager){
+    assessorSection.appendChild(dv({cls:'txs muted st',st:{fontStyle:'italic'}},'Awaiting manager/assessor sign-off. Only authorised managers can complete this step.'));
+  } else {
+    assessorSection.appendChild(dv({cls:'txs muted',st:{fontStyle:'italic'}},'Employee must complete self-assessment first.'));
+  }
+  modal.appendChild(assessorSection);
+
+  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
+    btn('Close','btn-o',function(){overlay.remove();})
+  ));
+  overlay.appendChild(modal);
+  overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};
+  document.body.appendChild(overlay);
+}
+
+// ── SAFETY ALERTS ─────────────────────────────────────────────────────
+function renderSafetyAlerts(c){
+  let selSafe=null;
+  function render(){
+    let w=c.querySelector('#sal');if(!w){w=dv({id:'sal'});c.appendChild(w);}w.innerHTML='';
+    const layout=dv({cls:'row gap3',st:{alignItems:'flex-start'}});
+    const list=dv({st:{flex:'1',display:'flex',flexDirection:'column',gap:'10px'}});
+    safety.forEach(function(doc){
+      const row=dv({st:{padding:'12px 14px',borderRadius:'10px',border:'1px solid '+(selSafe===doc.id?'var(--green)':'var(--border)'),background:selSafe===doc.id?'#f0fdf4':'#fff',cursor:'pointer'},onclick:()=>{selSafe=selSafe===doc.id?null:doc.id;render();}});
+      row.appendChild(dv({cls:'row jb gap2'},
+        dv({},dv({cls:'row gap2 mb2'},sp({cls:'txs muted',st:{fontFamily:'monospace'}},doc.refNo),doc.pinned&&bdg('📌','amber')),dv({cls:'fw6 tsm'},doc.title),dv({cls:'txs muted'},doc.dept+' · '+doc.category+' · '+ago(doc.createdAt))),
+        bdg(doc.priority,doc.priority==='Critical'?'red':doc.priority==='High'?'orange':doc.priority==='Medium'?'amber':'green')
+      ));
+      list.appendChild(row);
+    });
+    layout.appendChild(list);
+    if(selSafe){
+      const doc=safety.find(function(d){return d.id===selSafe;});
+      if(doc){
+        const det=dv({cls:'card',st:{width:'340px',flexShrink:'0'}});
+        det.appendChild(dv({cls:'row jb mb3'},h('h2',{st:{fontSize:'15px',fontWeight:'700'}},doc.title),h('button',{st:{background:'none',border:'none',fontSize:'18px',cursor:'pointer'},onclick:()=>{selSafe=null;render();}},'×')));
+        det.appendChild(dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}},bdg(doc.priority,doc.priority==='Critical'?'red':doc.priority==='High'?'orange':'amber'),bdg(doc.category,'gray'),bdg(doc.dept,'blue')));
+        det.appendChild(h('p',{st:{fontSize:'14px',lineHeight:'1.6',color:'#374151',marginBottom:'12px'}},doc.content));
+        det.appendChild(dv({cls:'txs muted'},'Ref: '+doc.refNo+' · '+ago(doc.createdAt)));
+        if(isManager)det.appendChild(dv({cls:'row gap2 mt3',st:{borderTop:'1px solid #f3f4f6',paddingTop:'12px'}},
+          btn(doc.pinned?'Unpin':'📌 Pin','btn-o btn-sm',()=>{safety=safety.map(x=>x.id===doc.id?Object.assign({},x,{pinned:!x.pinned}):x);render();}),
+          btn('🗑 Delete','btn-d btn-sm',()=>{if(confirm('Delete?')){safety=safety.filter(x=>x.id!==doc.id);selSafe=null;render();}})
+        ));
+        layout.appendChild(det);
+      }
+    }
+    w.appendChild(layout);
+  }
+  if(isManager){
+    const addBtn=btn('+ New Alert','btn-p btn-sm',function(){showSafetyFormInline(c,render);});
+    c.appendChild(dv({cls:'row jb mb3'},dv({},),addBtn));
+  }
+  render();
+}
+
+function showSafetyFormInline(c,onSave){
+  if(c.querySelector('#sf'))return;
+  const f=dv({cls:'card mb4',id:'sf'});
+  f.appendChild(dv({cls:'row jb mb3'},dv({cls:'card-title'},'New Safety Document'),h('button',{st:{background:'none',border:'none',fontSize:'18px',cursor:'pointer'},onclick:()=>f.remove()},'×')));
+  const ti=inp('','Title *');const ri=inp('','e.g. SA-005');const pr=sel('Medium','Low','Medium','High','Critical');const di=sel(DEPTS[0],...DEPTS);const co=h('textarea',{rows:'3',placeholder:'Content *'});
+  const g=dv({cls:'g2 mb2'});g.appendChild(frow('Title *',ti));g.appendChild(frow('Ref No',ri));g.appendChild(frow('Priority',pr));g.appendChild(frow('Department',di));f.appendChild(g);
+  f.appendChild(dv({cls:'mb3'},h('label',{},'Content *'),co));
+  f.appendChild(dv({cls:'row gap2'},btn('Cancel','btn-o',()=>f.remove()),btn('Create','btn-p',()=>{if(!ti.value||!co.value)return alert('Title and content required');safety.unshift({id:Date.now(),refNo:ri.value||'SA-NEW',title:ti.value,category:'General',dept:di.value,priority:pr.value,content:co.value,pinned:false,createdAt:new Date().toISOString()});f.remove();onSave();})));
+  c.insertBefore(f,c.querySelector('#sal'));
+}
+
+// ── SIGN-OFF LOG ──────────────────────────────────────────────────────
+async function renderSignoffLog(c){
+  const loading=dv({cls:'empty'},'Loading sign-off records...');c.appendChild(loading);
+  const [members,swps,signoffs]=await Promise.all([CDB.getMembers(),CDB.getSWPs(),CDB.getSignoffs()]);
+  loading.remove();
+  const memberMap={};members.forEach(function(m){memberMap[m.id]=m;});
+  const swpMap={};swps.forEach(function(s){swpMap[s.id]=s;});
+  const card=dv({cls:'card'});
+  card.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'Sign-off Record Log'),dv({cls:'card-sub'},signoffs.length+' total records')));
+  if(!signoffs.length){card.appendChild(dv({cls:'empty'},'No sign-off records yet'));c.appendChild(card);return;}
+  const tbl=document.createElement('table');
+  tbl.appendChild((function(){const thead=document.createElement('thead');const r=document.createElement('tr');['Employee','SWP','Self Sign','Assessor','Expires','Status'].forEach(function(h_){const th=document.createElement('th');th.textContent=h_;r.appendChild(th);});thead.appendChild(r);return thead;})());
+  const tbody=document.createElement('tbody');
+  signoffs.forEach(function(so){
+    const m=memberMap[so.team_member_id];const s=swpMap[so.swp_id];
+    if(!m||!s)return;
+    const st=complianceStatus(so,s);
+    const r=document.createElement('tr');
+    [
+      m.name,
+      s.title,
+      so.self_signed_at?so.self_signed_initials+' · '+new Date(so.self_signed_at).toLocaleDateString('en-AU'):'—',
+      so.assessor_signed_at?so.assessor_name+' ('+so.assessor_signed_initials+') · '+new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'—',
+      so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—'
+    ].forEach(function(txt,i){const td=document.createElement('td');td.textContent=txt;if(i===0)td.style.fontWeight='600';td.style.fontSize='12px';r.appendChild(td);});
+    const statusTd=document.createElement('td');
+    const dot=dv({st:{display:'inline-flex',alignItems:'center',gap:'4px'}},
+      dv({st:{width:'8px',height:'8px',borderRadius:'50%',background:statusColor(st),flexShrink:'0'}}),
+      sp({st:{fontSize:'11px',fontWeight:'600',color:statusColor(st)}},statusLabel(st))
+    );
+    statusTd.appendChild(dot);r.appendChild(statusTd);
+    tbody.appendChild(r);
+  });
+  tbl.appendChild(tbody);card.appendChild(tbl);c.appendChild(card);
+}
+
+// ── DASHBOARD COMPLIANCE WIDGET ───────────────────────────────────────
+async function renderDashboardCompliance(c){
+  const [members,swps,signoffs]=await Promise.all([CDB.getMembers(),CDB.getSWPs(),CDB.getSignoffs()]);
+  const lookup={};
+  signoffs.forEach(function(s){const key=s.team_member_id+'_'+s.swp_id;if(!lookup[key]||new Date(s.created_at)>new Date(lookup[key].created_at))lookup[key]=s;});
+  let current=0,overdue=0,total=members.length*swps.length;
+  const overdueList=[];
+  members.forEach(function(m){swps.forEach(function(s){
+    const so=lookup[m.id+'_'+s.id];const st=complianceStatus(so,s);
+    if(st==='current')current++;
+    if(st==='overdue')overdueList.push({member:m.name,swp:s.title});
+  });});
+  overdue=overdueList.length;
+  const pct=total>0?Math.round(current/total*100):0;
+  const card=dv({cls:'card'});
+  card.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'🛡 Safety Compliance'),dv({cls:'card-sub'},pct+'% compliant · '+overdue+' overdue')),h('button',{cls:'link-btn',onclick:()=>go('safety')},'View matrix →')));
+  // Progress bar
+  const pbWrap=dv({cls:'pb-row mb3'});
+  pbWrap.appendChild(dv({cls:'pb-fill',st:{width:pct+'%',background:pct>=90?'#22c55e':pct>=70?'#f59e0b':'#ef4444'}}));
+  card.appendChild(pbWrap);
+  // Mini stats
+  const ms=dv({cls:'row gap3 mb3'});
+  [{v:pct+'%',l:'Compliant',col:'#22c55e'},{v:overdue,l:'Overdue',col:'#ef4444'},{v:total-current-overdue,l:'Pending',col:'#f59e0b'}].forEach(function(x){
+    ms.appendChild(dv({st:{textAlign:'center',flex:'1'}},dv({st:{fontSize:'20px',fontWeight:'700',color:x.col}},''+x.v),dv({cls:'txs muted'},x.l)));
+  });
+  card.appendChild(ms);
+  // Overdue list (top 5)
+  if(overdueList.length>0){
+    card.appendChild(dv({cls:'txs fw6 mb2',st:{color:'#ef4444'}},'Overdue sign-offs:'));
+    overdueList.slice(0,5).forEach(function(x){
+      card.appendChild(dv({cls:'row gap2 mb2'},
+        dv({st:{width:'6px',height:'6px',borderRadius:'50%',background:'#ef4444',flexShrink:'0',marginTop:'4px'}}),
+        dv({cls:'txs'},sp({cls:'fw6'},x.member)+' — '+x.swp)
+      ));
+    });
+    if(overdueList.length>5)card.appendChild(dv({cls:'txs muted'},'+' +(overdueList.length-5)+' more overdue'));
+  } else {
+    card.appendChild(dv({st:{textAlign:'center',padding:'8px',color:'#22c55e',fontSize:'13px',fontWeight:'600'}},'✓ All sign-offs current!'));
+  }
+  c.appendChild(card);
+}
+
+
+function exportComplianceCSV(members,swps,lookup){
+  const rows=[['Employee','Is Assessor',...swps.map(function(s){return s.title;})]];
+  members.forEach(function(m){
+    const row=[m.name,m.is_assessor?'Yes':'No'];
+    swps.forEach(function(s){
+      const so=lookup[m.id+'_'+s.id];
+      const st=complianceStatus(so,s);
+      const exp=so&&so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'';
+      row.push(statusLabel(st)+(exp?' (exp '+exp+')':''));
+    });
+    rows.push(row);
+  });
+  const csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='wm_compliance_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+}
 // ══ INIT ════════════════════════════════════════════════════════════
 renderNav();renderTop();renderPage();
 </script>
