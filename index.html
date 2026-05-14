@@ -1329,101 +1329,295 @@ function showProdForm(c){
 
 // ── DELIVERIES ────────────────────────────────────────────────────────
 async function pgDel(c){
+  // Header
   c.appendChild(dv({cls:'row jb mb3'},
     dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},'Schedule and manage deliveries')),
     dv({cls:'row gap2'},
-      isManager()&&btn('+ New Delivery','btn-p',function(){openDelForm(null,null,c);}),
+      isManager()&&btn('+ New Delivery','btn-p',function(){openDelForm(null,iso(calDate),c);}),
       btn('◀','btn-o btn-sm',function(){calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);c.innerHTML='';pgDel(c);}),
-      dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'120px',textAlign:'center'}},calDate.toLocaleDateString('en-AU',{month:'long',year:'numeric'})),
+      dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'140px',textAlign:'center'}},calDate.toLocaleDateString('en-AU',{month:'long',year:'numeric'})),
       btn('▶','btn-o btn-sm',function(){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);c.innerHTML='';pgDel(c);})
     )
   ));
+  // View toggle
+  const tvRow=dv({cls:'row gap2 mb3'});
+  const monthBtn=btn('Month','btn-'+(calView==='month'?'p':'o')+' btn-sm',function(){calView='month';c.innerHTML='';pgDel(c);});
+  const weekBtn=btn('Week','btn-'+(calView==='week'?'p':'o')+' btn-sm',function(){calView='week';c.innerHTML='';pgDel(c);});
+  const listBtn=btn('List','btn-'+(calView==='list'?'p':'o')+' btn-sm',function(){calView='list';c.innerHTML='';pgDel(c);});
+  tvRow.appendChild(monthBtn);tvRow.appendChild(weekBtn);tvRow.appendChild(listBtn);
+  c.appendChild(tvRow);
+
+  // Load deliveries
   const y=calDate.getFullYear(),m=calDate.getMonth();
-  const first=new Date(y,m,1),last=new Date(y,m+1,0);
-  const loading=dv({cls:'empty'},'Loading deliveries...');c.appendChild(loading);
-  const deliveries=await DB.list(iso(first),iso(last));
+  let fromDate,toDate;
+  if(calView==='week'){
+    fromDate=sowMon(calDate);toDate=addD(fromDate,6);
+  } else {
+    fromDate=new Date(y,m,1);toDate=new Date(y,m+1,0);
+  }
+  const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
+  deliveries=await DB.list(iso(fromDate),iso(toDate));
   loading.remove();
-  // Build week grid
-  const delMap={};
-  deliveries.forEach(function(d){if(!delMap[d.scheduledDate])delMap[d.scheduledDate]=[];delMap[d.scheduledDate].push(d);});
-  // List view below calendar - filter to this month sorted by date
-  renderDelList(c,deliveries,calDate);
+
+  if(calView==='list'){
+    renderDelList(c,deliveries);
+  } else if(calView==='week'){
+    renderDelWeek(c,deliveries,fromDate);
+  } else {
+    renderDelMonth(c,deliveries,y,m);
+  }
 }
-function renderDelList(c,deliveries,calDate){
-  const y=calDate.getFullYear(),m=calDate.getMonth();
-  const sorted=[].concat(deliveries).sort(function(a,b){return a.scheduledDate>b.scheduledDate?1:-1;});
-  if(!sorted.length){c.appendChild(dv({cls:'empty'},'No deliveries this month'));return;}
+
+function renderDelMonth(c,dels,y,m){
+  const first=new Date(y,m,1);
+  const startDow=(first.getDay()+6)%7; // Mon=0
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const todayStr=iso(tod());
+  // Build map
+  const delMap={};
+  dels.forEach(function(d){if(!delMap[d.scheduledDate])delMap[d.scheduledDate]=[];delMap[d.scheduledDate].push(d);});
+  // Day headers
+  const hdrRow=dv({cls:'cal-hdr-row'});
+  ['Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(d){hdrRow.appendChild(dv({cls:'cal-hdr'},d));});
+  c.appendChild(hdrRow);
+  const grid=dv({cls:'cal-grid'});
+  let dayCount=0;
+  // Leading empty cells
+  for(let i=0;i<startDow&&i<5;i++){grid.appendChild(dv({cls:'cal-cell c-other'}));dayCount++;}
+  for(let day=1;day<=daysInMonth;day++){
+    const date=new Date(y,m,day);
+    const dow=(date.getDay()+6)%7;
+    if(dow===6)continue; // skip Sunday
+    const dateStr=iso(date);
+    const isToday=dateStr===todayStr;
+    const isSel=selDay===dateStr;
+    const isSat=dow===5;
+    const cell=dv({cls:'cal-cell'+(isToday?' c-today':'')+(isSel?' c-sel':'')+(isSat?' c-sat':'')});
+    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;c.innerHTML='';renderDelMonth(c,dels,y,m);};
+    if(isManager()){
+      cell.ondblclick=function(e){e.stopPropagation();openDelForm(null,dateStr,document.getElementById('content'));};
+    }
+    const dayNum=dv({cls:'cal-day-num'+(isToday?' c-today-num':'')});dayNum.textContent=day;cell.appendChild(dayNum);
+    // Delivery pills
+    const dayDels=delMap[dateStr]||[];
+    const sorted=dayDels.slice().sort(function(a,b){return(ORDERS.indexOf(a.deliveryOrder)||0)-(ORDERS.indexOf(b.deliveryOrder)||0);});
+    ORDERS.forEach(function(order){
+      const slot=dv({cls:'cal-slot'});
+      slot.appendChild(dv({cls:'cal-slot-lbl'},order));
+      const orderDels=sorted.filter(function(d){return d.deliveryOrder===order;});
+      orderDels.forEach(function(d){
+        const pill=makePill(d);
+        pill.draggable=true;
+        pill.ondragstart=function(e){e.dataTransfer.setData('delId',d.id);e.dataTransfer.setData('fromDate',dateStr);};
+        slot.appendChild(pill);
+      });
+      // Drop target
+      slot.ondragover=function(e){e.preventDefault();slot.classList.add('drag-over');};
+      slot.ondragleave=function(){slot.classList.remove('drag-over');};
+      slot.ondrop=async function(e){
+        e.preventDefault();slot.classList.remove('drag-over');
+        const delId=parseInt(e.dataTransfer.getData('delId'));
+        if(!delId)return;
+        await DB.patch(delId,{scheduled_date:dateStr,delivery_order:order});
+        deliveries=await DB.list(iso(new Date(y,m,1)),iso(new Date(y,m+1,0)));
+        c.innerHTML='';renderDelMonth(c,deliveries,y,m);
+      };
+      cell.appendChild(slot);
+    });
+    grid.appendChild(cell);
+    dayCount++;
+  }
+  c.appendChild(grid);
+  // Selected day detail
+  if(selDay){
+    const selDels=delMap[selDay]||[];
+    const selDate=new Date(selDay+'T12:00:00');
+    const detCard=dv({cls:'card mt3'});
+    detCard.appendChild(dv({cls:'row jb mb3'},
+      dv({cls:'card-title'},selDate.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'})),
+      isManager()&&btn('+ Add Delivery','btn-p btn-sm',function(){openDelForm(null,selDay,document.getElementById('content'));})
+    ));
+    if(!selDels.length){detCard.appendChild(dv({cls:'empty'},'No deliveries scheduled'));}
+    else{selDels.forEach(function(d){renderDelRow(detCard,d,document.getElementById('content'));});}
+    c.appendChild(detCard);
+  }
+}
+
+function renderDelWeek(c,dels,weekStart){
+  const delMap={};
+  dels.forEach(function(d){if(!delMap[d.scheduledDate])delMap[d.scheduledDate]=[];delMap[d.scheduledDate].push(d);});
+  const hdrRow=dv({cls:'cal-hdr-row'});
+  for(let i=0;i<6;i++){
+    const d=addD(weekStart,i);
+    const isToday=iso(d)===iso(tod());
+    const hdr=dv({cls:'cal-hdr',st:{padding:'10px 4px',lineHeight:'1.4'}});
+    hdr.appendChild(dv({st:{fontWeight:'600',color:isToday?'var(--green)':'var(--muted)'}},d.toLocaleDateString('en-AU',{weekday:'short'})));
+    hdr.appendChild(dv({st:{fontSize:'16px',fontWeight:'700',color:isToday?'var(--green)':'var(--text)'}},d.getDate()+''));
+    c.appendChild(hdrRow);
+    hdrRow.appendChild(hdr);
+  }
+  c.appendChild(hdrRow);
+  const grid=dv({cls:'cal-grid'});
+  for(let i=0;i<6;i++){
+    const d=addD(weekStart,i);const dateStr=iso(d);
+    const isToday=dateStr===iso(tod());
+    const cell=dv({cls:'cal-cell'+(isToday?' c-today':''),st:{minHeight:'220px'}});
+    const dayDels=delMap[dateStr]||[];
+    ORDERS.forEach(function(order){
+      const slot=dv({cls:'cal-slot'});
+      slot.appendChild(dv({cls:'cal-slot-lbl'},order));
+      dayDels.filter(function(d2){return d2.deliveryOrder===order;}).forEach(function(d2){
+        const pill=makePill(d2);
+        pill.draggable=true;
+        pill.ondragstart=function(e){e.dataTransfer.setData('delId',d2.id);};
+        slot.appendChild(pill);
+      });
+      slot.ondragover=function(e){e.preventDefault();slot.classList.add('drag-over');};
+      slot.ondragleave=function(){slot.classList.remove('drag-over');};
+      slot.ondrop=async function(e){
+        e.preventDefault();slot.classList.remove('drag-over');
+        const delId=parseInt(e.dataTransfer.getData('delId'));
+        if(!delId)return;
+        await DB.patch(delId,{scheduled_date:dateStr,delivery_order:order});
+        c.innerHTML='';pgDel(c);
+      };
+      cell.appendChild(slot);
+    });
+    if(isManager()){cell.ondblclick=function(){openDelForm(null,dateStr,document.getElementById('content'));};}
+    grid.appendChild(cell);
+  }
+  c.appendChild(grid);
+}
+
+function makePill(d){
+  const col=d.type==='Incoming'?'#1d4ed8':'#15803d';
+  const bg=d.type==='Incoming'?'#1d4ed8':'#166534';
+  const pill=dv({cls:'cal-pill',st:{background:bg,marginBottom:'2px',cursor:'pointer'}});
+  if(!d.isPaid){pill.appendChild(dv({cls:'not-paid-tag'},'NOT PAID'));}
+  pill.appendChild(dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.8'}},d.deliveryOrder));
+  if(d.customer)pill.appendChild(dv({st:{fontSize:'11px',lineHeight:'1.3'}},d.customer));
+  if(d.scheduledTime)pill.appendChild(dv({st:{fontSize:'10px',opacity:'0.8'}},d.scheduledTime));
+  pill.onclick=function(e){e.stopPropagation();openDelForm(d,null,document.getElementById('content'));};
+  return pill;
+}
+
+function renderDelList(c,dels){
   const card=dv({cls:'card'});
-  card.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'This Month\'s Deliveries'),dv({cls:'card-sub'},sorted.length+' total')));
-  sorted.forEach(function(d){
-    const ov=new Date(d.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(d.status);
-    const row=dv({st:{display:'flex',alignItems:'flex-start',gap:'12px',padding:'10px 12px',borderBottom:'1px solid #f3f4f6',cursor:'pointer'},onclick:function(){openDelForm(d,null,c);}});
-    row.appendChild(dv({st:{minWidth:'70px',textAlign:'center',padding:'6px 8px',borderRadius:'8px',background:ov?'#fef2f2':d.type==='Incoming'?'#eff6ff':'#f0fdf4',flexShrink:'0'}},
-      dv({st:{fontSize:'18px',fontWeight:'700',color:ov?'#dc2626':d.type==='Incoming'?'#1d4ed8':'#15803d'}},new Date(d.scheduledDate+'T12:00:00').getDate()),
-      dv({st:{fontSize:'10px',color:'#6b7280'}},new Date(d.scheduledDate+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short'}))
-    ));
-    const info=dv({st:{flex:'1'}});
-    info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap'}},
-      d.jobNumber&&sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+d.jobNumber),
-      bdg(d.type,d.type==='Incoming'?'blue':'green'),
-      bdg(d.status,d.status==='Completed'?'green':d.status==='Cancelled'?'red':ov?'red':'gray'),
-      !d.isPaid&&bdg('NOT PAID','red')
-    ));
-    if(d.customer)info.appendChild(dv({cls:'fw6 tsm'},d.customer));
-    if(d.address)info.appendChild(dv({cls:'txs muted'},d.address));
-    if(d.notes)info.appendChild(dv({cls:'txs muted',st:{fontStyle:'italic'}},d.notes));
-    row.appendChild(info);
-    row.appendChild(dv({st:{textAlign:'right',flexShrink:'0'}},
-      dv({cls:'txs muted'},d.scheduledTime||''),
-      dv({cls:'txs muted'},d.vehicle),
-      isManager()&&btn('×','btn-d btn-sm',async function(e){e.stopPropagation();if(!confirm('Delete this delivery?'))return;await DB.del(d.id);c.innerHTML='';pgDel(c);})
-    ));
-    card.appendChild(row);
+  card.appendChild(dv({cls:'card-hdr'},
+    dv({cls:'card-title'},'Deliveries'),
+    dv({cls:'card-sub'},dels.length+' total'),
+    isManager()&&btn('+ New','btn-p btn-sm',function(){openDelForm(null,iso(calDate),document.getElementById('content'));})
+  ));
+  if(!dels.length){card.appendChild(dv({cls:'empty'},'No deliveries this period'));c.appendChild(card);return;}
+  const sorted=dels.slice().sort(function(a,b){return a.scheduledDate>b.scheduledDate?1:a.scheduledDate<b.scheduledDate?-1:0;});
+  // Drag-drop list
+  let dragSrc=null;
+  sorted.forEach(function(d,i){
+    const row=renderDelRow(card,d,document.getElementById('content'),function(dragEl,targetEl){
+      // Reorder in list
+    });
   });
   c.appendChild(card);
 }
+
+function renderDelRow(card,d,pageC){
+  const ov=new Date(d.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(d.status);
+  const row=dv({cls:'del-row'});
+  // Drag handle
+  const handle=dv({cls:'drag-handle'},'⠿');
+  handle.draggable=true;
+  handle.ondragstart=function(e){e.dataTransfer.setData('listDelId',''+d.id);row.style.opacity='0.4';};
+  handle.ondragend=function(){row.style.opacity='1';};
+  row.ondragover=function(e){e.preventDefault();row.classList.add('drag-top');};
+  row.ondragleave=function(){row.classList.remove('drag-top');};
+  row.ondrop=async function(e){
+    e.preventDefault();row.classList.remove('drag-top');
+    const srcId=parseInt(e.dataTransfer.getData('listDelId'));
+    if(!srcId||srcId===d.id)return;
+    // Swap delivery_order and date
+    const src=deliveries.find(function(x){return x.id===srcId;});
+    if(!src)return;
+    await Promise.all([
+      DB.patch(srcId,{scheduled_date:d.scheduledDate,delivery_order:d.deliveryOrder}),
+      DB.patch(d.id,{scheduled_date:src.scheduledDate,delivery_order:src.deliveryOrder})
+    ]);
+    pageC.innerHTML='';pgDel(pageC);
+  };
+  card.appendChild(handle);
+  // Info
+  const info=dv({st:{flex:'1',cursor:'pointer'},onclick:function(){openDelForm(d,null,pageC);}});
+  info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap'}},
+    d.jobNumber&&sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+d.jobNumber),
+    bdg(d.type,d.type==='Incoming'?'blue':'green'),
+    bdg(d.deliveryOrder,'gray'),
+    bdg(d.status,d.status==='Completed'?'green':d.status==='Cancelled'?'red':ov?'red':'gray'),
+    !d.isPaid&&bdg('NOT PAID','red')
+  ));
+  if(d.customer)info.appendChild(dv({cls:'fw6 tsm'},d.customer));
+  if(d.address)info.appendChild(dv({cls:'txs muted'},d.address));
+  info.appendChild(dv({cls:'txs muted'},fmtD(d.scheduledDate)+(d.scheduledTime?' · '+d.scheduledTime:'')+' · '+d.vehicle+(d.crew&&d.crew!=='Driver only'?' · '+d.crew:'')));
+  row.appendChild(info);
+  if(isManager()){
+    row.appendChild(btn('×','btn-d btn-sm',async function(e){
+      e.stopPropagation();
+      if(!confirm('Delete this delivery?'))return;
+      await DB.del(d.id);pageC.innerHTML='';pgDel(pageC);
+    }));
+  }
+  card.appendChild(row);
+  return row;
+}
+
 function openDelForm(d,dateStr,c){
   const overlay=dv({cls:'modal-overlay'});
   const modal=dv({cls:'modal',st:{width:'600px'}});
   const isNew=!d;
   modal.appendChild(dv({cls:'modal-title'},isNew?'New Delivery':'Edit Delivery'));
-  const g2=function(a,b){const g=dv({cls:'g2 mb2'});g.appendChild(a);g.appendChild(b);return g;};
   const jobIn=inp(d?d.jobNumber:'','Job number');
   const custIn=inp(d?d.customer:'','Customer name');
-  const addrIn=inp(d?d.address:'','Address');
+  const addrIn=inp(d?d.address:'','Delivery address');
   const descIn=inp(d?d.description:'','Description');
-  const dateIn=h('input',{type:'date',value:d?d.scheduledDate:dateStr||iso(new Date())});
-  const timeIn=h('input',{type:'time',value:d?d.scheduledTime:''});
+  const dateIn=h('input',{type:'date',value:d?d.scheduledDate:dateStr||iso(calDate)});
+  const timeIn=h('input',{type:'time',value:d?d.scheduledTime||'':''});
   const typeSel=sel(d?d.type:'Outgoing','Outgoing','Incoming');
   const statusSel=sel(d?d.status:'Scheduled','Scheduled','In Progress','Completed','Cancelled');
   const vehSel=sel(d?d.vehicle:'Truck',...VEHICLES);
   const crewSel=sel(d?d.crew:'Driver only',...CREWS);
   const orderSel=sel(d?d.deliveryOrder:'Delivery 1',...ORDERS);
-  const bayIn=inp(d?d.bayNumber:'','Bay number');
-  const notesIn=h('textarea',{rows:'2',placeholder:'Notes',value:d?d.notes:''});
-  const paidChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',accentColor:'var(--green)',cursor:'pointer'}});
+  const seqSel=sel(d?d.deliverySequence:'Deliver 1st',...SEQS);
+  const bayIn=inp(d?d.bayNumber||'':'','Bay number');
+  const notesIn=h('textarea',{rows:'2',placeholder:'Notes'});
+  if(d&&d.notes)notesIn.value=d.notes;
+  const paidChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',accentColor:'var(--green)',cursor:'pointer',flexShrink:'0'}});
   paidChk.checked=d?d.isPaid:false;
-  const paidByIn=inp(d?d.paidBy:'','Paid by');
+  const paidByIn=inp(d?d.paidBy||'':'','Paid by');
+  const g2=function(a,b){const g=dv({cls:'g2 mb2'});g.appendChild(a);g.appendChild(b);return g;};
   modal.appendChild(g2(frow('Job #',jobIn),frow('Customer',custIn)));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Address'),addrIn));
-  modal.appendChild(g2(frow('Date',dateIn),frow('Time',timeIn)));
+  modal.appendChild(g2(frow('Date',dateIn),frow('Time (optional)',timeIn)));
   modal.appendChild(g2(frow('Type',typeSel),frow('Status',statusSel)));
   modal.appendChild(g2(frow('Vehicle',vehSel),frow('Crew',crewSel)));
-  modal.appendChild(g2(frow('Delivery Order',orderSel),frow('Bay',bayIn)));
+  modal.appendChild(g2(frow('Delivery Order',orderSel),frow('Sequence',seqSel)));
+  modal.appendChild(g2(frow('Bay Number',bayIn),frow('Description',descIn)));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Notes'),notesIn));
-  modal.appendChild(dv({cls:'row gap2 mb3'},paidChk,dv({st:{fontSize:'13px',fontWeight:'600',marginTop:'1px'}},'Payment received'),frow('',paidByIn)));
-  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
-    btn('Cancel','btn-o',function(){overlay.remove();}),
-    btn(isNew?'Create':'Save','btn-p',async function(){
-      if(!dateIn.value)return alert('Date required');
-      const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
-      if(isNew){await DB.create(data);}else{await DB.update(d.id,data);}
-      overlay.remove();c.innerHTML='';pgDel(c);
-    })
-  ));
+  modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},paidChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Payment received'),dv({st:{flex:'1'}},paidByIn)));
+  const btns=dv({cls:'row gap2',st:{justifyContent:'flex-end'}});
+  if(!isNew&&isManager()){
+    btns.appendChild(btn('Delete','btn-d',async function(){
+      if(!confirm('Delete this delivery?'))return;
+      await DB.del(d.id);overlay.remove();c.innerHTML='';pgDel(c);
+    }));
+  }
+  btns.appendChild(btn('Cancel','btn-o',function(){overlay.remove();}));
+  btns.appendChild(btn(isNew?'Create':'Save','btn-p',async function(){
+    if(!dateIn.value)return alert('Date required');
+    const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
+    if(isNew){await DB.create(data);}else{await DB.update(d.id,data);}
+    overlay.remove();c.innerHTML='';pgDel(c);
+  }));
+  modal.appendChild(btns);
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
 }
-
 // ── SOP LIBRARY ───────────────────────────────────────────────────────
 function pgSOP(c){
   c.appendChild(dv({cls:'row jb mb4'},dv({},h('h1',{cls:'page-title'},'SOP Library'),dv({cls:'page-sub'},'Standard Operating Procedures')),isManager()&&btn('+ Add SOP','btn-p',function(){showSOPForm(c);})));
