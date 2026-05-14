@@ -1351,51 +1351,204 @@ function showSafetyAlertForm(c){
 
 // ── SIGN-OFF LOG ──────────────────────────────────────────────────────
 async function renderLog(c){
-  c.appendChild(dv({cls:'fw6 mb3',st:{fontSize:'14px'}},'Sign-off Log'));
+  c.appendChild(dv({cls:'row jb mb3'},
+    dv({},dv({cls:'fw6',st:{fontSize:'14px'}},'Training Records & Sign-off Log'),dv({cls:'txs muted mt1'},'Search by employee to view and download their full training record')),
+    isManager()&&btn('Export All CSV','btn-o btn-sm',async function(){
+      const [so,mem,sw]=await Promise.all([CDB.getSignoffs(),CDB.getMembers(),CDB.getSWPs()]);
+      const lk={};so.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lk[k]||new Date(s.created_at)>new Date(lk[k].created_at))lk[k]=s;});
+      exportCSV(mem,sw,lk);
+    })
+  ));
+
+  // Search / filter bar
+  const searchRow=dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}});
   const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
   const [signoffs,members,swps]=await Promise.all([CDB.getSignoffs(),CDB.getMembers(),CDB.getSWPs()]);
   loading.remove();
   const mMap={};members.forEach(function(m){mMap[m.id]=m;});
   const sMap={};swps.forEach(function(s){sMap[s.id]=s;});
-  const sorted=[].concat(signoffs).sort(function(a,b){return b.created_at>a.created_at?1:-1;});
-  if(!sorted.length){c.appendChild(dv({cls:'empty'},'No sign-off records yet'));return;}
+
+  // Member selector
+  const memSel=document.createElement('select');
+  memSel.style.cssText='padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:200px';
+  memSel.appendChild(h('option',{value:''},'— Select employee —'));
+  members.forEach(function(m){memSel.appendChild(h('option',{value:''+m.id},m.name));});
+  // SWP selector
+  const swpSel=document.createElement('select');
+  swpSel.style.cssText='padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:200px';
+  swpSel.appendChild(h('option',{value:''},'All SWPs'));
+  swps.forEach(function(s){swpSel.appendChild(h('option',{value:''+s.id},s.title));});
+  searchRow.appendChild(dv({cls:'fg',st:{gap:'3px'}},h('label',{st:{fontSize:'11px',color:'var(--muted)'}},'Employee'),memSel));
+  searchRow.appendChild(dv({cls:'fg',st:{gap:'3px'}},h('label',{st:{fontSize:'11px',color:'var(--muted)'}},'Filter by SWP'),swpSel));
+  c.appendChild(searchRow);
+
+  const resultsArea=dv({});c.appendChild(resultsArea);
+
+  function renderResults(){
+    resultsArea.innerHTML='';
+    const selMemberId=memSel.value?parseInt(memSel.value):null;
+    const selSwpId=swpSel.value?parseInt(swpSel.value):null;
+    if(!selMemberId){
+      // Show summary table of all members
+      renderLogTable(resultsArea,signoffs,members,swps,mMap,sMap,selSwpId);
+      return;
+    }
+    // Show full training record for selected member
+    const member=mMap[selMemberId];
+    if(!member)return;
+    renderMemberRecord(resultsArea,member,signoffs,swps,sMap);
+  }
+
+  memSel.onchange=renderResults;
+  swpSel.onchange=renderResults;
+  renderResults();
+}
+
+function renderLogTable(c,signoffs,members,swps,mMap,sMap,swpFilter){
+  // Build latest signoff per member+swp
+  const lk={};
+  signoffs.forEach(function(s){
+    const k=s.team_member_id+'_'+s.swp_id;
+    if(!lk[k]||new Date(s.created_at)>new Date(lk[k].created_at))lk[k]=s;
+  });
   const card=dv({cls:'card'});
-  const tbl=document.createElement('table');tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12.5px';
+  const tbl=document.createElement('table');
+  tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12.5px';
   const thead=document.createElement('thead');const hrow=document.createElement('tr');
-  ['Employee','SWP','Self-signed','Assessor','Expires','Status'].forEach(function(hh){
+  ['Employee','SWP','Self-signed','Assessor','Expires','Status',''].forEach(function(hh){
     const th=document.createElement('th');th.textContent=hh;
     th.style.cssText='text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)';
     hrow.appendChild(th);
   });
   thead.appendChild(hrow);tbl.appendChild(thead);
   const tbody=document.createElement('tbody');
-  sorted.forEach(function(so){
-    const m=mMap[so.team_member_id];const s=sMap[so.swp_id];
-    const row=document.createElement('tr');row.style.borderBottom='1px solid #f3f4f6';
-    const st=compStatus(so);
-    const cells=[
-      m?m.name:'Unknown',
-      s?s.title:'Unknown SWP',
-      so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+'  ('+so.self_signed_initials+')':'—',
-      so.assessor_signed_at?so.assessor_name+' '+new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'—',
-      so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—',
-      statusLabel(st)
-    ];
-    cells.forEach(function(txt,i){
-      const td=document.createElement('td');td.style.padding='8px 12px';
-      if(i===5){
-        const stCol={current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#9ca3af'};
-        td.innerHTML='<span style="color:'+(stCol[st]||'#9ca3af')+';font-weight:600">'+txt+'</span>';
-      } else {
-        td.textContent=txt;if(i===1)td.style.maxWidth='200px';
-      }
-      row.appendChild(td);
+  const swpsToShow=swpFilter?swps.filter(function(s){return s.id===swpFilter;}):swps;
+  let rowCount=0;
+  members.forEach(function(m){
+    swpsToShow.forEach(function(s){
+      const so=lk[m.id+'_'+s.id];
+      if(!so)return; // only show rows with a record
+      const st=compStatus(so);
+      rowCount++;
+      const row=document.createElement('tr');row.style.borderBottom='1px solid #f3f4f6';
+      const stCol={current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#9ca3af'};
+      const cells=[m.name,s.title,
+        so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+' ('+so.self_signed_initials+')':'—',
+        so.assessor_signed_at?so.assessor_name+' · '+new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'—',
+        so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—'
+      ];
+      cells.forEach(function(txt,i){
+        const td=document.createElement('td');td.style.cssText='padding:8px 12px'+(i===1?';max-width:200px':'');
+        td.textContent=txt;row.appendChild(td);
+      });
+      const stTd=document.createElement('td');stTd.style.padding='8px 12px';
+      stTd.innerHTML='<span style="color:'+(stCol[st]||'#9ca3af')+';font-weight:600">'+statusLabel(st)+'</span>';
+      row.appendChild(stTd);
+      // View record btn
+      const actTd=document.createElement('td');actTd.style.padding='8px 12px';
+      actTd.appendChild(btn('View Record','btn-o btn-sm',function(){
+        // Scroll to / re-render with this member selected
+        const memSel=document.querySelector('#log-mem-sel');
+        if(memSel){memSel.value=''+m.id;memSel.dispatchEvent(new Event('change'));}
+      }));
+      row.appendChild(actTd);
+      tbody.appendChild(row);
     });
-    tbody.appendChild(row);
   });
-  tbl.appendChild(tbody);card.appendChild(tbl);c.appendChild(card);
+  tbl.appendChild(tbody);card.appendChild(tbl);
+  if(rowCount===0){c.appendChild(dv({cls:'empty'},'No sign-off records yet'));return;}
+  c.appendChild(card);
 }
 
+async function renderMemberRecord(c,member,signoffs,swps,sMap){
+  // Get all signoffs for this member
+  const memberSOs=signoffs.filter(function(s){return s.team_member_id===member.id;});
+  // Build latest per SWP
+  const lk={};
+  memberSOs.forEach(function(s){
+    if(!lk[s.swp_id]||new Date(s.created_at)>new Date(lk[s.swp_id].created_at))lk[s.swp_id]=s;
+  });
+
+  // Header card
+  const ini=member.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+  const rc={admin:'#7c3aed',manager:'#15803d',supervisor:'#0369a1',team_member:'#374151'};
+  const hdr=dv({cls:'card mb3'});
+  hdr.appendChild(dv({cls:'row gap3',st:{alignItems:'center'}},
+    dv({st:{width:'52px',height:'52px',borderRadius:'50%',background:rc[member.role_level]||'var(--green-light)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:'700',flexShrink:'0'}},ini),
+    dv({st:{flex:'1'}},
+      h('h2',{st:{fontSize:'17px',fontWeight:'700',marginBottom:'3px'}},member.name),
+      dv({cls:'txs muted'},member.role||'Factory Employee'),
+      dv({cls:'txs muted'},'Training record as at '+new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}))
+    ),
+    btn('⬇ Download PDF Record','btn-p',function(){printMemberRecord(member,swps,lk,memberSOs);})
+  ));
+  c.appendChild(hdr);
+
+  // SWP cards
+  if(!Object.keys(lk).length){c.appendChild(dv({cls:'empty'},'No sign-off records for this employee'));return;}
+  const grid=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:'12px'}});
+  swps.forEach(function(swp){
+    const so=lk[swp.id];
+    if(!so)return;
+    const st=compStatus(so);
+    const stCol={current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#9ca3af'};
+    const card=dv({cls:'card',st:{borderLeft:'4px solid '+(stCol[st]||'#e5e7eb')}});
+    card.appendChild(dv({cls:'fw6 mb2',st:{fontSize:'13px'}},swp.title));
+    card.appendChild(dv({cls:'row gap2 mb2'},bdg(statusLabel(st),st==='current'?'green':st==='overdue'?'red':st==='due-soon'?'amber':st==='self-only'?'blue':'gray')));
+    const rows2=[
+      ['Self-assessed',so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+' · '+so.self_signed_initials:'Not completed'],
+      ['Assessor',so.assessor_signed_at?so.assessor_name+' · '+new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'Not verified'],
+      ['Expires',so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—']
+    ];
+    rows2.forEach(function(r){
+      card.appendChild(dv({cls:'row jb',st:{marginBottom:'4px'}},
+        sp({cls:'txs muted'},r[0]),
+        sp({cls:'txs fw6',st:{textAlign:'right',maxWidth:'180px',fontSize:'11.5px'}},r[1])
+      ));
+    });
+    grid.appendChild(card);
+  });
+  c.appendChild(grid);
+}
+
+function printMemberRecord(member,swps,lk,allSOs){
+  const ini=member.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+  const date=new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Training Record — '+member.name+'</title>';
+  html+='<style>body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:32px;max-width:900px;margin:0 auto}';
+  html+='.header{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #4a9a0f}';
+  html+='.avatar{width:52px;height:52px;border-radius:50%;background:#4a9a0f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}';
+  html+='.logo{font-size:20px;font-weight:700;color:#4a9a0f}h2{font-size:16px;margin:0 0 3px}';
+  html+='.sub{color:#6b7280;font-size:11px}table{width:100%;border-collapse:collapse;margin-bottom:20px}';
+  html+='th{background:#f0fdf4;padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#374151;border:1px solid #e5e7eb;print-color-adjust:exact;-webkit-print-color-adjust:exact}';
+  html+='td{padding:8px 12px;border:1px solid #e5e7eb;font-size:11.5px}';
+  html+='.current{color:#15803d;font-weight:700}.overdue{color:#dc2626;font-weight:700}.due-soon{color:#d97706;font-weight:700}.self-only{color:#1d4ed8;font-weight:700}';
+  html+='@media print{body{padding:16px}.no-print{display:none}}</style></head><body>';
+  html+='<div class="header"><div class="avatar">'+ini+'</div><div><div class="logo">Window Makers</div><h2>'+member.name+' — Training Record</h2><div class="sub">'+( member.role||'Factory Employee')+' · Generated '+date+'</div></div></div>';
+  html+='<table><thead><tr><th>SWP / Equipment</th><th>Status</th><th>Self-Assessed</th><th>Assessor</th><th>Assessed Date</th><th>Expires</th></tr></thead><tbody>';
+  swps.forEach(function(swp){
+    const so=lk[swp.id];
+    if(!so)return;
+    const st=compStatus(so);
+    const stLabel=statusLabel(st);
+    const stClass=st==='current'?'current':st==='overdue'?'overdue':st==='due-soon'?'due-soon':st==='self-only'?'self-only':'';
+    html+='<tr>';
+    html+='<td><strong>'+swp.title+'</strong></td>';
+    html+='<td class="'+stClass+'">'+stLabel+'</td>';
+    html+='<td>'+(so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+' ('+so.self_signed_initials+')':'—')+'</td>';
+    html+='<td>'+(so.assessor_name||'—')+'</td>';
+    html+='<td>'+(so.assessor_signed_at?new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'—')+'</td>';
+    html+='<td>'+(so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—')+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  html+='<div class="sub" style="margin-top:32px;border-top:1px solid #e5e7eb;padding-top:12px">This record was generated from the Window Makers Factory Portal on '+date+'. Records are subject to renewal schedules as defined in each Safe Work Practice.</div>';
+  html+='</body></html>';
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){w.print();},500);
+}
 // ── EXPORT CSV ────────────────────────────────────────────────────────
 function exportCSV(members,swps,lk){
   const rows=[['Employee','SWP','Status','Self Signed','Self Initials','Assessor','Assessor Signed','Expires']];
