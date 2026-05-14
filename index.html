@@ -1534,7 +1534,6 @@ function renderDelRow(card,d,pageC){
     e.preventDefault();row.classList.remove('drag-top');
     const srcId=parseInt(e.dataTransfer.getData('listDelId'));
     if(!srcId||srcId===d.id)return;
-    // Swap delivery_order and date
     const src=deliveries.find(function(x){return x.id===srcId;});
     if(!src)return;
     await Promise.all([
@@ -1543,7 +1542,7 @@ function renderDelRow(card,d,pageC){
     ]);
     pageC.innerHTML='';pgDel(pageC);
   };
-  card.appendChild(handle);
+  row.appendChild(handle);
   // Info
   const info=dv({st:{flex:'1',cursor:'pointer'},onclick:function(){openDelForm(d,null,pageC);}});
   info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap'}},
