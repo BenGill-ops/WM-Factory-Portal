@@ -942,12 +942,15 @@ const LEAN_STATCOL={Submitted:'#8b5cf6','Under Review':'#0369a1','In Progress':'
 
 let leanView='board';let leanFilter={status:'All',dept:'All',priority:'All',person:'All'};
 let leanItems=[];let selLeanId=null;
+let leanTargets={}; // memberId -> target number, persisted to Supabase team_members.lean_target
 
 async function pgLean(c){
   // Load data
   const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
   const [items,members]=await Promise.all([CDB.getLeanItems(),CDB.getMembers()]);
-  leanItems=items;loading.remove();
+  leanItems=items;
+  // Load targets from member records
+  members.forEach(function(m){if(m.lean_target)leanTargets[m.id]=m.lean_target;});loading.remove();
 
   // Header
   c.appendChild(dv({cls:'row jb mb3'},
@@ -1071,63 +1074,180 @@ function renderLeanBoard(wrap,members){
 }
 
 function renderLeanRegister(wrap,members){
-  const items=getFilteredLean();
-  const card=dv({cls:'card'});
-  const tbl=document.createElement('table');tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12.5px';
-  const thead=document.createElement('thead');const hrow=document.createElement('tr');
-  ['Title','Department','Priority','Status','Submitted By','Date','Assigned To',''].forEach(function(hh){
+  // Show all members with their improvement counts vs targets
+  // Also show item register below
+  const allItems=leanItems; // unfiltered for person summary
+  const filtered=getFilteredLean();
+
+  // ── Person summary table ──────────────────────────────────────────
+  const summaryCard=dv({cls:'card mb3'});
+  summaryCard.appendChild(dv({cls:'row jb mb3'},
+    dv({},dv({cls:'card-title'},'Team Summary — Improvements Registered'),dv({cls:'card-sub'},'Set individual targets then track progress')),
+    isManager()&&btn('Set Targets','btn-o btn-sm',function(){showTargetForm(wrap,members);})
+  ));
+  const sTbl=document.createElement('table');sTbl.style.cssText='width:100%;border-collapse:collapse;font-size:12.5px';
+  const sThead=document.createElement('thead');const sHrow=document.createElement('tr');
+  ['Team Member','Submitted','In Progress','Completed','Total','Target','Progress',''].forEach(function(hh){
     const th=document.createElement('th');th.textContent=hh;
     th.style.cssText='text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)';
-    hrow.appendChild(th);
+    sHrow.appendChild(th);
   });
-  thead.appendChild(hrow);tbl.appendChild(thead);
-  const tbody=document.createElement('tbody');
-  if(!items.length){
-    const tr=document.createElement('tr');const td=document.createElement('td');
-    td.colSpan=8;td.style.cssText='text-align:center;padding:32px;color:var(--muted);font-size:13px';
-    td.textContent='No improvements match the current filters';tr.appendChild(td);tbody.appendChild(tr);
-  }
-  items.forEach(function(item){
-    const row=document.createElement('tr');
-    row.style.cssText='border-bottom:1px solid #f3f4f6;cursor:pointer';
-    row.onmouseenter=function(){row.style.background='#fafaf9';};
-    row.onmouseleave=function(){row.style.background='';};
-    row.onclick=function(){selLeanId=selLeanId===item.id?null:item.id;renderLeanRegister(wrap,members);};
-    if(selLeanId===item.id)row.style.background='#f0fdf4';
-    const cells=[
-      {txt:item.title,fw:true,max:'220px'},
-      {txt:item.dept||'—'},
-      {html:'<span style="color:'+LEAN_PRICOL[item.priority]+';font-weight:700">'+item.priority+'</span>'},
-      {html:'<span style="color:'+LEAN_STATCOL[item.status]+';font-weight:600">'+item.status+'</span>'},
-      {txt:item.submitted_by||'—'},
-      {txt:item.created_at?new Date(item.created_at).toLocaleDateString('en-AU'):'—'},
-      {txt:item.assigned_to||'Unassigned'}
-    ];
-    cells.forEach(function(cell){
-      const td=document.createElement('td');td.style.cssText='padding:8px 12px'+(cell.max?';max-width:'+cell.max+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap':'');
-      if(cell.html)td.innerHTML=cell.html;
-      else{td.textContent=cell.txt;if(cell.fw)td.style.fontWeight='600';}
+  sThead.appendChild(sHrow);sTbl.appendChild(sThead);
+  const sTbody=document.createElement('tbody');
+  const sortedMembers=members.slice().sort(function(a,b){
+    const aTotal=allItems.filter(function(i){return i.submitted_by===a.name;}).length;
+    const bTotal=allItems.filter(function(i){return i.submitted_by===b.name;}).length;
+    return bTotal-aTotal;
+  });
+  sortedMembers.forEach(function(m){
+    const mItems=allItems.filter(function(i){return i.submitted_by===m.name;});
+    const submitted=mItems.filter(function(i){return i.status==='Submitted';}).length;
+    const inProgress=mItems.filter(function(i){return i.status==='In Progress'||i.status==='Under Review';}).length;
+    const completed=mItems.filter(function(i){return i.status==='Completed';}).length;
+    const total=mItems.length;
+    const target=leanTargets[m.id]||0;
+    const pct=target>0?Math.min(Math.round(total/target*100),100):0;
+    const metTarget=target>0&&total>=target;
+    const row=document.createElement('tr');row.style.cssText='border-bottom:1px solid #f3f4f6'+(metTarget?';background:#f0fdf4':'');
+    // Name
+    const nameTd=document.createElement('td');nameTd.style.cssText='padding:8px 12px;font-weight:600';
+    const ini=m.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+    const rc={admin:'#7c3aed',manager:'#15803d',supervisor:'#0369a1',team_member:'#374151'};
+    nameTd.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:'+(rc[m.role_level]||'#374151')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+ini+'</div>'+m.name+'</div>';
+    row.appendChild(nameTd);
+    // Counts
+    [submitted,inProgress,completed,total].forEach(function(v,i){
+      const td=document.createElement('td');td.style.cssText='padding:8px 12px;text-align:center';
+      const cols=['#8b5cf6','#d97706','#15803d',total>0?'#1a1a1a':'#9ca3af'];
+      td.innerHTML='<span style="font-weight:'+(v>0?'700':'400')+';color:'+cols[i]+'">'+v+'</span>';
       row.appendChild(td);
     });
-    // Actions
+    // Target
+    const targTd=document.createElement('td');targTd.style.cssText='padding:8px 12px;text-align:center';
+    if(target>0){
+      targTd.innerHTML='<span style="font-weight:600;color:'+(metTarget?'#15803d':'#374151')+'">'+total+'/'+target+(metTarget?' ✓':'')+'</span>';
+    } else {
+      targTd.innerHTML='<span style="color:#d1d5db;font-size:11px">No target</span>';
+    }
+    row.appendChild(targTd);
+    // Progress bar
+    const pbTd=document.createElement('td');pbTd.style.cssText='padding:8px 12px;min-width:120px';
+    if(target>0){
+      const barCol=metTarget?'#22c55e':pct>=70?'#f59e0b':'#ef4444';
+      pbTd.innerHTML='<div style="height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barCol+';border-radius:999px;transition:width 0.4s"></div></div><div style="font-size:10px;color:var(--muted);margin-top:2px;text-align:right">'+pct+'%</div>';
+    } else {
+      pbTd.innerHTML='<span style="color:#d1d5db;font-size:11px">—</span>';
+    }
+    row.appendChild(pbTd);
+    // Quick add btn
     const actTd=document.createElement('td');actTd.style.padding='6px 12px';
-    if(isManager()){
-      actTd.appendChild(btn('Edit','btn-o btn-sm',function(e){e.stopPropagation();showLeanForm(wrap,members,item);}));
-    }
+    actTd.appendChild(btn('+ Add','btn-o btn-sm',function(){
+      // Pre-fill submitted_by with this member
+      const overlay=document.createElement('div');
+      // Reuse showLeanForm but pre-select member - handled by setting currentUser context
+      showLeanFormForMember(wrap,members,m.name);
+    }));
     row.appendChild(actTd);
-    tbody.appendChild(row);
-    // Expanded detail row
-    if(selLeanId===item.id){
-      const detRow=document.createElement('tr');detRow.style.background='#f8faf7';
-      const detTd=document.createElement('td');detTd.colSpan=8;detTd.style.padding='0 12px 12px';
-      const detDiv=dv({});renderLeanDetail(detDiv,item,members,wrap);
-      detTd.appendChild(detDiv);detRow.appendChild(detTd);tbody.appendChild(detRow);
-    }
+    sTbody.appendChild(row);
   });
-  tbl.appendChild(tbody);card.appendChild(tbl);
-  wrap.appendChild(card);
+  sTbl.appendChild(sTbody);summaryCard.appendChild(sTbl);
+  wrap.appendChild(summaryCard);
+
+  // ── Item register ──────────────────────────────────────────────────
+  if(filtered.length){
+    const card=dv({cls:'card'});
+    card.appendChild(dv({cls:'card-hdr mb2'},dv({cls:'card-title'},'All Improvements ('+filtered.length+')'),dv({cls:'card-sub'},'Filtered view')));
+    const tbl=document.createElement('table');tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12.5px';
+    const thead=document.createElement('thead');const hrow=document.createElement('tr');
+    ['Title','Department','Priority','Status','Submitted By','Date','Assigned To',''].forEach(function(hh){
+      const th=document.createElement('th');th.textContent=hh;
+      th.style.cssText='text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)';
+      hrow.appendChild(th);
+    });
+    thead.appendChild(hrow);tbl.appendChild(thead);
+    const tbody=document.createElement('tbody');
+    filtered.forEach(function(item){
+      const row=document.createElement('tr');
+      row.style.cssText='border-bottom:1px solid #f3f4f6;cursor:pointer';
+      row.onmouseenter=function(){row.style.background='#fafaf9';};
+      row.onmouseleave=function(){row.style.background=selLeanId===item.id?'#f0fdf4':'';};
+      row.onclick=function(){selLeanId=selLeanId===item.id?null:item.id;renderLeanBody(wrap,members);};
+      if(selLeanId===item.id)row.style.background='#f0fdf4';
+      const cells=[
+        {txt:item.title,fw:true,max:'200px'},
+        {txt:item.dept||'—'},
+        {html:'<span style="color:'+LEAN_PRICOL[item.priority]+';font-weight:700">'+item.priority+'</span>'},
+        {html:'<span style="color:'+LEAN_STATCOL[item.status]+';font-weight:600">'+item.status+'</span>'},
+        {txt:item.submitted_by||'—'},
+        {txt:item.created_at?new Date(item.created_at).toLocaleDateString('en-AU'):'—'},
+        {txt:item.assigned_to||'Unassigned'}
+      ];
+      cells.forEach(function(cell){
+        const td=document.createElement('td');td.style.cssText='padding:8px 12px'+(cell.max?';max-width:'+cell.max+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap':'');
+        if(cell.html)td.innerHTML=cell.html;
+        else{td.textContent=cell.txt;if(cell.fw)td.style.fontWeight='600';}
+        row.appendChild(td);
+      });
+      const actTd=document.createElement('td');actTd.style.padding='6px 12px';
+      if(isManager())actTd.appendChild(btn('Edit','btn-o btn-sm',function(e){e.stopPropagation();showLeanForm(wrap,members,item);}));
+      row.appendChild(actTd);
+      tbody.appendChild(row);
+      if(selLeanId===item.id){
+        const detRow=document.createElement('tr');detRow.style.background='#f8faf7';
+        const detTd=document.createElement('td');detTd.colSpan=8;detTd.style.padding='0 12px 12px';
+        const detDiv=dv({});renderLeanDetail(detDiv,item,members,wrap);
+        detTd.appendChild(detDiv);detRow.appendChild(detTd);tbody.appendChild(detRow);
+      }
+    });
+    tbl.appendChild(tbody);card.appendChild(tbl);
+    wrap.appendChild(card);
+  }
 }
 
+function showTargetForm(wrap,members){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'480px'}});
+  modal.appendChild(dv({cls:'modal-title'},'Set Individual Targets'));
+  modal.appendChild(dv({cls:'txs muted mb3'},'Set a target number of lean improvements for each team member. Leave at 0 for no target.'));
+  const inputs={};
+  members.forEach(function(m){
+    const row=dv({cls:'row gap3 mb2',st:{alignItems:'center'}});
+    const ini=m.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+    const rc={admin:'#7c3aed',manager:'#15803d',supervisor:'#0369a1',team_member:'#374151'};
+    row.appendChild(dv({st:{width:'28px',height:'28px',borderRadius:'50%',background:rc[m.role_level]||'#374151',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:'700',flexShrink:'0'}},ini));
+    row.appendChild(sp({st:{flex:'1',fontSize:'13px',fontWeight:'600'}},m.name));
+    const numIn=h('input',{type:'number',value:''+(leanTargets[m.id]||0),st:{width:'80px',padding:'5px 8px',textAlign:'center',fontSize:'13px'}});
+    numIn.min='0';numIn.max='99';
+    inputs[m.id]=numIn;
+    row.appendChild(numIn);
+    modal.appendChild(row);
+  });
+  modal.appendChild(dv({cls:'row gap2 mt3',st:{justifyContent:'flex-end'}},
+    btn('Cancel','btn-o',function(){overlay.remove();}),
+    btn('Save Targets','btn-p',async function(){
+      members.forEach(function(m){
+        const val=parseInt(inputs[m.id].value)||0;
+        leanTargets[m.id]=val;
+      });
+      // Save to Supabase - store as JSON in a simple key-value or update team_members
+      // We'll save per member using the lean_target column
+      await Promise.all(members.map(function(m){
+        return fetch(SB+'/rest/v1/team_members?id=eq.'+m.id,{method:'PATCH',headers:SH(),body:JSON.stringify({lean_target:leanTargets[m.id]||0})});
+      }));
+      overlay.remove();
+      // Reload with new targets
+      const page=document.getElementById('content');
+      page.innerHTML='';pgLean(page);
+    })
+  ));
+  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
+}
+
+function showLeanFormForMember(wrap,members,memberName){
+  // Open lean form with submitted_by pre-filled
+  const fakeItem={submitted_by:memberName,status:'Submitted',priority:'Medium',dept:LEAN_DEPTS[0]};
+  showLeanForm(wrap,members,null,memberName);
+}
 function renderLeanDetail(wrap,item,members,bodyWrap){
   const panel=dv({cls:'card',st:{padding:'18px'}});
   // Header
@@ -1190,15 +1310,14 @@ function renderLeanChart(c,items){
   card.appendChild(dv({cls:'card-hdr mb3'},dv({},dv({cls:'card-title'},'Improvements by Department'),dv({cls:'card-sub'},'Submitted vs Completed'))));
   const depts=LEAN_DEPTS.filter(function(d){return items.some(function(i){return i.dept===d;});});
   if(!depts.length){card.appendChild(dv({cls:'empty'},'No data yet'));c.appendChild(card);return;}
-  const chartH=160;const barW=32;const gap=24;const padL=32;const padB=24;
-  const totalW=padL+(barW*2+gap)*depts.length+20;
+  const chartH=160;const barW=28;const gap=20;const padL=32;const padB=32;
   const maxVal=Math.max(1,...depts.map(function(d){return items.filter(function(i){return i.dept===d;}).length;}));
+  const totalW=padL+(barW*2+gap)*depts.length+20;
   let svg='<svg width="'+totalW+'" height="'+(chartH+padB+20)+'" style="overflow:visible">';
-  // Y gridlines
-  for(let y=0;y<=maxVal;y++){
-    const yp=chartH-Math.round(y/maxVal*chartH);
+  for(let y2=0;y2<=maxVal;y2++){
+    const yp=chartH-Math.round(y2/maxVal*chartH);
     svg+='<line x1="'+padL+'" y1="'+yp+'" x2="'+(totalW-10)+'" y2="'+yp+'" stroke="#f3f4f6" stroke-width="1"/>';
-    svg+='<text x="'+(padL-6)+'" y="'+(yp+4)+'" text-anchor="end" font-size="10" fill="#9ca3af">'+y+'</text>';
+    svg+='<text x="'+(padL-6)+'" y="'+(yp+4)+'" text-anchor="end" font-size="10" fill="#9ca3af">'+y2+'</text>';
   }
   depts.forEach(function(dept,di){
     const sub=items.filter(function(i){return i.dept===dept;}).length;
@@ -1208,7 +1327,6 @@ function renderLeanChart(c,items){
     const compH=Math.round(comp/maxVal*chartH);
     svg+='<rect x="'+x+'" y="'+(chartH-subH)+'" width="'+barW+'" height="'+subH+'" fill="#6DC22A" rx="3"/>';
     svg+='<rect x="'+(x+barW+4)+'" y="'+(chartH-compH)+'" width="'+barW+'" height="'+compH+'" fill="#3a7a0a" rx="3"/>';
-    // Label
     const lx=x+barW;const label=dept.length>12?dept.slice(0,12)+'…':dept;
     svg+='<text x="'+lx+'" y="'+(chartH+16)+'" text-anchor="middle" font-size="10" fill="#6b7280" transform="rotate(-30 '+lx+' '+(chartH+16)+')">'+label+'</text>';
   });
@@ -1216,15 +1334,13 @@ function renderLeanChart(c,items){
   const chartWrap=dv({st:{overflowX:'auto',paddingBottom:'8px'}});
   chartWrap.innerHTML=svg;
   card.appendChild(chartWrap);
-  // Legend
   card.appendChild(dv({cls:'row gap3 mt2'},
     dv({cls:'row gap1'},dv({st:{width:'12px',height:'12px',background:'#6DC22A',borderRadius:'2px'}}),sp({cls:'txs muted'},'Submitted')),
     dv({cls:'row gap1'},dv({st:{width:'12px',height:'12px',background:'#3a7a0a',borderRadius:'2px'}}),sp({cls:'txs muted'},'Completed'))
   ));
   c.appendChild(card);
 }
-
-function showLeanForm(wrap,members,item){
+function showLeanForm(wrap,members,item,prefilledBy){
   const isNew=!item;
   const overlay=dv({cls:'modal-overlay'});
   const modal=dv({cls:'modal'});
@@ -1255,7 +1371,7 @@ function showLeanForm(wrap,members,item){
     btn('Cancel','btn-o',function(){overlay.remove();}),
     btn(isNew?'Register':'Save','btn-p',async function(){
       if(!tiIn.value.trim())return alert('Please enter a title');
-      const data={title:tiIn.value.trim(),description:descIn.value.trim()||null,dept:deptSel.value,priority:priSel.value,status:statSel.value,assigned_to:aSel.value||null,before_notes:beforeIn.value.trim()||null,after_notes:afterIn.value.trim()||null,submitted_by:item?item.submitted_by:(currentUser?currentUser.name:'Unknown')};
+      const data={title:tiIn.value.trim(),description:descIn.value.trim()||null,dept:deptSel.value,priority:priSel.value,status:statSel.value,assigned_to:aSel.value||null,before_notes:beforeIn.value.trim()||null,after_notes:afterIn.value.trim()||null,submitted_by:item?item.submitted_by:(prefilledBy||( currentUser?currentUser.name:'Unknown'))};
       if(isNew){
         const created=await CDB.createLeanItem(data);
         leanItems.unshift(created||Object.assign({id:Date.now(),created_at:new Date().toISOString()},data));
