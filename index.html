@@ -206,7 +206,7 @@ function isAdmin(){return currentUser&&currentUser.role_level==='admin';}
 function isManager(){return currentUser&&['admin','manager'].includes(currentUser.role_level);}
 function isSupervisor(){return currentUser&&['admin','manager','supervisor'].includes(currentUser.role_level);}
 function canAssess(){return currentUser&&currentUser.is_assessor;}
-let page='dashboard',deliveries=[],calDate=new Date(),calView='month',selDay=null;
+let page='dashboard',deliveries=[],calDate=new Date(),calView='week',selDay=iso(new Date());
 let msgs=[{id:1,title:'Site safety induction update',content:'All new starters must complete the updated induction before accessing the factory floor.',type:'Safety Alert',priority:'Urgent',author:'HR Team',pinned:true,createdAt:new Date(Date.now()-7200000).toISOString()},{id:2,title:'Q2 production targets announced',content:'Management has set Q2 targets. Review the production schedule.',type:'Announcement',priority:'High',author:'Management',pinned:false,createdAt:new Date(Date.now()-86400000).toISOString()},{id:3,title:'Forklift maintenance Wednesday',content:'Forklift 2 out of service 9am-1pm Wednesday.',type:'Maintenance',priority:'Medium',author:'Maintenance',pinned:false,createdAt:new Date(Date.now()-172800000).toISOString()}];
 let safety=[{id:1,refNo:'SA-001',title:'Unguarded machinery - Fab Bay 3',category:'Machine Safety',dept:'Fabrication',priority:'Critical',content:'Guard rail missing from press brake. Immediate attention required.',pinned:true,createdAt:new Date(Date.now()-172800000).toISOString()},{id:2,refNo:'SA-002',title:'Chemical storage non-compliant',category:'Hazardous Materials',dept:'Glass',priority:'High',content:'Chemical containers lack proper hazard labels.',pinned:true,createdAt:new Date(Date.now()-345600000).toISOString()},{id:3,refNo:'SA-003',title:'Slippery floor near dock',category:'Manual Handling',dept:'Dispatch',priority:'Medium',content:'Water pooling near dock door 2.',pinned:false,createdAt:new Date(Date.now()-432000000).toISOString()}];
 let prod=[{id:1,name:'Operations',completed:42,target:50,status:'On Track'},{id:2,name:'Fabrication',completed:38,target:40,status:'Ahead'},{id:3,name:'Glass',completed:12,target:30,status:'Behind'},{id:4,name:'Aluminium',completed:25,target:25,status:'On Track'},{id:5,name:'Dispatch',completed:18,target:20,status:'On Track'},{id:6,name:'Installation',completed:0,target:10,status:'Stopped'}];
@@ -959,7 +959,7 @@ async function pgLean(c){
   ));
 
   // Stats row
-  const statsRow=dv({cls:'g4 mb3'});
+  const statsRow=dv({st:{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'12px',marginBottom:'12px'}});
   const open=items.filter(function(i){return i.status!=='Completed'&&i.status!=='Rejected';});
   const completed=items.filter(function(i){return i.status==='Completed';});
   LEAN_PRIORITIES.forEach(function(p){
@@ -1509,7 +1509,7 @@ function renderDelMonth(c,dels,y,m){
     const isSel=selDay===dateStr;
     const isSat=dow===5;
     const cell=dv({cls:'cal-cell'+(isToday?' c-today':'')+(isSel?' c-sel':'')+(isSat?' c-sat':'')});
-    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;c.innerHTML='';renderDelMonth(c,dels,y,m);};
+    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;c.innerHTML='';renderDelMonth(c,dels,y,m);window.scrollTo({top:document.getElementById('content').scrollHeight,behavior:'smooth'});};
     if(isManager()){
       cell.ondblclick=function(e){e.stopPropagation();openDelForm(null,dateStr,document.getElementById('content'));};
     }
@@ -1557,6 +1557,8 @@ function renderDelMonth(c,dels,y,m){
     else{selDels.forEach(function(d){renderDelRow(detCard,d,document.getElementById('content'));});}
     c.appendChild(detCard);
   }
+  // Status key
+  renderDelKey(c);
 }
 
 function renderDelWeek(c,dels,weekStart){
@@ -1599,17 +1601,37 @@ function renderDelWeek(c,dels,weekStart){
       };
       cell.appendChild(slot);
     });
-    if(isManager()){cell.ondblclick=function(){openDelForm(null,dateStr,document.getElementById('content'));};}
+    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;
+      // Re-render week to show/hide detail
+      const pg=document.getElementById('content');pg.innerHTML='';pgDel(pg);
+    };
+    if(isManager()){cell.ondblclick=function(e){e.stopPropagation();openDelForm(null,dateStr,document.getElementById('content'));};}
     grid.appendChild(cell);
   }
   c.appendChild(grid);
+  // Selected day detail panel
+  if(selDay){
+    const selDels=(delMap[selDay]||[]).slice().sort(function(a,b){return(ORDERS.indexOf(a.deliveryOrder)||0)-(ORDERS.indexOf(b.deliveryOrder)||0);});
+    const selDate=new Date(selDay+'T12:00:00');
+    const detCard=dv({cls:'card mt3'});
+    detCard.appendChild(dv({cls:'row jb mb3'},
+      dv({cls:'card-title'},selDate.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'})),
+      isManager()&&btn('+ Add Delivery','btn-p btn-sm',function(){openDelForm(null,selDay,document.getElementById('content'));})
+    ));
+    if(!selDels.length){detCard.appendChild(dv({cls:'empty'},'No deliveries scheduled for this day'));}
+    else{selDels.forEach(function(d){renderDelRow(detCard,d,document.getElementById('content'));});}
+    c.appendChild(detCard);
+  }
+  // Status key
+  renderDelKey(c);
 }
 
 function makePill(d){
-  const col=d.type==='Incoming'?'#1d4ed8':'#15803d';
-  const bg=d.type==='Incoming'?'#1d4ed8':'#166534';
-  const pill=dv({cls:'cal-pill',st:{background:bg,marginBottom:'2px',cursor:'pointer'}});
-  if(!d.isPaid){pill.appendChild(dv({cls:'not-paid-tag'},'NOT PAID'));}
+  const bg=!d.isPaid?'#dc2626':d.type==='Incoming'?'#1d4ed8':'#166534';
+  const overdue=new Date(d.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(d.status);
+  const pillBg=d.status==='Cancelled'?'#6b7280':overdue&&d.isPaid?'#b45309':bg;
+  const pill=dv({cls:'cal-pill',st:{background:pillBg,marginBottom:'2px',cursor:'pointer'}});
+  if(!d.isPaid){pill.appendChild(dv({cls:'not-paid-tag'},'⚠ NOT PAID — DO NOT DELIVER'));}
   pill.appendChild(dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.8'}},d.deliveryOrder));
   if(d.customer)pill.appendChild(dv({st:{fontSize:'11px',lineHeight:'1.3'}},d.customer));
   if(d.scheduledTime)pill.appendChild(dv({st:{fontSize:'10px',opacity:'0.8'}},d.scheduledTime));
@@ -1634,6 +1656,7 @@ function renderDelList(c,dels){
     });
   });
   c.appendChild(card);
+  renderDelKey(c);
 }
 
 function renderDelRow(card,d,pageC){
@@ -1681,6 +1704,24 @@ function renderDelRow(card,d,pageC){
   }
   card.appendChild(row);
   return row;
+}
+
+function renderDelKey(c){
+  const key=dv({cls:'row gap3 mt3',st:{flexWrap:'wrap',padding:'10px 14px',background:'#fff',borderRadius:'10px',border:'1px solid var(--border)'}});
+  const items=[
+    {col:'#166534',label:'Outgoing Delivery'},
+    {col:'#1d4ed8',label:'Incoming Delivery'},
+    {col:'#dc2626',label:'NOT PAID — Do Not Deliver',bold:true},
+    {col:'#f59e0b',label:'Overdue / Undelivered'},
+    {col:'#6b7280',label:'Cancelled'},
+  ];
+  items.forEach(function(item){
+    key.appendChild(dv({cls:'row gap2',st:{alignItems:'center'}},
+      dv({st:{width:'14px',height:'14px',borderRadius:'3px',background:item.col,flexShrink:'0'}}),
+      sp({st:{fontSize:'11.5px',fontWeight:item.bold?'700':'500',color:item.bold?'#dc2626':'#374151'}},item.label)
+    ));
+  });
+  c.appendChild(key);
 }
 
 function openDelForm(d,dateStr,c){
