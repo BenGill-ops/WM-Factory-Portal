@@ -161,6 +161,11 @@ const DB={
 };
 const CDB={
   async getMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async getSafetyAlerts(){try{const r=await fetch(SB+'/rest/v1/safety_alerts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async deleteSafetyAlert(id){await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return !m.exclude_from_compliance;});}catch(e){return[];}},
   async getAssessors(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&is_assessor=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPs(){try{const r=await fetch(SB+'/rest/v1/safe_work_practices?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPsForMember(memberId){try{const[allSwps,assignments]=await Promise.all([this.getSWPs(),this.getAssignments(memberId)]);const assignedIds=new Set(assignments.map(function(a){return a.swp_id;}));return allSwps.filter(function(s){return !s.is_optional||assignedIds.has(s.id);});}catch(e){return this.getSWPs();}},
@@ -338,7 +343,7 @@ function closeLogin(){closeLoginScreen();}
 // ── DASHBOARD ────────────────────────────────────────────────────────
 async function pgDash(c){
   const today=new Date();
-  const [upcoming,members,swps,signoffs]=await Promise.all([DB.list(iso(today),iso(addD(today,7))),CDB.getMembers(),CDB.getSWPs(),CDB.getSignoffs()]);
+  const [upcoming,members,swps,signoffs,safetyAlerts]=await Promise.all([DB.list(iso(today),iso(addD(today,7))),CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs(),CDB.getSafetyAlerts()]);
   const todayStr=today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   c.appendChild(dv({cls:'mb4'},h('h1',{cls:'page-title'},'Factory Dashboard'),dv({cls:'page-sub'},todayStr)));
   const lookup={};signoffs.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lookup[k]||new Date(s.created_at)>new Date(lookup[k].created_at))lookup[k]=s;});
@@ -346,9 +351,9 @@ async function pgDash(c){
   const total=members.length*swps.length;
   members.forEach(function(m){swps.forEach(function(s){const st=compStatus(lookup[m.id+'_'+s.id]);if(st==='current')compCurrent++;if(st==='overdue'){compOverdue++;overdueList.push({m:m.name,s:s.title});}});});
   const compPct=total>0?Math.round(compCurrent/total*100):0;
-  const pinned=safety.filter(function(s){return s.pinned;});
+  const pinned=safetyAlerts.filter(function(s){return s.is_pinned&&!s.is_archived;});
   const sr=dv({cls:'g4 mb4'});
-  [{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444'},{v:pinned.length,l:'Safety Alerts',s:'Pinned',col:'#dc2626'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706'}].forEach(function(x){
+  [{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706'}].forEach(function(x){
     sr.appendChild(dv({cls:'stat-card'},dv({cls:'stat-val',st:{color:x.col}},''+x.v),dv({cls:'stat-lbl'},x.l),dv({cls:'stat-sub'},x.s)));
   });
   c.appendChild(sr);
@@ -364,7 +369,7 @@ async function pgDash(c){
   // Safety alerts
   const sc=dv({cls:'card'});sc.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'Safety Alerts'),dv({cls:'card-sub'},'Pinned')),linkBtn('View all',function(){go('safety');})));
   if(!pinned.length)sc.appendChild(dv({cls:'empty'},'No pinned alerts'));
-  else pinned.forEach(function(doc){sc.appendChild(dv({cls:'row gap2 mb2',st:{padding:'8px 10px',borderRadius:'8px',border:'1px solid '+(doc.priority==='Critical'?'#fecaca':'#fde68a'),background:doc.priority==='Critical'?'#fef2f2':'#fffbeb',cursor:'pointer'},onclick:function(){go('safety');}},dv({},sp({cls:'txs muted',st:{fontFamily:'monospace'}},doc.refNo),dv({cls:'fw6 tsm trunc',st:{maxWidth:'180px'}},doc.title)),bdg(doc.priority,doc.priority==='Critical'?'red':'amber')));});
+  else pinned.forEach(function(doc){sc.appendChild(dv({cls:'row gap2 mb2',st:{padding:'8px 10px',borderRadius:'8px',border:'1px solid '+(doc.priority==='Critical'?'#fecaca':'#fde68a'),background:doc.priority==='Critical'?'#fef2f2':'#fffbeb',cursor:'pointer'},onclick:function(){go('safety');}},dv({},sp({cls:'txs muted',st:{fontFamily:'monospace'}},doc.ref_no||''),dv({cls:'fw6 tsm trunc',st:{maxWidth:'180px'}},doc.title)),bdg(doc.priority,doc.priority==='Critical'?'red':'amber')));});
   r2.appendChild(sc);c.appendChild(r2);
   // Deliveries
   const dc=dv({cls:'card'});dc.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'Upcoming Deliveries'),dv({cls:'card-sub'},'Next 7 days')),linkBtn('Full schedule',function(){go('delivery');})));
@@ -383,20 +388,20 @@ function showMsgForm(c){if(c.querySelector('#mf'))return;const f=dv({cls:'card m
 async function pgSafe(c){
   c.appendChild(dv({cls:'row jb mb3'},
     dv({},h('h1',{cls:'page-title'},'Safety & Compliance'),dv({cls:'page-sub'},'SWP sign-offs, alerts and records')),
-    isSupervisor()&&btn('+ New Alert','btn-p',function(){showSafetyAlertForm(c);})
+    false
   ));
-  const tabBar=dv({cls:'tab-bar'});let activeTab='compliance';const tabContent=dv({id:'stc'});
+  const tabBar=dv({cls:'tab-bar'});let activeTab='alerts';const tabContent=dv({id:'stc'});
   c.appendChild(tabBar);c.appendChild(tabContent);
   function renderTabs(){
     tabBar.innerHTML='';
-    [{id:'compliance',label:'Compliance'},{id:'alerts',label:'Safety Alerts'},{id:'log',label:'Sign-off Log'}].forEach(function(t){
+    [{id:'alerts',label:'Safety Alerts'},{id:'compliance',label:'SWP Compliance'},{id:'log',label:'Sign-off Log'}].forEach(function(t){
       tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;renderTabs();renderTabContent();}},t.label));
     });
   }
   async function renderTabContent(){
     tabContent.innerHTML='';
-    if(activeTab==='compliance')await renderComplianceTiles(tabContent);
-    else if(activeTab==='alerts')renderAlerts(tabContent);
+    if(activeTab==='alerts')await renderAlerts(tabContent);
+    else if(activeTab==='compliance')await renderComplianceTiles(tabContent);
     else await renderLog(tabContent);
   }
   renderTabs();await renderTabContent();
@@ -404,7 +409,7 @@ async function pgSafe(c){
 
 async function renderComplianceTiles(c){
   const lo=dv({cls:'empty'},'Loading...');c.appendChild(lo);
-  const [members,swps,signoffs]=await Promise.all([CDB.getMembers(),CDB.getSWPs(),CDB.getSignoffs()]);
+  const [members,swps,signoffs]=await Promise.all([CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs()]);
   lo.remove();
   // Build lookup
   const lk={};signoffs.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lk[k]||new Date(s.created_at)>new Date(lk[k].created_at))lk[k]=s;});
@@ -481,7 +486,7 @@ function renderMemberSWPs(c,member,swps,lk,signoffs,members){
   c.appendChild(dv({cls:'row gap3 mb4'},
     btn('← Back','btn-o',async function(){
       c.innerHTML='';
-      const [m2,s2,so2]=await Promise.all([CDB.getMembers(),CDB.getSWPs(),CDB.getSignoffs()]);// back button uses all SWPs for tile view
+      const [m2,s2,so2]=await Promise.all([CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs()]);// back button uses factory members for tile view
       const lk2={};so2.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lk2[k]||new Date(s.created_at)>new Date(lk2[k].created_at))lk2[k]=s;});
       renderComplianceTiles(c);
     }),
@@ -830,7 +835,17 @@ async function openSOMdl(member,swp,so,onSave){
       });
       step3.appendChild(summaryDiv);
     }
-    if(isManager())step3.appendChild(dv({cls:'mt2'},btn('Revoke','btn-d btn-sm',async function(){if(!confirm('Revoke assessor sign-off?'))return;await CDB.updateSignoff(so.id,{assessor_signed_at:null,assessor_signed_initials:null,assessor_name:null,expires_at:null,status:'self-signed'});overlay.remove();onSave();})));
+    if(isManager())step3.appendChild(dv({cls:'row gap2 mt2'},
+      btn('Revoke Assessor','btn-d btn-sm',async function(){if(!confirm('Revoke assessor sign-off only? Employee self-assessment will remain.'))return;await CDB.updateSignoff(so.id,{assessor_signed_at:null,assessor_signed_initials:null,assessor_name:null,expires_at:null,status:'self-signed'});overlay.remove();onSave();}),
+      btn('Reset — Full Redo','btn-d btn-sm',async function(){
+        if(!confirm('This will delete the entire sign-off record for '+member.name+' on "'+swp.title+'".\n\nThey will need to complete the full process again from scratch.\n\nContinue?'))return;
+        // Delete competency responses, quiz responses, then the signoff itself
+        await fetch(SB+'/rest/v1/competency_responses?signoff_id=eq.'+so.id,{method:'DELETE',headers:SH({'Prefer':''})});
+        await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+so.id,{method:'DELETE',headers:SH({'Prefer':''})});
+        await fetch(SB+'/rest/v1/signoffs?id=eq.'+so.id,{method:'DELETE',headers:SH({'Prefer':''})});
+        overlay.remove();onSave();
+      })
+    ));
   } else if(selfSigned&&isSupervisor()){
     step3.appendChild(dv({cls:'txs muted mb3'},'Rate each competency independently based on direct observation, then sign off.'));
     // Assessor dropdown
@@ -1194,6 +1209,216 @@ function pgQR(c){
   c.appendChild(grid);
 }
 
+
+// ── SAFETY ALERTS ─────────────────────────────────────────────────────
+async function renderAlerts(c){
+  // Header row with New Alert button
+  const hdr=dv({cls:'row jb mb4'});
+  hdr.appendChild(dv({},dv({cls:'fw6',st:{fontSize:'14px'}},'Safety Alerts & Concerns'),dv({cls:'txs muted mt1'},'Logged safety issues, hazards and concerns')));
+  if(isSupervisor())hdr.appendChild(btn('+ New Alert','btn-p',function(){showSafetyAlertForm(c);}));
+  c.appendChild(hdr);
+  // Filters
+  const filterRow=dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}});
+  const cats=['All','Machine Safety','Manual Handling','Hazardous Materials','Electrical','Fire Safety','Housekeeping','Slip/Trip/Fall','Other'];
+  const pris=['All','Critical','High','Medium','Low'];
+  let filterCat='All',filterPri='All',filterArchived=false;
+  const catSel=sel('All',...cats);catSel.style.cssText='width:160px;font-size:12.5px;padding:6px 8px';
+  const priSel=sel('All',...pris);priSel.style.cssText='width:120px;font-size:12.5px;padding:6px 8px';
+  const archChk=h('input',{type:'checkbox',st:{width:'14px',height:'14px',accentColor:'var(--green)',cursor:'pointer'}});
+  filterRow.appendChild(dv({cls:'fg',st:{gap:'3px'}},h('label',{st:{fontSize:'11px',color:'var(--muted)'}},'Category'),catSel));
+  filterRow.appendChild(dv({cls:'fg',st:{gap:'3px'}},h('label',{st:{fontSize:'11px',color:'var(--muted)'}},'Priority'),priSel));
+  filterRow.appendChild(dv({cls:'row gap2',st:{alignItems:'center',marginTop:'14px'}},archChk,sp({st:{fontSize:'12px',color:'var(--muted)'}},'Show archived')));
+  c.appendChild(filterRow);
+  const listWrap=dv({id:'sal'});c.appendChild(listWrap);
+  async function loadAndRender(){
+    listWrap.innerHTML='<div class="empty">Loading...</div>';
+    const alerts=await CDB.getSafetyAlerts();
+    listWrap.innerHTML='';
+    const filtered=alerts.filter(function(a){
+      if(!filterArchived&&a.is_archived)return false;
+      if(filterArchived&&!a.is_archived)return false;
+      if(filterCat!=='All'&&a.category!==filterCat)return false;
+      if(filterPri!=='All'&&a.priority!==filterPri)return false;
+      return true;
+    });
+    if(!filtered.length){listWrap.appendChild(dv({cls:'empty'},filterArchived?'No archived alerts':'No active safety alerts — great work!'));return;}
+    filtered.forEach(function(a){renderAlertCard(listWrap,a,loadAndRender);});
+  }
+  catSel.onchange=function(){filterCat=catSel.value;loadAndRender();};
+  priSel.onchange=function(){filterPri=priSel.value;loadAndRender();};
+  archChk.onchange=function(){filterArchived=archChk.checked;loadAndRender();};
+  loadAndRender();
+}
+
+function renderAlertCard(c,a,onRefresh){
+  const priCol={Critical:'#dc2626',High:'#ea580c',Medium:'#d97706',Low:'#2563eb'};
+  const priBadge={Critical:'red',High:'orange',Medium:'amber',Low:'blue'};
+  const card=dv({cls:'card mb3',st:{borderLeft:'4px solid '+(priCol[a.priority]||'#e5e7eb'),opacity:a.is_archived?'0.6':'1'}});
+  // Top row
+  const top=dv({cls:'row jb mb2'});
+  top.appendChild(dv({cls:'row gap2',st:{flexWrap:'wrap'}},
+    a.is_pinned&&bdg('Pinned','amber'),
+    bdg(a.priority,priBadge[a.priority]||'gray'),
+    bdg(a.category||'General','gray'),
+    a.dept&&bdg(a.dept,'indigo'),
+    a.is_archived&&bdg('Archived','gray')
+  ));
+  if(isSupervisor()){
+    const acts=dv({cls:'row gap2'});
+    if(!a.is_archived){
+      acts.appendChild(btn(a.is_pinned?'Unpin':'Pin','btn-o btn-sm',async function(){
+        await CDB.updateSafetyAlert(a.id,{is_pinned:!a.is_pinned});onRefresh();
+      }));
+      acts.appendChild(btn('Archive','btn-o btn-sm',async function(){
+        if(!confirm('Archive this alert?'))return;
+        await CDB.updateSafetyAlert(a.id,{is_archived:true,is_pinned:false});onRefresh();
+      }));
+    } else {
+      acts.appendChild(btn('Restore','btn-o btn-sm',async function(){
+        await CDB.updateSafetyAlert(a.id,{is_archived:false});onRefresh();
+      }));
+    }
+    if(isManager())acts.appendChild(btn('Delete','btn-d btn-sm',async function(){
+      if(!confirm('Permanently delete this alert?'))return;
+      await CDB.deleteSafetyAlert(a.id);onRefresh();
+    }));
+    top.appendChild(acts);
+  }
+  card.appendChild(top);
+  // Ref + Title
+  card.appendChild(dv({cls:'row gap2 mb1',st:{alignItems:'baseline'}},
+    a.ref_no&&sp({st:{fontFamily:'monospace',fontSize:'11px',color:'var(--muted)',flexShrink:'0'}},a.ref_no),
+    dv({cls:'fw6',st:{fontSize:'14px'}},a.title)
+  ));
+  // Content
+  if(a.content)card.appendChild(dv({st:{fontSize:'13px',color:'#374151',lineHeight:'1.6',marginBottom:'8px'}},a.content));
+  // Footer
+  const footer=dv({cls:'row gap3',st:{flexWrap:'wrap'}});
+  footer.appendChild(sp({cls:'txs muted'},'Raised by '+a.raised_by));
+  footer.appendChild(sp({cls:'txs muted'},new Date(a.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})));
+  if(a.location)footer.appendChild(sp({cls:'txs muted'},'📍 '+a.location));
+  card.appendChild(footer);
+  c.appendChild(card);
+}
+
+function showSafetyAlertForm(c){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal'});
+  modal.appendChild(dv({cls:'modal-title'},'Raise Safety Alert'));
+  const tiIn=inp('','Alert title (brief description)');
+  const cats=['Machine Safety','Manual Handling','Hazardous Materials','Electrical','Fire Safety','Housekeeping','Slip/Trip/Fall','Other'];
+  const catSel=sel('Machine Safety',...cats);
+  const priSel=sel('High','Critical','High','Medium','Low');
+  const deptSel=sel('',...[''].concat(DEPTS));
+  const locIn=inp('','Location / area (e.g. Fab Bay 3)');
+  const contIn=h('textarea',{rows:'4',placeholder:'Describe the hazard or concern in detail...'});
+  const pinChk=h('input',{type:'checkbox',st:{width:'14px',height:'14px',accentColor:'var(--green)',cursor:'pointer'}});
+  const g=dv({cls:'g2 mb2'});
+  g.appendChild(frow('Category',catSel));g.appendChild(frow('Priority',priSel));
+  const g2=dv({cls:'g2 mb2'});
+  g2.appendChild(frow('Department',deptSel));g2.appendChild(frow('Location',locIn));
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Title'),tiIn));
+  modal.appendChild(g);modal.appendChild(g2);
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Details'),contIn));
+  modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},pinChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Pin to dashboard')));
+  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
+    btn('Cancel','btn-o',function(){overlay.remove();}),
+    btn('Raise Alert','btn-p',async function(){
+      if(!tiIn.value.trim())return alert('Please enter a title');
+      if(!contIn.value.trim())return alert('Please describe the issue');
+      const now=new Date();
+      const refNo='SA-'+now.getFullYear().toString().slice(2)+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'-'+String(Math.floor(Math.random()*900)+100);
+      await CDB.createSafetyAlert({
+        ref_no:refNo,
+        title:tiIn.value.trim(),
+        category:catSel.value,
+        priority:priSel.value,
+        dept:deptSel.value||null,
+        location:locIn.value.trim()||null,
+        content:contIn.value.trim(),
+        is_pinned:pinChk.checked,
+        is_archived:false,
+        raised_by:currentUser?currentUser.name:'Unknown'
+      });
+      overlay.remove();
+      // Refresh the alerts list
+      const listWrap=document.getElementById('sal');
+      if(listWrap){listWrap.innerHTML='';const alerts2=await CDB.getSafetyAlerts();alerts2.filter(function(a){return !a.is_archived;}).forEach(function(a){renderAlertCard(listWrap,a,function(){go('safety');});});}
+    })
+  ));
+  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
+}
+
+// ── SIGN-OFF LOG ──────────────────────────────────────────────────────
+async function renderLog(c){
+  c.appendChild(dv({cls:'fw6 mb3',st:{fontSize:'14px'}},'Sign-off Log'));
+  const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
+  const [signoffs,members,swps]=await Promise.all([CDB.getSignoffs(),CDB.getMembers(),CDB.getSWPs()]);
+  loading.remove();
+  const mMap={};members.forEach(function(m){mMap[m.id]=m;});
+  const sMap={};swps.forEach(function(s){sMap[s.id]=s;});
+  const sorted=[].concat(signoffs).sort(function(a,b){return b.created_at>a.created_at?1:-1;});
+  if(!sorted.length){c.appendChild(dv({cls:'empty'},'No sign-off records yet'));return;}
+  const card=dv({cls:'card'});
+  const tbl=document.createElement('table');tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12.5px';
+  const thead=document.createElement('thead');const hrow=document.createElement('tr');
+  ['Employee','SWP','Self-signed','Assessor','Expires','Status'].forEach(function(hh){
+    const th=document.createElement('th');th.textContent=hh;
+    th.style.cssText='text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)';
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);tbl.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  sorted.forEach(function(so){
+    const m=mMap[so.team_member_id];const s=sMap[so.swp_id];
+    const row=document.createElement('tr');row.style.borderBottom='1px solid #f3f4f6';
+    const st=compStatus(so);
+    const cells=[
+      m?m.name:'Unknown',
+      s?s.title:'Unknown SWP',
+      so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+'  ('+so.self_signed_initials+')':'—',
+      so.assessor_signed_at?so.assessor_name+' '+new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'—',
+      so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—',
+      statusLabel(st)
+    ];
+    cells.forEach(function(txt,i){
+      const td=document.createElement('td');td.style.padding='8px 12px';
+      if(i===5){
+        const stCol={current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#9ca3af'};
+        td.innerHTML='<span style="color:'+(stCol[st]||'#9ca3af')+';font-weight:600">'+txt+'</span>';
+      } else {
+        td.textContent=txt;if(i===1)td.style.maxWidth='200px';
+      }
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+  tbl.appendChild(tbody);card.appendChild(tbl);c.appendChild(card);
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────
+function exportCSV(members,swps,lk){
+  const rows=[['Employee','SWP','Status','Self Signed','Self Initials','Assessor','Assessor Signed','Expires']];
+  members.forEach(function(m){
+    swps.forEach(function(s){
+      const so=lk[m.id+'_'+s.id];
+      const st=compStatus(so);
+      rows.push([
+        m.name,s.title,statusLabel(st),
+        so&&so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU'):'',
+        so&&so.self_signed_initials||'',
+        so&&so.assessor_name||'',
+        so&&so.assessor_signed_at?new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'',
+        so&&so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):''
+      ]);
+    });
+  });
+  const csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='swp_compliance_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
 // ── ADMIN PANEL ──────────────────────────────────────────────────────
 async function pgAdmin(c){
   if(!isAdmin()){c.appendChild(dv({cls:'empty'},'Access denied.'));return;}
@@ -1226,7 +1451,7 @@ async function renderAdminTeam(c){
   const tbl=document.createElement('table');
   tbl.style.cssText='width:100%;border-collapse:collapse;font-size:13px';
   const thead=document.createElement('thead');const hrow=document.createElement('tr');
-  ['Name','Department','Access Level','Assessor','New Password',''].forEach(function(hh){
+  ['Name','Department','Access Level','Assessor','Exclude from Compliance','New Password',''].forEach(function(hh){
     const th=document.createElement('th');th.textContent=hh;
     th.style.cssText='text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)';
     hrow.appendChild(th);
@@ -1253,6 +1478,13 @@ async function renderAdminTeam(c){
     const assChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',cursor:'pointer',accentColor:'var(--green)'}});
     assChk.checked=m.is_assessor||false;
     assTd.appendChild(assChk);row.appendChild(assTd);
+    // Exclude from compliance checkbox
+    const exclTd=document.createElement('td');exclTd.style.cssText='padding:8px 12px;text-align:center';
+    const exclChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',cursor:'pointer',accentColor:'#ef4444'}});
+    exclChk.checked=m.exclude_from_compliance||false;
+    const exclLbl=dv({st:{display:'flex',flexDirection:'column',alignItems:'center',gap:'2px'}},exclChk);
+    if(m.exclude_from_compliance)exclLbl.appendChild(sp({st:{fontSize:'9px',color:'#ef4444',fontWeight:'700'}},'Hidden'));
+    exclTd.appendChild(exclLbl);row.appendChild(exclTd);
     // Password field
     const pwdTd=document.createElement('td');pwdTd.style.padding='8px 12px';
     const pwdIn=h('input',{type:'text',placeholder:'New password',st:{width:'140px',padding:'5px 8px',border:'1px solid var(--border)',borderRadius:'6px',fontSize:'12px'}});
@@ -1260,7 +1492,7 @@ async function renderAdminTeam(c){
     // Save
     const saveTd=document.createElement('td');saveTd.style.padding='8px 12px';
     saveTd.appendChild(btn('Save','btn-p btn-sm',async function(){
-      const updates={role_level:roleSel.value,is_assessor:assChk.checked};
+      const updates={role_level:roleSel.value,is_assessor:assChk.checked,exclude_from_compliance:exclChk.checked};
       if(pwdIn.value.trim())updates.password_hash=pwdIn.value.trim();
       await fetch(SB+'/rest/v1/team_members?id=eq.'+m.id,{method:'PATCH',headers:SH(),body:JSON.stringify(updates)});
       pwdIn.value='';
