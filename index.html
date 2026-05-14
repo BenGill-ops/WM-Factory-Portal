@@ -328,7 +328,32 @@ function openSOMdl(member,swp,so,onSave){
   const ss=dv({st:{padding:'14px',borderRadius:'10px',border:'1px solid '+(selfSigned?'#bbf7d0':'var(--border)'),background:selfSigned?'#f0fdf4':'#fff',marginBottom:'12px'}});
   ss.appendChild(dv({cls:'row jb mb2'},dv({},dv({cls:'fw6 tsm'},'1. Employee Self-Assessment'),selfSigned?bdg('Signed','green'):bdg('Required','amber')),sp({cls:'txs muted'},'Employee declares they have read and understood the SWP')));
   if(selfSigned){ss.appendChild(dv({cls:'txs muted'},'Signed by '+so.self_signed_initials+' on '+new Date(so.self_signed_at).toLocaleDateString('en-AU')+' at '+new Date(so.self_signed_at).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})));if(isManager)ss.appendChild(dv({cls:'mt2'},btn('Revoke','btn-d btn-sm',async function(){if(!confirm('Revoke self sign-off?'))return;await CDB.updateSignoff(so.id,{self_signed_at:null,self_signed_initials:null,status:'pending',assessor_signed_at:null,assessor_signed_initials:null,assessor_name:null,expires_at:null});overlay.remove();onSave();})));}
-  else{ss.appendChild(dv({st:{padding:'10px',background:'#fffbeb',borderRadius:'6px',fontSize:'11.5px',color:'#92400e',marginBottom:'10px',lineHeight:'1.6'}},'I, '+member.name+', declare that I have read and understood the Safe Work Practice for "'+swp.title+'" and agree to follow these procedures at all times.'));const iniIn=h('input',{type:'text',placeholder:'Your initials (e.g. TS)',st:{textTransform:'uppercase',marginBottom:'8px'}});ss.appendChild(dv({cls:'fg mb2',st:{maxWidth:'200px'}},h('label',{},'Your initials to sign'),iniIn));ss.appendChild(btn('Sign Self-Assessment','btn-p',async function(){const ini=iniIn.value.trim().toUpperCase();if(!ini)return alert('Please enter your initials');if(!confirm('Confirm: '+member.name+' has read and understood this SWP?'))return;const now=new Date().toISOString();if(so&&so.id){await CDB.updateSignoff(so.id,{self_signed_at:now,self_signed_initials:ini,status:'self-signed'});}else{await CDB.createSignoff({team_member_id:member.id,swp_id:swp.id,self_signed_at:now,self_signed_initials:ini,status:'self-signed'});}overlay.remove();onSave();}));}
+  else{const pdfSection=dv({st:{marginBottom:'12px'}});
+if(swp.pdf_url){
+  let pdfRead=false;
+  const pdfBtn=btn('View SWP Document (PDF)','btn-o',function(){
+    window.open(swp.pdf_url,'_blank');
+    pdfRead=true;
+    pdfAck.style.display='flex';
+    pdfBtn.style.background='#f0fdf4';
+    pdfBtn.style.borderColor='#bbf7d0';
+    pdfBtn.style.color='#15803d';
+    pdfBtn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> SWP Document Opened';
+  });
+  pdfBtn.style.cssText='width:100%;justify-content:center;margin-bottom:8px;gap:8px';
+  pdfBtn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> View SWP Document (PDF)';
+  pdfSection.appendChild(pdfBtn);
+  const pdfAck=dv({st:{display:'none',alignItems:'center',gap:'8px',padding:'8px 12px',background:'#fffbeb',borderRadius:'8px',marginBottom:'10px',fontSize:'12px',color:'#92400e'}});
+  const pdfChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',cursor:'pointer',accentColor:'var(--green)',flexShrink:'0'}});
+  pdfAck.appendChild(pdfChk);
+  pdfAck.appendChild(sp({},'I confirm I have read and understood this Safe Work Practice document'));
+  pdfSection.appendChild(pdfAck);
+  ss.appendChild(pdfSection);
+} else {
+  ss.appendChild(dv({st:{padding:'8px 12px',background:'#fff7ed',borderRadius:'8px',fontSize:'12px',color:'#92400e',marginBottom:'10px'}},
+    'Note: No PDF document attached to this SWP. Contact your manager to add the document.'));
+}
+ss.appendChild(dv({st:{padding:'10px',background:'#fffbeb',borderRadius:'6px',fontSize:'11.5px',color:'#92400e',marginBottom:'10px',lineHeight:'1.6'}},'I, '+member.name+', declare that I have read and understood the Safe Work Practice for "'+swp.title+'" and agree to follow these procedures at all times.'));const iniIn=h('input',{type:'text',placeholder:'Your initials (e.g. TS)',st:{textTransform:'uppercase',marginBottom:'8px'}});ss.appendChild(dv({cls:'fg mb2',st:{maxWidth:'200px'}},h('label',{},'Your initials to sign'),iniIn));ss.appendChild(btn('Sign Self-Assessment','btn-p',async function(){if(swp.pdf_url&&typeof pdfRead!=='undefined'&&!pdfRead)return alert('Please open and read the SWP document before signing.');if(swp.pdf_url&&typeof pdfChk!=='undefined'&&!pdfChk.checked)return alert('Please tick the box to confirm you have read the SWP document.');const ini=iniIn.value.trim().toUpperCase();if(!ini)return alert('Please enter your initials');if(!confirm('Confirm: '+member.name+' has read and understood this SWP?'))return;const now=new Date().toISOString();if(so&&so.id){await CDB.updateSignoff(so.id,{self_signed_at:now,self_signed_initials:ini,status:'self-signed'});}else{await CDB.createSignoff({team_member_id:member.id,swp_id:swp.id,self_signed_at:now,self_signed_initials:ini,status:'self-signed'});}overlay.remove();onSave();}));}
   modal.appendChild(ss);
   // Assessor section
   const as=dv({st:{padding:'14px',borderRadius:'10px',border:'1px solid '+(assSigned?'#bbf7d0':selfSigned?'var(--border)':'#f3f4f6'),background:assSigned?'#f0fdf4':selfSigned?'#fff':'#fafafa',marginBottom:'16px',opacity:selfSigned?'1':'0.6'}});
