@@ -274,7 +274,7 @@ function renderTop(){
       'Sign In'));
   }
 }
-function go(p){page=p;selDay=null;// init runs at end of script}
+function go(p){page=p;selDay=null;renderNav();renderTop();renderPage();}
 function renderPage(){
   const c=document.getElementById('content');c.innerHTML='';
   const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
@@ -821,7 +821,7 @@ async function openSOMdl(member,swp,so,onSave){
           const row=dv({st:{display:'flex',alignItems:'flex-start',gap:'8px',marginBottom:'6px',fontSize:'12px'}});
           row.appendChild(sp({st:{flex:'1',color:'#374151'}},item.item));
           row.appendChild(dv({st:{display:'flex',gap:'6px',flexShrink:'0'}},
-            dv({st:{textAlign:'center'}},dv({st:{fontSize:'9px',color:'var(--muted)'},''},'Self'),dv({st:{padding:'2px 6px',borderRadius:'4px',background:selfR!=='—'?RATING_COLORS[selfR]:'#e5e7eb',color:selfR!=='—'?'#fff':'#374151',fontSize:'11px',fontWeight:'700'}},selfR)),
+            dv({st:{textAlign:'center'}},dv({st:{fontSize:'9px',color:'var(--muted)'}},'Self'),dv({st:{padding:'2px 6px',borderRadius:'4px',background:selfR!=='—'?RATING_COLORS[selfR]:'#e5e7eb',color:selfR!=='—'?'#fff':'#374151',fontSize:'11px',fontWeight:'700'}},selfR)),
             dv({st:{textAlign:'center'}},dv({st:{fontSize:'9px',color:'var(--muted)'}},'Assessor'),dv({st:{padding:'2px 6px',borderRadius:'4px',background:assR!=='—'?RATING_COLORS[assR]:'#e5e7eb',color:assR!=='—'?'#fff':'#374151',fontSize:'11px',fontWeight:'700'}},assR))
           ));
           summaryDiv.appendChild(row);
