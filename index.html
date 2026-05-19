@@ -1805,10 +1805,10 @@ function openDelForm(d,dateStr,c){
           xeroMsg.textContent='Error: '+data.message;
           xeroMsg.style.color='#dc2626';
         } else {
-          console.log('Xero data:', JSON.stringify(data));
           // Auto-fill fields
-          if(data.customer){custIn.value=data.customer;console.log('Set customer:',data.customer);}
-          if(data.address){addrIn.value=data.address;console.log('Set address:',data.address);}
+          if(data.customer)custIn.value=data.customer;
+          if(data.address)addrIn.value=data.address;
+          if(data.description)descIn.value=data.description;
           if(data.isPaid)paidChk.checked=true;
           // Store xero data on form
           modal._xeroData=data;
