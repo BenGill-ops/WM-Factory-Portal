@@ -160,6 +160,10 @@ const DB={
   async del(id){await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});}
 };
 const CDB={
+  async getArchivedMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.false&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async reactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:true})});},
+  async createMember(data){const r=await fetch(SB+'/rest/v1/team_members',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async deactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:false})});},
   async getMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getLeanItems(){try{const r=await fetch(SB+'/rest/v1/lean_items?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async createLeanItem(data){const r=await fetch(SB+'/rest/v1/lean_items',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
@@ -169,7 +173,7 @@ const CDB={
   async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
   async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
   async deleteSafetyAlert(id){await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
-  async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return !m.exclude_from_compliance;});}catch(e){return[];}},
+  async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return m.exclude_from_compliance!==true;});}catch(e){return[];}},
   async getAssessors(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&is_assessor=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPs(){try{const r=await fetch(SB+'/rest/v1/safe_work_practices?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPsForMember(memberId){try{const[allSwps,assignments]=await Promise.all([this.getSWPs(),this.getAssignments(memberId)]);const assignedIds=new Set(assignments.map(function(a){return a.swp_id;}));return allSwps.filter(function(s){return !s.is_optional||assignedIds.has(s.id);});}catch(e){return this.getSWPs();}},
@@ -357,26 +361,34 @@ async function pgDash(c){
   const compPct=total>0?Math.round(compCurrent/total*100):0;
   const pinned=safetyAlerts.filter(function(s){return s.is_pinned&&!s.is_archived;});
   const sr=dv({cls:'g4 mb4'});
-  [{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706'}].forEach(function(x){
-    sr.appendChild(dv({cls:'stat-card'},dv({cls:'stat-val',st:{color:x.col}},''+x.v),dv({cls:'stat-lbl'},x.l),dv({cls:'stat-sub'},x.s)));
+  [{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8',dest:'delivery'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444',dest:'safety'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626',dest:'safety'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706',dest:'lean'}].forEach(function(x){
+    const sc2=dv({cls:'stat-card',st:{cursor:'pointer',transition:'box-shadow 0.15s,transform 0.15s'}});
+    sc2.onmouseenter=function(){sc2.style.boxShadow='0 4px 16px rgba(0,0,0,0.10)';sc2.style.transform='translateY(-1px)';};
+    sc2.onmouseleave=function(){sc2.style.boxShadow='';sc2.style.transform='';};
+    sc2.onclick=function(){go(x.dest);};
+    sc2.appendChild(dv({cls:'stat-val',st:{color:x.col}},''+x.v));
+    sc2.appendChild(dv({cls:'stat-lbl'},x.l));
+    sc2.appendChild(dv({cls:'stat-sub'},x.s));
+    sc2.appendChild(dv({cls:'txs muted',st:{fontSize:'10px',color:'#9ca3af',marginTop:'2px'}},'Click to view →'));
+    sr.appendChild(sc2);
   });
   c.appendChild(sr);
   const r2=dv({cls:'g2 mb4'});
   // Compliance widget
   const cc=dv({cls:'card'});
-  cc.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'SWP Compliance'),dv({cls:'card-sub'},compPct+'% compliant')),linkBtn('View matrix',function(){go('safety');})));
+  const ccHdr=dv({cls:'card-hdr',st:{cursor:'pointer'}});ccHdr.onclick=function(){go('safety');};ccHdr.appendChild(dv({},dv({cls:'card-title'},'SWP Compliance'),dv({cls:'card-sub'},compPct+'% compliant')));ccHdr.appendChild(linkBtn('View matrix',function(){go('safety');}));cc.appendChild(ccHdr);
   const pb=dv({cls:'pb-row mb3'});pb.appendChild(dv({cls:'pb-fill',st:{width:compPct+'%',background:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444'}}));cc.appendChild(pb);
   const cs=dv({cls:'row gap3 mb3'});[{v:compPct+'%',l:'Compliant',col:'#22c55e'},{v:compOverdue,l:'Overdue',col:'#ef4444'},{v:total-compCurrent-compOverdue,l:'Pending',col:'#f59e0b'}].forEach(function(x){cs.appendChild(dv({st:{textAlign:'center',flex:'1'}},dv({st:{fontSize:'20px',fontWeight:'700',color:x.col}},''+x.v),dv({cls:'txs muted'},x.l)));});cc.appendChild(cs);
   if(overdueList.length){cc.appendChild(dv({cls:'txs fw6 mb2',st:{color:'#ef4444'}},'Overdue:'));overdueList.slice(0,4).forEach(function(x){cc.appendChild(dv({cls:'row gap2 mb2',st:{alignItems:'flex-start'}},dv({st:{width:'6px',height:'6px',borderRadius:'50%',background:'#ef4444',flexShrink:'0',marginTop:'5px'}}),dv({cls:'txs'},x.m+' - '+x.s)));});if(overdueList.length>4)cc.appendChild(dv({cls:'txs muted'},'+' +(overdueList.length-4)+' more'));}
   else{cc.appendChild(dv({st:{textAlign:'center',padding:'8px',color:'#22c55e',fontSize:'13px',fontWeight:'600'}},'All sign-offs current!'));}
   r2.appendChild(cc);
   // Safety alerts
-  const sc=dv({cls:'card'});sc.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'Safety Alerts'),dv({cls:'card-sub'},'Pinned')),linkBtn('View all',function(){go('safety');})));
+  const sc=dv({cls:'card'});const scHdr=dv({cls:'card-hdr',st:{cursor:'pointer'}});scHdr.onclick=function(){go('safety');};scHdr.appendChild(dv({},dv({cls:'card-title'},'Safety Alerts'),dv({cls:'card-sub'},'Pinned')));scHdr.appendChild(linkBtn('View all',function(){go('safety');}));sc.appendChild(scHdr);
   if(!pinned.length)sc.appendChild(dv({cls:'empty'},'No pinned alerts'));
   else pinned.forEach(function(doc){sc.appendChild(dv({cls:'row gap2 mb2',st:{padding:'8px 10px',borderRadius:'8px',border:'1px solid '+(doc.priority==='Critical'?'#fecaca':'#fde68a'),background:doc.priority==='Critical'?'#fef2f2':'#fffbeb',cursor:'pointer'},onclick:function(){go('safety');}},dv({},sp({cls:'txs muted',st:{fontFamily:'monospace'}},doc.ref_no||''),dv({cls:'fw6 tsm trunc',st:{maxWidth:'180px'}},doc.title)),bdg(doc.priority,doc.priority==='Critical'?'red':'amber')));});
   r2.appendChild(sc);c.appendChild(r2);
   // Deliveries
-  const dc=dv({cls:'card'});dc.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'Upcoming Deliveries'),dv({cls:'card-sub'},'Next 7 days')),linkBtn('Full schedule',function(){go('delivery');})));
+  const dc=dv({cls:'card'});const dcHdr=dv({cls:'card-hdr',st:{cursor:'pointer'}});dcHdr.onclick=function(){go('delivery');};dcHdr.appendChild(dv({},dv({cls:'card-title'},'Upcoming Deliveries'),dv({cls:'card-sub'},'Next 7 days')));dcHdr.appendChild(linkBtn('Full schedule',function(){go('delivery');}));dc.appendChild(dcHdr);
   if(!upcoming.length)dc.appendChild(dv({cls:'empty'},'No deliveries in the next 7 days'));
   else{const g=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'10px'}});upcoming.slice(0,6).forEach(function(d){const ov=new Date(d.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(d.status);const card=dv({st:{padding:'10px 12px',borderRadius:'8px',border:'1px solid '+(ov?'#fde68a':d.type==='Incoming'?'#bfdbfe':'#bbf7d0'),background:ov?'#fffbeb':d.type==='Incoming'?'#eff6ff':'#f0fdf4'}});card.appendChild(dv({cls:'row gap2 mb2',st:{flexWrap:'wrap'}},sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+d.jobNumber),bdg(d.type,d.type==='Incoming'?'blue':'green'),!d.isPaid&&bdg('NOT PAID','red')));if(d.customer)card.appendChild(dv({cls:'fw6 tsm mb2'},d.customer));if(d.address)card.appendChild(dv({cls:'txs muted mb2'},d.address));card.appendChild(dv({cls:'txs muted'},fmtD(d.scheduledDate)+(d.scheduledTime?' - '+d.scheduledTime:'')));g.appendChild(card);});dc.appendChild(g);}
   c.appendChild(dc);
@@ -2228,13 +2240,14 @@ async function pgAdmin(c){
   c.appendChild(tabBar);c.appendChild(tabContent);
   function renderAdminTabs(){
     tabBar.innerHTML='';
-    [{id:'team',label:'Team Members'},{id:'assignments',label:'SWP Assignments'}].forEach(function(t){
+    [{id:'team',label:'Team Members'},{id:'assignments',label:'SWP Assignments'},{id:'archived',label:'Archived Members'}].forEach(function(t){
       tabBar.appendChild(h('button',{cls:'tab-btn'+(adminTab===t.id?' active':''),onclick:function(){adminTab=t.id;renderAdminTabs();renderAdminTab();}},t.label));
     });
   }
   async function renderAdminTab(){
     tabContent.innerHTML='';
     if(adminTab==='team'){await renderAdminTeam(tabContent);}
+    else if(adminTab==='archived'){await renderArchivedMembers(tabContent);}
     else{
       const card2=dv({cls:'card'});
       card2.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'Optional SWP Assignments'),dv({cls:'card-sub'},'Tick to assign optional SWPs to specific team members')));
@@ -2247,7 +2260,10 @@ async function pgAdmin(c){
 async function renderAdminTeam(c){
   const members=await CDB.getMembers();
   const card=dv({cls:'card'});
-  card.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'Team Members'),dv({cls:'card-sub'},'Set roles, assessor status and passwords')));
+  card.appendChild(dv({cls:'card-hdr'},
+    dv({},dv({cls:'card-title'},'Team Members'),dv({cls:'card-sub'},'Set roles, assessor status and passwords')),
+    btn('+ Add Member','btn-p btn-sm',function(){showAddMemberForm(c);})
+  ));
   const tbl=document.createElement('table');
   tbl.style.cssText='width:100%;border-collapse:collapse;font-size:13px';
   const thead=document.createElement('thead');const hrow=document.createElement('tr');
@@ -2291,6 +2307,7 @@ async function renderAdminTeam(c){
     pwdTd.appendChild(pwdIn);row.appendChild(pwdTd);
     // Save
     const saveTd=document.createElement('td');saveTd.style.padding='8px 12px';
+    saveTd.appendChild(btn('Archive','btn-o btn-sm',async function(){if(!confirm('Archive '+m.name+'? They will be hidden from the portal but all their training records and sign-off history will be preserved.'))return;await CDB.deactivateMember(m.id);c.innerHTML='';renderAdminTeam(c);}));
     saveTd.appendChild(btn('Save','btn-p btn-sm',async function(){
       const updates={role_level:roleSel.value,is_assessor:assChk.checked,exclude_from_compliance:exclChk.checked};
       if(pwdIn.value.trim())updates.password_hash=pwdIn.value.trim();
@@ -2303,6 +2320,168 @@ async function renderAdminTeam(c){
     tbody.appendChild(row);
   });
   tbl.appendChild(tbody);card.appendChild(tbl);c.appendChild(card);
+}
+
+
+// ── ADD MEMBER FORM ───────────────────────────────────────────────────
+function showAddMemberForm(adminC){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'480px'}});
+  modal.appendChild(dv({cls:'modal-title'},'Add Team Member'));
+  const nameIn=inp('','Full name');
+  const roleIn=inp('','Role / Job title (e.g. Factory Employee)');
+  const roleSel=sel('team_member','team_member','supervisor','manager','admin');
+  const deptSel=sel('Factory',...DEPTS,'Factory');
+  const pwdIn=inp('','Initial password');
+  const assChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',accentColor:'var(--green)',cursor:'pointer'}});
+  const g=dv({cls:'g2 mb2'});
+  g.appendChild(frow('Access Level',roleSel));
+  g.appendChild(frow('Department',deptSel));
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Full Name'),nameIn));
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Job Title'),roleIn));
+  modal.appendChild(g);
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Initial Password'),pwdIn));
+  modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},assChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Assessor (can sign off competencies)')));
+  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
+    btn('Cancel','btn-o',function(){overlay.remove();}),
+    btn('Create Member','btn-p',async function(){
+      if(!nameIn.value.trim())return alert('Name is required');
+      if(!pwdIn.value.trim())return alert('Initial password is required');
+      await CDB.createMember({
+        name:nameIn.value.trim(),
+        role:roleIn.value.trim()||'Factory Employee',
+        role_level:roleSel.value,
+        department:deptSel.value,
+        password:pwdIn.value.trim(),
+        is_assessor:assChk.checked,
+        is_active:true,
+        exclude_from_compliance:false,
+        lean_target:0
+      });
+      overlay.remove();
+      adminC.innerHTML='';
+      renderAdminTeam(adminC);
+    })
+  ));
+  overlay.appendChild(modal);
+  overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};
+  document.body.appendChild(overlay);
+}
+
+
+// ── ARCHIVED MEMBERS ─────────────────────────────────────────────────
+async function renderArchivedMembers(c){
+  const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
+  const [archived,signoffs,swps]=await Promise.all([CDB.getArchivedMembers(),CDB.getSignoffs(),CDB.getSWPs()]);
+  loading.remove();
+
+  const card=dv({cls:'card'});
+  card.appendChild(dv({cls:'card-hdr'},
+    dv({},dv({cls:'card-title'},'Archived Members'),dv({cls:'card-sub'},archived.length+' archived · all training records preserved')),
+  ));
+
+  if(!archived.length){
+    card.appendChild(dv({cls:'empty'},'No archived members'));
+    c.appendChild(card);
+    return;
+  }
+
+  const sMap={};swps.forEach(function(s){sMap[s.id]=s;});
+
+  archived.forEach(function(m){
+    const mSignoffs=signoffs.filter(function(s){return s.team_member_id===m.id;});
+    // Latest per SWP
+    const lk={};mSignoffs.forEach(function(s){if(!lk[s.swp_id]||new Date(s.created_at)>new Date(lk[s.swp_id].created_at))lk[s.swp_id]=s;});
+    const completed=Object.values(lk).filter(function(s){return s.assessor_signed_at;}).length;
+    const total=swps.length;
+
+    const ini=m.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+    const rc={admin:'#7c3aed',manager:'#15803d',supervisor:'#0369a1',team_member:'#374151'};
+
+    const row=dv({st:{display:'flex',alignItems:'center',gap:'14px',padding:'14px 16px',borderBottom:'1px solid #f3f4f6'}});
+
+    // Avatar
+    row.appendChild(dv({st:{width:'40px',height:'40px',borderRadius:'50%',background:'#e5e7eb',color:'#9ca3af',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',fontWeight:'700',flexShrink:'0'}},ini));
+
+    // Info
+    const info=dv({st:{flex:'1'}});
+    info.appendChild(dv({cls:'fw6',st:{fontSize:'13px',color:'#374151'}},m.name));
+    info.appendChild(dv({cls:'row gap2 mt1'},
+      bdg(m.role||'Team Member','gray'),
+      bdg(m.role_level||'team_member','gray'),
+      m.is_assessor&&bdg('Assessor','amber')
+    ));
+    info.appendChild(dv({cls:'txs muted mt1'},completed+' of '+total+' SWPs signed off'));
+    row.appendChild(info);
+
+    // Actions
+    const acts=dv({cls:'row gap2'});
+
+    // View training record
+    acts.appendChild(btn('Training Record','btn-o btn-sm',function(){
+      showArchivedRecord(m,swps,lk);
+    }));
+
+    // Reinstate
+    acts.appendChild(btn('Reinstate','btn-p btn-sm',async function(){
+      if(!confirm('Reinstate '+m.name+'? They will reappear in the portal with all their previous data.'))return;
+      await CDB.reactivateMember(m.id);
+      c.innerHTML='';
+      renderArchivedMembers(c);
+    }));
+
+    row.appendChild(acts);
+    card.appendChild(row);
+  });
+
+  c.appendChild(card);
+}
+
+function showArchivedRecord(member,swps,lk){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'680px',maxHeight:'80vh',overflowY:'auto'}});
+  const ini=member.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+  modal.appendChild(dv({cls:'row gap3 mb4',st:{alignItems:'center'}},
+    dv({st:{width:'48px',height:'48px',borderRadius:'50%',background:'#e5e7eb',color:'#9ca3af',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px',fontWeight:'700',flexShrink:'0'}},ini),
+    dv({st:{flex:'1'}},
+      h('h2',{st:{fontSize:'16px',fontWeight:'700',marginBottom:'3px'}},member.name+' — Training Record'),
+      dv({cls:'txs muted'},(member.role||'Team Member')+' · Archived')
+    ),
+    btn('⬇ Download PDF','btn-p',function(){printMemberRecord(member,swps,lk,[]);})
+  ));
+
+  if(!Object.keys(lk).length){
+    modal.appendChild(dv({cls:'empty'},'No sign-off records found for this member'));
+  } else {
+    const grid=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:'10px'}});
+    swps.forEach(function(swp){
+      const so=lk[swp.id];if(!so)return;
+      const st=compStatus(so);
+      const stCol={current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#9ca3af'};
+      const card=dv({cls:'card',st:{borderLeft:'4px solid '+(stCol[st]||'#e5e7eb'),padding:'12px'}});
+      card.appendChild(dv({cls:'fw6 mb1',st:{fontSize:'12.5px'}},swp.title));
+      card.appendChild(dv({cls:'row gap2 mb2'},bdg(statusLabel(st),st==='current'?'green':st==='overdue'?'red':st==='due-soon'?'amber':'gray')));
+      [
+        ['Self-assessed',so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+' ('+so.self_signed_initials+')':'—'],
+        ['Assessor',so.assessor_signed_at?so.assessor_name+' · '+new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'—'],
+        ['Expires',so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—']
+      ].forEach(function(r){
+        card.appendChild(dv({cls:'row jb',st:{marginBottom:'3px'}},
+          sp({cls:'txs muted'},r[0]),
+          sp({cls:'txs',st:{fontSize:'11.5px',fontWeight:'600',textAlign:'right'}},r[1])
+        ));
+      });
+      grid.appendChild(card);
+    });
+    modal.appendChild(grid);
+  }
+
+  modal.appendChild(dv({cls:'row gap2 mt4',st:{justifyContent:'flex-end'}},
+    btn('Close','btn-o',function(){overlay.remove();})
+  ));
+  overlay.appendChild(modal);
+  overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};
+  document.body.appendChild(overlay);
 }
 
 // ── SWP ASSIGNMENTS ADMIN ────────────────────────────────────────────
