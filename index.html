@@ -1790,7 +1790,7 @@ function openDelForm(d,dateStr,c){
       searchBtn.textContent='Searching...';searchBtn.disabled=true;
       xeroMsg.textContent='';xeroMsg.style.color='var(--muted)';
       try{
-        const res=await fetch(XERO_FN+'/Xero-lookup?job='+encodeURIComponent(jn));
+        const res=await fetch(XERO_FN+'/xero-lookup?job='+encodeURIComponent(jn));
         const data=await res.json();
         if(data.error==='not_connected'){
           xeroMsg.textContent='⚠ Xero not connected — go to Admin → Connect Xero';
