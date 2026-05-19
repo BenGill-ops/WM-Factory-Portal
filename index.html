@@ -1779,6 +1779,9 @@ function openDelForm(d,dateStr,c){
   const isNew=!d;
   modal.appendChild(dv({cls:'modal-title'},isNew?'New Delivery':'Edit Delivery'));
   const jobIn=inp(d?d.jobNumber:'','Job number');
+  // custIn and addrIn declared above
+  const paidChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',accentColor:'var(--green)',cursor:'pointer',flexShrink:'0'}});
+  paidChk.checked=d?d.isPaid:false;
   // Xero lookup row
   if(isNew){
     const xeroRow=dv({cls:'row gap2 mb3',st:{alignItems:'flex-end'}});
@@ -1837,8 +1840,7 @@ function openDelForm(d,dateStr,c){
   const bayIn=inp(d?d.bayNumber||'':'','Bay number');
   const notesIn=h('textarea',{rows:'2',placeholder:'Notes'});
   if(d&&d.notes)notesIn.value=d.notes;
-  const paidChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',accentColor:'var(--green)',cursor:'pointer',flexShrink:'0'}});
-  paidChk.checked=d?d.isPaid:false;
+  // paidChk declared above
   const paidByIn=inp(d?d.paidBy||'':'','Paid by');
   const g2=function(a,b){const g=dv({cls:'g2 mb2'});g.appendChild(a);g.appendChild(b);return g;};
   modal.appendChild(g2(frow('Job #',jobIn),frow('Customer',custIn)));
