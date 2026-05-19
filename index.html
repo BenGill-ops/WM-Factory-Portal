@@ -148,6 +148,7 @@ textarea{resize:vertical}
 <script>
 const SB='https://souwlbqovhhmjrfpxunv.supabase.co';
 const XERO_FN=SB+'/functions/v1';
+const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SH=(x)=>Object.assign({'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation'},x||{});
 function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at};}
