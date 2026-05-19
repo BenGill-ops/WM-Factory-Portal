@@ -1782,6 +1782,8 @@ function openDelForm(d,dateStr,c){
   // custIn and addrIn declared above
   const paidChk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',accentColor:'var(--green)',cursor:'pointer',flexShrink:'0'}});
   paidChk.checked=d?d.isPaid:false;
+  const notesIn=h('textarea',{rows:'2',placeholder:'Notes'});
+  if(d&&d.notes)notesIn.value=d.notes;
   // Xero lookup row
   if(isNew){
     const xeroRow=dv({cls:'row gap2 mb3',st:{alignItems:'flex-end'}});
@@ -1808,7 +1810,7 @@ function openDelForm(d,dateStr,c){
           // Auto-fill fields
           if(data.customer)custIn.value=data.customer;
           if(data.address)addrIn.value=data.address;
-          if(data.description)descIn.value=data.description;
+          if(data.description)notesIn.value=data.description;
           if(data.isPaid)paidChk.checked=true;
           // Store xero data on form
           modal._xeroData=data;
@@ -1839,9 +1841,7 @@ function openDelForm(d,dateStr,c){
   const orderSel=sel(d?d.deliveryOrder:'Delivery 1',...ORDERS);
   const seqSel=sel(d?d.deliverySequence:'Deliver 1st',...SEQS);
   const bayIn=inp(d?d.bayNumber||'':'','Bay number');
-  const notesIn=h('textarea',{rows:'2',placeholder:'Notes'});
-  if(d&&d.notes)notesIn.value=d.notes;
-  // paidChk declared above
+  // notesIn declared above
   const paidByIn=inp(d?d.paidBy||'':'','Paid by');
   const g2=function(a,b){const g=dv({cls:'g2 mb2'});g.appendChild(a);g.appendChild(b);return g;};
   modal.appendChild(g2(frow('Job #',jobIn),frow('Customer',custIn)));
