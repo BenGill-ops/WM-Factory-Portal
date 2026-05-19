@@ -167,11 +167,25 @@ const CDB={
   async createMember(data){const r=await fetch(SB+'/rest/v1/team_members',{method:'POST',headers:SH({'Prefer':'return=representation'}),body:JSON.stringify(data)});const d=await r.json();if(!r.ok){console.error('createMember error:',r.status,JSON.stringify(d));throw new Error(JSON.stringify(d));}return Array.isArray(d)?d[0]:d;},
   async deactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:false})});},
   async getMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async uploadLeanPhoto(file,itemId,type){
+    const ext=file.name.split('.').pop();
+    const path='lean/'+itemId+'-'+type+'-'+Date.now()+'.'+ext;
+    const r=await fetch(SB+'/storage/v1/object/lean-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type,'x-upsert':'true'},body:file});
+    if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
+    return SB+'/storage/v1/object/public/lean-photos/'+path;
+  },
   async getLeanItems(){try{const r=await fetch(SB+'/rest/v1/lean_items?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async createLeanItem(data){const r=await fetch(SB+'/rest/v1/lean_items',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
   async updateLeanItem(id,data){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
   async deleteLeanItem(id){await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
   async getSafetyAlerts(){try{const r=await fetch(SB+'/rest/v1/safety_alerts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async uploadSafetyPhoto(file,refNo){
+    const ext=file.name.split('.').pop();
+    const path='alerts/'+refNo+'-'+Date.now()+'.'+ext;
+    const r=await fetch(SB+'/storage/v1/object/safety-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type,'x-upsert':'true'},body:file});
+    if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
+    return SB+'/storage/v1/object/public/safety-photos/'+path;
+  },
   async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
   async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
   async deleteSafetyAlert(id){await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
@@ -1313,10 +1327,32 @@ function renderLeanDetail(wrap,item,members,bodyWrap){
   metaRow.appendChild(dv({},sp({cls:'txs muted',st:{display:'block',marginBottom:'3px'}},'Assigned to'),sp({st:{fontWeight:'600',fontSize:'13px'}},item.assigned_to||'Unassigned')));
   panel.appendChild(metaRow);
   // Before/After notes
-  if(item.before_notes||item.after_notes){
+  if(item.before_notes||item.after_notes||item.before_photo_urls||item.after_photo_urls){
     const baRow=dv({cls:'g2 mb3'});
-    if(item.before_notes)baRow.appendChild(dv({st:{padding:'10px',background:'#fef2f2',borderRadius:'8px'}},dv({cls:'txs fw6 mb1',st:{color:'#b91c1c'}},'Before'),dv({st:{fontSize:'12.5px',color:'#374151'}},item.before_notes)));
-    if(item.after_notes)baRow.appendChild(dv({st:{padding:'10px',background:'#f0fdf4',borderRadius:'8px'}},dv({cls:'txs fw6 mb1',st:{color:'#15803d'}},'After'),dv({st:{fontSize:'12.5px',color:'#374151'}},item.after_notes)));
+    function makeDetailPhotoSection(label,notes,photoUrlsJson,bgCol,textCol){
+      const sec=dv({st:{padding:'10px',background:bgCol,borderRadius:'8px'}});
+      sec.appendChild(dv({cls:'txs fw6 mb1',st:{color:textCol}},label));
+      if(notes)sec.appendChild(dv({st:{fontSize:'12.5px',color:'#374151',marginBottom:'8px'}},notes));
+      if(photoUrlsJson){
+        try{
+          const urls=JSON.parse(photoUrlsJson);
+          const photoRow=dv({cls:'row gap2',st:{flexWrap:'wrap'}});
+          urls.forEach(function(url){
+            const img=h('img',{src:url,st:{width:'90px',height:'70px',objectFit:'cover',borderRadius:'6px',cursor:'pointer',border:'1px solid rgba(0,0,0,0.1)'}});
+            img.onclick=function(){
+              const ov=dv({st:{position:'fixed',inset:'0',background:'rgba(0,0,0,0.9)',zIndex:'9999',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
+              ov.appendChild(h('img',{src:url,st:{maxWidth:'90vw',maxHeight:'90vh',objectFit:'contain',borderRadius:'8px'}}));
+              ov.onclick=function(){ov.remove();};document.body.appendChild(ov);
+            };
+            photoRow.appendChild(img);
+          });
+          sec.appendChild(photoRow);
+        }catch(e){}
+      }
+      return sec;
+    }
+    if(item.before_notes||item.before_photo_urls)baRow.appendChild(makeDetailPhotoSection('Before — Current situation',item.before_notes,item.before_photo_urls,'#fef2f2','#b91c1c'));
+    if(item.after_notes||item.after_photo_urls)baRow.appendChild(makeDetailPhotoSection('After — Standard to maintain',item.after_notes,item.after_photo_urls,'#f0fdf4','#15803d'));
     panel.appendChild(baRow);
   }
   // Actions for managers
@@ -1415,12 +1451,59 @@ function showLeanForm(wrap,members,item,prefilledBy){
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Title'),tiIn));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Description'),descIn));
   modal.appendChild(g);modal.appendChild(g2);
-  modal.appendChild(dv({cls:'g2 mb3'},frow('Before (current situation)',beforeIn),frow('After (desired outcome)',afterIn)));
+  // Before/After photo upload
+  const beforePhotoUrls=item&&item.before_photo_urls?JSON.parse(item.before_photo_urls||'[]'):[];
+  const afterPhotoUrls=item&&item.after_photo_urls?JSON.parse(item.after_photo_urls||'[]'):[];
+
+  function makePhotoSection(label,photoUrls,type,bgCol,borderCol){
+    const section=dv({st:{flex:'1',padding:'12px',background:bgCol,borderRadius:'8px',border:'1px solid '+borderCol}});
+    section.appendChild(dv({cls:'txs fw6 mb2',st:{color:type==='before'?'#b91c1c':'#15803d'}},label));
+    const notesEl=type==='before'?beforeIn:afterIn;
+    notesEl.style.cssText='margin-bottom:8px;background:rgba(255,255,255,0.7)';
+    section.appendChild(notesEl);
+    const previewRow=dv({cls:'row gap2 mb2',st:{flexWrap:'wrap'}});
+    photoUrls.forEach(function(url,ui){
+      const wrap=dv({st:{position:'relative'}});
+      const img=h('img',{src:url,st:{width:'70px',height:'70px',objectFit:'cover',borderRadius:'6px',border:'1px solid '+borderCol}});
+      const del=dv({st:{position:'absolute',top:'-5px',right:'-5px',width:'16px',height:'16px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'10px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
+      del.textContent='×';del.onclick=function(){photoUrls.splice(ui,1);wrap.remove();if(photoUrls.length<3)addBtn.style.display='';};
+      wrap.appendChild(img);wrap.appendChild(del);previewRow.appendChild(wrap);
+    });
+    section.appendChild(previewRow);
+    const fileIn=h('input',{type:'file',st:{display:'none'}});fileIn.accept='image/*';
+    const statusEl=dv({cls:'txs muted'});
+    const addBtn=btn('📷 Add Photo','btn-o btn-sm',function(){if(photoUrls.length>=3)return alert('Max 3 photos');fileIn.click();});
+    if(photoUrls.length>=3)addBtn.style.display='none';
+    fileIn.onchange=async function(){
+      const file=fileIn.files[0];if(!file)return;
+      addBtn.textContent='Uploading...';addBtn.disabled=true;statusEl.textContent='';
+      try{
+        const url=await CDB.uploadLeanPhoto(file,(item?item.id:'new')+'-'+Date.now(),type);
+        photoUrls.push(url);
+        const wrap2=dv({st:{position:'relative'}});
+        const img2=h('img',{src:url,st:{width:'70px',height:'70px',objectFit:'cover',borderRadius:'6px',border:'1px solid '+borderCol}});
+        const del2=dv({st:{position:'absolute',top:'-5px',right:'-5px',width:'16px',height:'16px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'10px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
+        const capturedIdx=photoUrls.length-1;
+        del2.textContent='×';del2.onclick=function(){photoUrls.splice(capturedIdx,1);wrap2.remove();if(photoUrls.length<3)addBtn.style.display='';};
+        wrap2.appendChild(img2);wrap2.appendChild(del2);previewRow.appendChild(wrap2);
+        if(photoUrls.length>=3)addBtn.style.display='none';
+      }catch(e){statusEl.textContent='Failed: '+e.message;statusEl.style.color='#dc2626';}
+      addBtn.textContent='📷 Add Photo';addBtn.disabled=false;fileIn.value='';
+    };
+    section.appendChild(dv({cls:'row gap2'},addBtn,statusEl));
+    section.appendChild(fileIn);
+    return section;
+  }
+
+  const baRow=dv({cls:'g2 mb3'});
+  baRow.appendChild(makePhotoSection('Before — Current situation',beforePhotoUrls,'before','#fef2f2','#fecaca'));
+  baRow.appendChild(makePhotoSection('After — Standard to maintain',afterPhotoUrls,'after','#f0fdf4','#bbf7d0'));
+  modal.appendChild(baRow);
   modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
     btn('Cancel','btn-o',function(){overlay.remove();}),
     btn(isNew?'Register':'Save','btn-p',async function(){
       if(!tiIn.value.trim())return alert('Please enter a title');
-      const data={title:tiIn.value.trim(),description:descIn.value.trim()||null,dept:deptSel.value,priority:priSel.value,status:statSel.value,assigned_to:aSel.value||null,before_notes:beforeIn.value.trim()||null,after_notes:afterIn.value.trim()||null,submitted_by:item?item.submitted_by:(prefilledBy||( currentUser?currentUser.name:'Unknown'))};
+      const data={title:tiIn.value.trim(),description:descIn.value.trim()||null,dept:deptSel.value,priority:priSel.value,status:statSel.value,assigned_to:aSel.value||null,before_notes:beforeIn.value.trim()||null,after_notes:afterIn.value.trim()||null,before_photo_urls:beforePhotoUrls.length>0?JSON.stringify(beforePhotoUrls):null,after_photo_urls:afterPhotoUrls.length>0?JSON.stringify(afterPhotoUrls):null,submitted_by:item?item.submitted_by:(prefilledBy||( currentUser?currentUser.name:'Unknown'))};
       if(isNew){
         const created=await CDB.createLeanItem(data);
         leanItems.unshift(created||Object.assign({id:Date.now(),created_at:new Date().toISOString()},data));
@@ -2047,6 +2130,27 @@ function renderAlertCard(c,a,onRefresh){
   ));
   // Content
   if(a.content)card.appendChild(dv({st:{fontSize:'13px',color:'#374151',lineHeight:'1.6',marginBottom:'8px'}},a.content));
+  // Photos
+  if(a.photo_urls){
+    try{
+      const urls=JSON.parse(a.photo_urls);
+      if(urls.length>0){
+        const photoRow=dv({cls:'row gap2 mb2',st:{flexWrap:'wrap'}});
+        urls.forEach(function(url){
+          const img=h('img',{src:url,st:{width:'120px',height:'90px',objectFit:'cover',borderRadius:'8px',border:'1px solid var(--border)',cursor:'pointer'}});
+          img.onclick=function(){
+            const overlay=dv({st:{position:'fixed',inset:'0',background:'rgba(0,0,0,0.85)',zIndex:'9999',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
+            const bigImg=h('img',{src:url,st:{maxWidth:'90vw',maxHeight:'90vh',objectFit:'contain',borderRadius:'8px'}});
+            overlay.appendChild(bigImg);
+            overlay.onclick=function(){overlay.remove();};
+            document.body.appendChild(overlay);
+          };
+          photoRow.appendChild(img);
+        });
+        card.appendChild(photoRow);
+      }
+    }catch(e){}
+  }
   // Footer
   const footer=dv({cls:'row gap3',st:{flexWrap:'wrap'}});
   footer.appendChild(sp({cls:'txs muted'},'Raised by '+a.raised_by));
@@ -2075,6 +2179,41 @@ function showSafetyAlertForm(c){
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Title'),tiIn));
   modal.appendChild(g);modal.appendChild(g2);
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Details'),contIn));
+  // Photo upload section
+  const photoUrls=[];
+  const photoPreviewRow=dv({cls:'row gap2 mb2',st:{flexWrap:'wrap'}});
+  const photoInput=h('input',{type:'file',st:{display:'none'}});
+  photoInput.accept='image/*';
+  photoInput.multiple=false;
+  const addPhotoBtn=btn('📷 Add Photo','btn-o btn-sm',function(){if(photoUrls.length>=3)return alert('Maximum 3 photos');photoInput.click();});
+  const photoUploadStatus=dv({cls:'txs muted'});
+  photoInput.onchange=async function(){
+    const file=photoInput.files[0];if(!file)return;
+    if(photoUrls.length>=3){alert('Maximum 3 photos');return;}
+    addPhotoBtn.textContent='Uploading...';addPhotoBtn.disabled=true;
+    photoUploadStatus.textContent='';
+    try{
+      const url=await CDB.uploadSafetyPhoto(file,'TEMP-'+Date.now());
+      photoUrls.push(url);
+      // Show preview
+      const preview=dv({st:{position:'relative',display:'inline-block'}});
+      const img=h('img',{src:url,st:{width:'80px',height:'80px',objectFit:'cover',borderRadius:'6px',border:'1px solid var(--border)'}});
+      const delBtn=dv({st:{position:'absolute',top:'-6px',right:'-6px',width:'18px',height:'18px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'11px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',lineHeight:'1'}});
+      delBtn.textContent='×';
+      delBtn.onclick=function(){photoUrls.splice(photoUrls.indexOf(url),1);preview.remove();if(photoUrls.length<3)addPhotoBtn.style.display='';};
+      preview.appendChild(img);preview.appendChild(delBtn);
+      photoPreviewRow.appendChild(preview);
+      if(photoUrls.length>=3)addPhotoBtn.style.display='none';
+    }catch(e){photoUploadStatus.textContent='Upload failed: '+e.message;photoUploadStatus.style.color='#dc2626';}
+    addPhotoBtn.textContent='📷 Add Photo';addPhotoBtn.disabled=false;
+    photoInput.value='';
+  };
+  modal.appendChild(dv({cls:'fg mb2'},
+    h('label',{st:{fontSize:'11px',color:'var(--muted)',fontWeight:'600',display:'block',marginBottom:'6px'}},'Photos (max 3)'),
+    dv({cls:'row gap2 mb2'},addPhotoBtn,photoUploadStatus),
+    photoPreviewRow
+  ));
+  modal.appendChild(photoInput);
   modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},pinChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Pin to dashboard')));
   modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
     btn('Cancel','btn-o',function(){overlay.remove();}),
@@ -2093,7 +2232,8 @@ function showSafetyAlertForm(c){
         content:contIn.value.trim(),
         is_pinned:pinChk.checked,
         is_archived:false,
-        raised_by:currentUser?currentUser.name:'Unknown'
+        raised_by:currentUser?currentUser.name:'Unknown',
+        photo_urls:photoUrls.length>0?JSON.stringify(photoUrls):null
       });
       overlay.remove();
       // Refresh the alerts list
