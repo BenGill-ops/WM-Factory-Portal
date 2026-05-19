@@ -147,6 +147,7 @@ textarea{resize:vertical}
 </div>
 <script>
 const SB='https://souwlbqovhhmjrfpxunv.supabase.co';
+const XERO_FN=SB+'/functions/v1';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SH=(x)=>Object.assign({'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation'},x||{});
 function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at};}
@@ -388,9 +389,44 @@ async function pgDash(c){
   else pinned.forEach(function(doc){sc.appendChild(dv({cls:'row gap2 mb2',st:{padding:'8px 10px',borderRadius:'8px',border:'1px solid '+(doc.priority==='Critical'?'#fecaca':'#fde68a'),background:doc.priority==='Critical'?'#fef2f2':'#fffbeb',cursor:'pointer'},onclick:function(){go('safety');}},dv({},sp({cls:'txs muted',st:{fontFamily:'monospace'}},doc.ref_no||''),dv({cls:'fw6 tsm trunc',st:{maxWidth:'180px'}},doc.title)),bdg(doc.priority,doc.priority==='Critical'?'red':'amber')));});
   r2.appendChild(sc);c.appendChild(r2);
   // Deliveries
-  const dc=dv({cls:'card'});const dcHdr=dv({cls:'card-hdr',st:{cursor:'pointer'}});dcHdr.onclick=function(){go('delivery');};dcHdr.appendChild(dv({},dv({cls:'card-title'},'Upcoming Deliveries'),dv({cls:'card-sub'},'Next 7 days')));dcHdr.appendChild(linkBtn('Full schedule',function(){go('delivery');}));dc.appendChild(dcHdr);
-  if(!upcoming.length)dc.appendChild(dv({cls:'empty'},'No deliveries in the next 7 days'));
-  else{const g=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'10px'}});upcoming.slice(0,6).forEach(function(d){const ov=new Date(d.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(d.status);const card=dv({st:{padding:'10px 12px',borderRadius:'8px',border:'1px solid '+(ov?'#fde68a':d.type==='Incoming'?'#bfdbfe':'#bbf7d0'),background:ov?'#fffbeb':d.type==='Incoming'?'#eff6ff':'#f0fdf4'}});card.appendChild(dv({cls:'row gap2 mb2',st:{flexWrap:'wrap'}},sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+d.jobNumber),bdg(d.type,d.type==='Incoming'?'blue':'green'),!d.isPaid&&bdg('NOT PAID','red')));if(d.customer)card.appendChild(dv({cls:'fw6 tsm mb2'},d.customer));if(d.address)card.appendChild(dv({cls:'txs muted mb2'},d.address));card.appendChild(dv({cls:'txs muted'},fmtD(d.scheduledDate)+(d.scheduledTime?' - '+d.scheduledTime:'')));g.appendChild(card);});dc.appendChild(g);}
+  const dc=dv({cls:'card'});const dcHdr=dv({cls:'card-hdr',st:{cursor:'pointer'}});dcHdr.onclick=function(){go('delivery');};dcHdr.appendChild(dv({},dv({cls:'card-title'},'Deliveries'),dv({cls:'card-sub'},'Today & next 7 days')));dcHdr.appendChild(linkBtn('Full schedule',function(){go('delivery');}));dc.appendChild(dcHdr);
+  const dashTodayStr=iso(tod());
+  const todayDels=upcoming.filter(function(d){return d.scheduledDate===dashTodayStr;});
+  const futureDels=upcoming.filter(function(d){return d.scheduledDate>dashTodayStr;});
+  function makeDelPill(d){
+    const ov=new Date(d.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(d.status);
+    const unpaid=!d.isPaid;
+    const bg=unpaid?'#fef2f2':d.type==='Incoming'?'#eff6ff':'#f0fdf4';
+    const border=unpaid?'#fecaca':d.type==='Incoming'?'#bfdbfe':'#bbf7d0';
+    const card=dv({st:{padding:'10px 12px',borderRadius:'8px',border:'1px solid '+border,background:bg,cursor:'pointer'},onclick:function(){go('delivery');}});
+    card.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap'}},
+      bdg(d.type,d.type==='Incoming'?'blue':'green'),
+      bdg(d.deliveryOrder||'','gray'),
+      unpaid&&bdg('NOT PAID','red'),
+      d.status==='Completed'&&bdg('Completed','green')
+    ));
+    if(d.customer)card.appendChild(dv({cls:'fw6 tsm mb1'},d.customer));
+    if(d.address)card.appendChild(dv({cls:'txs muted mb1'},d.address));
+    card.appendChild(dv({cls:'txs muted'},d.scheduledDate===dashTodayStr?'Today'+(d.scheduledTime?' · '+d.scheduledTime:''):fmtD(d.scheduledDate)+(d.scheduledTime?' · '+d.scheduledTime:'')));
+    return card;
+  }
+  if(!upcoming.length){dc.appendChild(dv({cls:'empty'},'No deliveries in the next 7 days'));}
+  else{
+    if(todayDels.length){
+      dc.appendChild(dv({st:{padding:'8px 14px 4px',fontWeight:'700',fontSize:'11px',color:'#374151',textTransform:'uppercase',letterSpacing:'0.05em',background:'#f0fdf4',borderBottom:'1px solid #bbf7d0'}},'Today · '+todayDels.length+' deliver'+(todayDels.length===1?'y':'ies')));
+      const tg=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px',padding:'10px 12px'}});
+      todayDels.forEach(function(d){tg.appendChild(makeDelPill(d));});
+      dc.appendChild(tg);
+    }
+    if(futureDels.length){
+      if(todayDels.length)dc.appendChild(dv({st:{height:'1px',background:'#f3f4f6',margin:'0 12px'}}));
+      dc.appendChild(dv({st:{padding:'8px 14px 4px',fontWeight:'700',fontSize:'11px',color:'#374151',textTransform:'uppercase',letterSpacing:'0.05em'}},'Upcoming · '+futureDels.length+' deliver'+(futureDels.length===1?'y':'ies')));
+      const fg=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px',padding:'10px 12px'}});
+      futureDels.slice(0,6).forEach(function(d){fg.appendChild(makeDelPill(d));});
+      if(futureDels.length>6)fg.appendChild(dv({st:{padding:'8px',textAlign:'center',color:'var(--muted)',fontSize:'12px',cursor:'pointer'},onclick:function(){go('delivery');}},'+'+(futureDels.length-6)+' more — click to view all'));
+      dc.appendChild(fg);
+    }
+  }
   c.appendChild(dc);
 }
 // ── MESSAGES ─────────────────────────────────────────────────────────
@@ -1742,6 +1778,50 @@ function openDelForm(d,dateStr,c){
   const isNew=!d;
   modal.appendChild(dv({cls:'modal-title'},isNew?'New Delivery':'Edit Delivery'));
   const jobIn=inp(d?d.jobNumber:'','Job number');
+  // Xero lookup row
+  if(isNew){
+    const xeroRow=dv({cls:'row gap2 mb3',st:{alignItems:'flex-end'}});
+    const xeroMsg=dv({cls:'txs',st:{marginTop:'4px',minHeight:'16px'}});
+    xeroRow.appendChild(dv({cls:'fg'},h('label',{st:{fontSize:'11px',color:'var(--muted)',fontWeight:'600',display:'block',marginBottom:'4px'}},'Job Number'),jobIn));
+    const searchBtn=btn('Search Xero','btn-o',async function(){
+      const jn=jobIn.value.trim();
+      if(!jn)return alert('Enter a job number first');
+      searchBtn.textContent='Searching...';searchBtn.disabled=true;
+      xeroMsg.textContent='';xeroMsg.style.color='var(--muted)';
+      try{
+        const res=await fetch(XERO_FN+'/xero-lookup?job='+encodeURIComponent(jn),{headers:{'apikey':ANON,'Authorization':'Bearer '+ANON}});
+        const data=await res.json();
+        if(data.error==='not_connected'){
+          xeroMsg.textContent='⚠ Xero not connected — go to Admin → Connect Xero';
+          xeroMsg.style.color='#dc2626';
+        } else if(data.error==='not_found'){
+          xeroMsg.textContent='No Xero invoice found for "'+jn+'"';
+          xeroMsg.style.color='#d97706';
+        } else if(data.error){
+          xeroMsg.textContent='Error: '+data.message;
+          xeroMsg.style.color='#dc2626';
+        } else {
+          // Auto-fill fields
+          if(data.customer)custIn.value=data.customer;
+          if(data.address)addrIn.value=data.address;
+          if(data.isPaid)paidChk.checked=true;
+          // Store xero data on form
+          modal._xeroData=data;
+          xeroMsg.textContent='✓ Found: '+data.customer+(data.total?' — $'+data.total.toFixed(2):'')+' ('+data.status+')';
+          xeroMsg.style.color='#15803d';
+        }
+      } catch(e){
+        xeroMsg.textContent='Could not reach Xero lookup service';
+        xeroMsg.style.color='#dc2626';
+      }
+      searchBtn.textContent='Search Xero';searchBtn.disabled=false;
+    });
+    xeroRow.appendChild(dv({st:{paddingBottom:'1px'}},searchBtn));
+    modal.appendChild(xeroRow);
+    modal.appendChild(xeroMsg);
+  } else {
+    modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Job Number'),jobIn));
+  }
   const custIn=inp(d?d.customer:'','Customer name');
   const addrIn=inp(d?d.address:'','Delivery address');
   const descIn=inp(d?d.description:'','Description');
@@ -2234,7 +2314,15 @@ function exportCSV(members,swps,lk){
 // ── ADMIN PANEL ──────────────────────────────────────────────────────
 async function pgAdmin(c){
   if(!isAdmin()){c.appendChild(dv({cls:'empty'},'Access denied.'));return;}
-  c.appendChild(dv({cls:'row jb mb4'},dv({},h('h1',{cls:'page-title'},'Admin Panel'),dv({cls:'page-sub'},'Manage team members, roles, passwords and SWP assignments'))));
+  c.appendChild(dv({cls:'row jb mb4'},
+    dv({},h('h1',{cls:'page-title'},'Admin Panel'),dv({cls:'page-sub'},'Manage team members, roles, passwords and SWP assignments')),
+    btn('🔗 Connect Xero','btn-o',async function(){
+      const res=await fetch(XERO_FN+'/xero-auth/connect',{headers:{'apikey':ANON,'Authorization':'Bearer '+ANON}});
+      const data=await res.json();
+      if(data.url)window.location.href=data.url;
+      else alert('Could not start Xero connection: '+(data.error||'unknown error'));
+    })
+  ));
   // Tab bar
   const tabBar=dv({cls:'tab-bar'});let adminTab='team';const tabContent=dv({id:'atc'});
   c.appendChild(tabBar);c.appendChild(tabContent);
