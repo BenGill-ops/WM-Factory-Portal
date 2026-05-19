@@ -164,7 +164,7 @@ const DB={
 const CDB={
   async getArchivedMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.false&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async reactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:true})});},
-  async createMember(data){const r=await fetch(SB+'/rest/v1/team_members',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async createMember(data){const r=await fetch(SB+'/rest/v1/team_members',{method:'POST',headers:SH({'Prefer':'return=representation'}),body:JSON.stringify(data)});const d=await r.json();if(!r.ok){console.error('createMember error:',r.status,JSON.stringify(d));throw new Error(JSON.stringify(d));}return Array.isArray(d)?d[0]:d;},
   async deactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:false})});},
   async getMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getLeanItems(){try{const r=await fetch(SB+'/rest/v1/lean_items?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
@@ -1811,7 +1811,17 @@ function openDelForm(d,dateStr,c){
           if(data.customer)custIn.value=data.customer;
           if(data.address)addrIn.value=data.address;
           if(data.description)notesIn.value=data.description;
-          if(data.isPaid)paidChk.checked=true;
+          if(data.isPaid){
+            paidChk.checked=true;
+            paidChk.disabled=true;
+            paidByIn.value='Xero (verified)';
+            paidByIn.disabled=true;
+            xeroPayBadge.style.display='flex';
+          } else {
+            paidChk.disabled=false;
+            paidByIn.disabled=false;
+            xeroPayBadge.style.display='none';
+          }
           // Store xero data on form
           modal._xeroData=data;
           xeroMsg.textContent='✓ Found: '+data.customer+(data.total?' — $'+data.total.toFixed(2):'')+' ('+data.status+')';
@@ -1852,7 +1862,9 @@ function openDelForm(d,dateStr,c){
   modal.appendChild(g2(frow('Delivery Order',orderSel),frow('Sequence',seqSel)));
   modal.appendChild(g2(frow('Bay Number',bayIn),frow('Description',descIn)));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Notes'),notesIn));
-  modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},paidChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Payment received'),dv({st:{flex:'1'}},paidByIn)));
+  const xeroPayBadge=dv({st:{display:'none',alignItems:'center',gap:'6px',padding:'3px 8px',borderRadius:'6px',background:'#f0fdf4',border:'1px solid #bbf7d0',fontSize:'11.5px',fontWeight:'600',color:'#15803d'}});
+  xeroPayBadge.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Confirmed paid in Xero';
+  modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center',flexWrap:'wrap'}},paidChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Payment received'),dv({st:{flex:'1'}},paidByIn),xeroPayBadge));
   const btns=dv({cls:'row gap2',st:{justifyContent:'flex-end'}});
   if(!isNew&&isManager()){
     btns.appendChild(btn('Delete','btn-d',async function(){
@@ -2439,20 +2451,21 @@ function showAddMemberForm(adminC){
     btn('Create Member','btn-p',async function(){
       if(!nameIn.value.trim())return alert('Name is required');
       if(!pwdIn.value.trim())return alert('Initial password is required');
-      await CDB.createMember({
-        name:nameIn.value.trim(),
-        role:roleIn.value.trim()||'Factory Employee',
-        role_level:roleSel.value,
-        department:deptSel.value,
-        password:pwdIn.value.trim(),
-        is_assessor:assChk.checked,
-        is_active:true,
-        exclude_from_compliance:false,
-        lean_target:0
-      });
-      overlay.remove();
-      adminC.innerHTML='';
-      renderAdminTeam(adminC);
+      try{
+        await CDB.createMember({
+          name:nameIn.value.trim(),
+          role:roleIn.value.trim()||'Factory Employee',
+          role_level:roleSel.value,
+          department:deptSel.value,
+          password_hash:pwdIn.value.trim(),
+          is_assessor:assChk.checked,
+          is_active:true,
+          exclude_from_compliance:false
+        });
+        overlay.remove();
+        adminC.innerHTML='';
+        renderAdminTeam(adminC);
+      }catch(e){alert('Error creating member: '+e.message);}
     })
   ));
   overlay.appendChild(modal);
