@@ -382,7 +382,7 @@ let safety=[{id:1,refNo:'SA-001',title:'Unguarded machinery - Fab Bay 3',categor
 let prod=[{id:1,name:'Operations',completed:42,target:50,status:'On Track'},{id:2,name:'Fabrication',completed:38,target:40,status:'Ahead'},{id:3,name:'Glass',completed:12,target:30,status:'Behind'},{id:4,name:'Aluminium',completed:25,target:25,status:'On Track'},{id:5,name:'Dispatch',completed:18,target:20,status:'On Track'},{id:6,name:'Installation',completed:0,target:10,status:'Stopped'}];
 let lean=[{id:1,title:'Reduce offcut waste',dept:'Aluminium',priority:'High',status:'In Progress',submittedBy:'Jake T.',description:'Optimise cut patterns.',createdAt:new Date(Date.now()-259200000).toISOString()},{id:2,title:'5S glass storage',dept:'Glass',priority:'Medium',status:'Submitted',submittedBy:'Sarah M.',description:'Implement 5S.',createdAt:new Date(Date.now()-432000000).toISOString()},{id:3,title:'Digital job cards',dept:'Operations',priority:'Critical',status:'Under Review',submittedBy:'Tom W.',description:'Replace paper job cards.',createdAt:new Date(Date.now()-604800000).toISOString()},{id:4,title:'Improved dispatch packing',dept:'Dispatch',priority:'Medium',status:'Completed',submittedBy:'Lisa K.',description:'Redesign packing station.',createdAt:new Date(Date.now()-1209600000).toISOString()}];
 let sops=[{id:1,title:'Glass cutting safety procedure',category:'Safety',dept:'Glass',version:'2.1',status:'Active',createdAt:new Date(Date.now()-2592000000).toISOString()},{id:2,title:'Forklift operation checklist',category:'Operations',dept:'Dispatch',version:'1.4',status:'Active',createdAt:new Date(Date.now()-5184000000).toISOString()},{id:3,title:'Chemical handling acid wash',category:'Safety',dept:'Fabrication',version:'3.0',status:'Active',createdAt:new Date(Date.now()-7776000000).toISOString()},{id:4,title:'New employee onboarding',category:'HR',dept:'Admin',version:'1.0',status:'Draft',createdAt:new Date(Date.now()-432000000).toISOString()}];
-const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'myday',label:'My Delivery Day',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>'},{id:'history',label:'Delivery History',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'}];
+const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'}];
 const ORDERS=['Delivery 1','Delivery 2','Delivery 3','Delivery 4'];
 const SEQS=['Deliver 1st','Deliver 2nd','Deliver 3rd','Deliver 4th'];
 const VEHICLES=['Truck','Truck and Trailer','Hilux','Other'];
@@ -473,7 +473,7 @@ function renderTop(){
 function go(p){page=p;selDay=null;renderNav();renderTop();renderPage();}
 function renderPage(){
   const c=document.getElementById('content');c.innerHTML='';
-  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,myday:pgMyDay,history:pgHistory,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
+  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
   if(pages[page])pages[page](c);else pgDash(c);
 }
 async function loadLoginDropdown(){
@@ -1691,7 +1691,7 @@ function showLeanForm(wrap,members,item,prefilledBy){
 // State persisted across re-renders of the history page
 let histFilters = { from:null, to:null, search:'', status:'all' };
 
-async function pgHistory(c){
+async function renderHistoryInto(c){
   // Default date range: last 30 days
   const today=tod();
   if(!histFilters.from){
@@ -1699,12 +1699,6 @@ async function pgHistory(c){
     histFilters.from=iso(start);
   }
   if(!histFilters.to){ histFilters.to=iso(today); }
-
-  // Header
-  c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'Delivery History'),dv({cls:'page-sub'},'Past deliveries with photos, signatures and activity logs')),
-    btn('\u21bb Refresh','btn-o btn-sm',function(){c.innerHTML='';pgHistory(c);})
-  ));
 
   // Filter row
   const filterCard=dv({cls:'hist-filters'});
@@ -1864,13 +1858,11 @@ function renderHistoryRow(card,delivery,photoCount){
   card.appendChild(expand);
 }
 
-async function pgMyDay(c){
-  // Header
+async function renderMyDayInto(c){
   const today=tod();
-  const todayLabel=today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
-  c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'My Day'),dv({cls:'page-sub'},todayLabel+' \u2014 deliveries scheduled for today')),
-    btn('\u21bb Refresh','btn-o btn-sm',function(){c.innerHTML='';pgMyDay(c);})
+  // Sub-header row with date pill and refresh
+  c.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},
+    sp({cls:'txs muted'},today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'}))
   ));
 
   // Fetch today's deliveries
@@ -1958,12 +1950,12 @@ function renderMyDayCard(delivery,pageC){
   // Action buttons: Take Photo + Get Sign-off (or both if already signed, photo still available)
   const actions=dv({cls:'myday-actions'});
   actions.appendChild(btn('\ud83d\udcf7 Take Photo','btn-o',function(){
-    capturePhoto(delivery,function(){pageC.innerHTML='';pgMyDay(pageC);});
+    capturePhoto(delivery,function(){pageC.innerHTML='';pgDel(pageC);});
   }));
   if(!delivery.signedOffAt){
     actions.appendChild(btn('\u270d\ufe0f Get Sign-off','btn-p',function(){
       openSignatureModal(delivery,async function(){
-        pageC.innerHTML='';await pgMyDay(pageC);
+        pageC.innerHTML='';await pgDel(pageC);
       });
     }));
   } else {
@@ -1980,7 +1972,7 @@ function renderMyDayCard(delivery,pageC){
       if(!confirm('Mark this delivery as Completed?'))return;
       try{
         await DB.patch(delivery.id,{status:'Completed'});
-        pageC.innerHTML='';await pgMyDay(pageC);
+        pageC.innerHTML='';await pgDel(pageC);
       }catch(err){alert('Update failed: '+err.message);}
     },{cls:'btn btn-p myday-complete'}));
   } else if(completed){
@@ -1988,7 +1980,7 @@ function renderMyDayCard(delivery,pageC){
       if(!confirm('Reopen this delivery (set status back to Scheduled)?'))return;
       try{
         await DB.patch(delivery.id,{status:'Scheduled'});
-        pageC.innerHTML='';await pgMyDay(pageC);
+        pageC.innerHTML='';await pgDel(pageC);
       }catch(err){alert('Update failed: '+err.message);}
     }));
   }
@@ -2067,36 +2059,46 @@ function showProdForm(c){
 
 // ── DELIVERIES ────────────────────────────────────────────────────────
 async function pgDel(c){
+  // Subtitle and whether the calendar nav (date arrows) is relevant for this view
+  const subTitles={month:'Schedule and manage deliveries',week:'Schedule and manage deliveries',list:'Schedule and manage deliveries',myday:"Today's deliveries — sign-off and photo evidence",history:'Past deliveries with photos, signatures and activity logs'};
+  const hasCalNav=(calView==='month'||calView==='week');
+
   // Header
   c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},'Schedule and manage deliveries')),
+    dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},subTitles[calView]||subTitles.month)),
     dv({cls:'row gap2'},
       isManager()&&btn('+ New Delivery','btn-p',function(){openDelForm(null,iso(calDate),c);}),
-      btn('◀','btn-o btn-sm',function(){
+      hasCalNav&&btn('◀','btn-o btn-sm',function(){
         if(calView==='week'){ calDate=addD(calDate,-7); }
         else { calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1); }
         c.innerHTML='';pgDel(c);
       }),
-      btn('Today','btn-o btn-sm',function(){ calDate=new Date(); c.innerHTML=''; pgDel(c); }),
-      dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'180px',textAlign:'center'}},
+      hasCalNav&&btn('Today','btn-o btn-sm',function(){ calDate=new Date(); c.innerHTML=''; pgDel(c); }),
+      hasCalNav&&dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'180px',textAlign:'center'}},
         calView==='week' ? weekRangeLabel(calDate) : calDate.toLocaleDateString('en-AU',{month:'long',year:'numeric'})
       ),
-      btn('▶','btn-o btn-sm',function(){
+      hasCalNav&&btn('▶','btn-o btn-sm',function(){
         if(calView==='week'){ calDate=addD(calDate,7); }
         else { calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1); }
         c.innerHTML='';pgDel(c);
       })
     )
   ));
-  // View toggle
+  // View toggle (5 buttons: Month / Week / List / My Day / History)
   const tvRow=dv({cls:'row gap2 mb3'});
-  const monthBtn=btn('Month','btn-'+(calView==='month'?'p':'o')+' btn-sm',function(){calView='month';c.innerHTML='';pgDel(c);});
-  const weekBtn=btn('Week','btn-'+(calView==='week'?'p':'o')+' btn-sm',function(){calView='week';c.innerHTML='';pgDel(c);});
-  const listBtn=btn('List','btn-'+(calView==='list'?'p':'o')+' btn-sm',function(){calView='list';c.innerHTML='';pgDel(c);});
-  tvRow.appendChild(monthBtn);tvRow.appendChild(weekBtn);tvRow.appendChild(listBtn);
+  function vbtn(label,id){ return btn(label,'btn-'+(calView===id?'p':'o')+' btn-sm',function(){calView=id;c.innerHTML='';pgDel(c);}); }
+  tvRow.appendChild(vbtn('Month','month'));
+  tvRow.appendChild(vbtn('Week','week'));
+  tvRow.appendChild(vbtn('List','list'));
+  tvRow.appendChild(vbtn('My Day','myday'));
+  tvRow.appendChild(vbtn('History','history'));
   c.appendChild(tvRow);
 
-  // Load deliveries
+  // Dispatch by view
+  if(calView==='myday'){ await renderMyDayInto(c); return; }
+  if(calView==='history'){ await renderHistoryInto(c); return; }
+
+  // Calendar/List views: load deliveries for the visible date range
   const y=calDate.getFullYear(),m=calDate.getMonth();
   let fromDate,toDate;
   if(calView==='week'){
