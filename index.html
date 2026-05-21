@@ -138,6 +138,34 @@ textarea{resize:vertical}
   .myday-customer{font-size:16px}
   .myday-actions{grid-template-columns:1fr}
 }
+/* === Delivery History page === */
+.hist-filters{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;align-items:end}
+.hist-filters .fg{margin:0}
+.hist-filters label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;display:block}
+.hist-filters input[type=date],.hist-filters input[type=search]{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%;font-family:inherit}
+.hist-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.hist-pills button{background:transparent;border:0;color:var(--muted);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.hist-pills button:hover{background:#fafafa;color:var(--text)}
+.hist-pills button.on{background:var(--green);color:#fff}
+.hist-pills .count{margin-left:4px;font-size:10.5px;opacity:0.7}
+.hist-pills button.on .count{opacity:0.95}
+.hist-date-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.hist-date-header{background:#fafaf7;padding:10px 14px;font-size:13px;font-weight:700;color:var(--text);border-bottom:1px solid var(--border)}
+.hist-date-count{font-weight:500;color:var(--muted);margin-left:8px}
+.hist-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.1s}
+.hist-row:last-child{border-bottom:0}
+.hist-row:hover{background:#fafaf9}
+.hist-row-main{flex:1;min-width:0}
+.hist-row-cust{font-weight:600;font-size:13.5px;color:var(--text);margin-bottom:2px}
+.hist-row-addr{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-row-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.hist-row-icons{display:flex;gap:4px;align-items:center}
+.hist-row-iconbox{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151}
+.hist-row-iconbox.signed{background:#f0fdf4;color:#15803d}
+.hist-row-iconbox.has-photos{background:#eff6ff;color:#1d4ed8}
+.hist-row-expand{padding:0 14px 14px 14px;background:#fafaf8;border-bottom:1px solid #f3f4f6;display:none}
+.hist-row.expanded + .hist-row-expand{display:block}
+@media (max-width:600px){.hist-filters{grid-template-columns:1fr}}
 .drag-handle{color:#d1d5db;cursor:grab;font-size:16px;flex-shrink:0;padding:2px 4px;margin-top:2px}
 .stat-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:14px 16px;text-align:center}
 .stat-val{font-size:26px;font-weight:700}
@@ -322,7 +350,18 @@ const CDB={
     return Array.isArray(d)?d[0]:d;
   },
   // --- Refetch a single delivery (used after sign-off to refresh local state) ---
-  async getDeliveryById(deliveryId){try{const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId+'&limit=1',{headers:SH()});const d=await r.json();return Array.isArray(d)&&d.length?r2d(d[0]):null;}catch(e){return null;}}
+  async getDeliveryById(deliveryId){try{const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId+'&limit=1',{headers:SH()});const d=await r.json();return Array.isArray(d)&&d.length?r2d(d[0]):null;}catch(e){return null;}},
+  // Bulk lookup: how many photos does each delivery have? Returns { deliveryId: count, ... }
+  async getPhotoCountsForDeliveries(deliveryIds){
+    if(!deliveryIds||!deliveryIds.length)return{};
+    try{
+      const r=await fetch(SB+'/rest/v1/delivery_photos?delivery_id=in.('+deliveryIds.join(',')+')&select=delivery_id',{headers:SH()});
+      const d=await r.json();
+      const counts={};
+      if(Array.isArray(d))d.forEach(function(p){counts[p.delivery_id]=(counts[p.delivery_id]||0)+1;});
+      return counts;
+    }catch(e){return{};}
+  }
 };
 function compStatus(so){
   if(!so||!so.self_signed_at)return 'unsigned';
@@ -343,7 +382,7 @@ let safety=[{id:1,refNo:'SA-001',title:'Unguarded machinery - Fab Bay 3',categor
 let prod=[{id:1,name:'Operations',completed:42,target:50,status:'On Track'},{id:2,name:'Fabrication',completed:38,target:40,status:'Ahead'},{id:3,name:'Glass',completed:12,target:30,status:'Behind'},{id:4,name:'Aluminium',completed:25,target:25,status:'On Track'},{id:5,name:'Dispatch',completed:18,target:20,status:'On Track'},{id:6,name:'Installation',completed:0,target:10,status:'Stopped'}];
 let lean=[{id:1,title:'Reduce offcut waste',dept:'Aluminium',priority:'High',status:'In Progress',submittedBy:'Jake T.',description:'Optimise cut patterns.',createdAt:new Date(Date.now()-259200000).toISOString()},{id:2,title:'5S glass storage',dept:'Glass',priority:'Medium',status:'Submitted',submittedBy:'Sarah M.',description:'Implement 5S.',createdAt:new Date(Date.now()-432000000).toISOString()},{id:3,title:'Digital job cards',dept:'Operations',priority:'Critical',status:'Under Review',submittedBy:'Tom W.',description:'Replace paper job cards.',createdAt:new Date(Date.now()-604800000).toISOString()},{id:4,title:'Improved dispatch packing',dept:'Dispatch',priority:'Medium',status:'Completed',submittedBy:'Lisa K.',description:'Redesign packing station.',createdAt:new Date(Date.now()-1209600000).toISOString()}];
 let sops=[{id:1,title:'Glass cutting safety procedure',category:'Safety',dept:'Glass',version:'2.1',status:'Active',createdAt:new Date(Date.now()-2592000000).toISOString()},{id:2,title:'Forklift operation checklist',category:'Operations',dept:'Dispatch',version:'1.4',status:'Active',createdAt:new Date(Date.now()-5184000000).toISOString()},{id:3,title:'Chemical handling acid wash',category:'Safety',dept:'Fabrication',version:'3.0',status:'Active',createdAt:new Date(Date.now()-7776000000).toISOString()},{id:4,title:'New employee onboarding',category:'HR',dept:'Admin',version:'1.0',status:'Draft',createdAt:new Date(Date.now()-432000000).toISOString()}];
-const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'myday',label:'My Delivery Day',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'}];
+const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'myday',label:'My Delivery Day',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>'},{id:'history',label:'Delivery History',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'}];
 const ORDERS=['Delivery 1','Delivery 2','Delivery 3','Delivery 4'];
 const SEQS=['Deliver 1st','Deliver 2nd','Deliver 3rd','Deliver 4th'];
 const VEHICLES=['Truck','Truck and Trailer','Hilux','Other'];
@@ -434,7 +473,7 @@ function renderTop(){
 function go(p){page=p;selDay=null;renderNav();renderTop();renderPage();}
 function renderPage(){
   const c=document.getElementById('content');c.innerHTML='';
-  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,myday:pgMyDay,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
+  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,myday:pgMyDay,history:pgHistory,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
   if(pages[page])pages[page](c);else pgDash(c);
 }
 async function loadLoginDropdown(){
@@ -1649,6 +1688,182 @@ function showLeanForm(wrap,members,item,prefilledBy){
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
 }
 // ── PRODUCTION STATUS ─────────────────────────────────────────────────
+// State persisted across re-renders of the history page
+let histFilters = { from:null, to:null, search:'', status:'all' };
+
+async function pgHistory(c){
+  // Default date range: last 30 days
+  const today=tod();
+  if(!histFilters.from){
+    const start=new Date(today);start.setDate(start.getDate()-30);
+    histFilters.from=iso(start);
+  }
+  if(!histFilters.to){ histFilters.to=iso(today); }
+
+  // Header
+  c.appendChild(dv({cls:'row jb mb3'},
+    dv({},h('h1',{cls:'page-title'},'Delivery History'),dv({cls:'page-sub'},'Past deliveries with photos, signatures and activity logs')),
+    btn('\u21bb Refresh','btn-o btn-sm',function(){c.innerHTML='';pgHistory(c);})
+  ));
+
+  // Filter row
+  const filterCard=dv({cls:'hist-filters'});
+  const fromIn=h('input',{type:'date',value:histFilters.from});
+  const toIn=h('input',{type:'date',value:histFilters.to});
+  const searchIn=h('input',{type:'search',placeholder:'Customer name, job #, address...',value:histFilters.search});
+  filterCard.appendChild(dv({cls:'fg'},h('label',{},'From'),fromIn));
+  filterCard.appendChild(dv({cls:'fg'},h('label',{},'To'),toIn));
+  filterCard.appendChild(dv({cls:'fg'},h('label',{},'Search'),searchIn));
+  c.appendChild(filterCard);
+
+  // Status pill row
+  const pillsRow=dv({cls:'hist-pills'});
+  c.appendChild(pillsRow);
+
+  // Results container
+  const resultsC=dv();
+  c.appendChild(resultsC);
+
+  async function refresh(){
+    histFilters.from=fromIn.value;
+    histFilters.to=toIn.value;
+    histFilters.search=searchIn.value.trim();
+    if(!histFilters.from||!histFilters.to){return;}
+    resultsC.innerHTML='<div class="empty">Loading...</div>';
+    let dels=[];
+    try{ dels=await DB.list(histFilters.from,histFilters.to); }catch(e){console.error(e);}
+    // Search filter
+    const q=histFilters.search.toLowerCase();
+    if(q){
+      dels=dels.filter(function(d){
+        return ((d.customer||'').toLowerCase().indexOf(q)>=0)
+          || ((d.jobNumber||'').toLowerCase().indexOf(q)>=0)
+          || ((d.address||'').toLowerCase().indexOf(q)>=0);
+      });
+    }
+    // Status counts (computed BEFORE pill filter so we can show totals on each pill)
+    const counts={
+      all:dels.length,
+      completed:dels.filter(function(d){return d.status==='Completed';}).length,
+      signed:dels.filter(function(d){return !!d.signedOffAt;}).length,
+      cancelled:dels.filter(function(d){return d.status==='Cancelled';}).length,
+      open:dels.filter(function(d){return d.status!=='Completed'&&d.status!=='Cancelled';}).length
+    };
+    // Build pills
+    pillsRow.innerHTML='';
+    [
+      ['all','All'],
+      ['completed','Completed'],
+      ['signed','Signed off'],
+      ['cancelled','Cancelled'],
+      ['open','Still open']
+    ].forEach(function(p){
+      const b=h('button',{cls:histFilters.status===p[0]?'on':''},
+        p[1],sp({cls:'count'},'('+counts[p[0]]+')'));
+      b.onclick=function(){ histFilters.status=p[0]; refresh(); };
+      pillsRow.appendChild(b);
+    });
+    // Apply pill filter
+    let filtered=dels;
+    if(histFilters.status==='completed')filtered=dels.filter(function(d){return d.status==='Completed';});
+    else if(histFilters.status==='signed')filtered=dels.filter(function(d){return !!d.signedOffAt;});
+    else if(histFilters.status==='cancelled')filtered=dels.filter(function(d){return d.status==='Cancelled';});
+    else if(histFilters.status==='open')filtered=dels.filter(function(d){return d.status!=='Completed'&&d.status!=='Cancelled';});
+
+    // Sort newest date first, then by delivery_order
+    filtered.sort(function(a,b){
+      if(a.scheduledDate!==b.scheduledDate)return b.scheduledDate.localeCompare(a.scheduledDate);
+      return (ORDERS.indexOf(a.deliveryOrder)+99)-(ORDERS.indexOf(b.deliveryOrder)+99);
+    });
+
+    // Bulk photo count
+    const ids=filtered.map(function(d){return d.id;});
+    let photoCounts={};
+    try{ photoCounts=await CDB.getPhotoCountsForDeliveries(ids); }catch(e){}
+
+    renderHistoryResults(resultsC,filtered,photoCounts);
+  }
+
+  fromIn.addEventListener('change',refresh);
+  toIn.addEventListener('change',refresh);
+  let searchDebounce;
+  searchIn.addEventListener('input',function(){
+    clearTimeout(searchDebounce);
+    searchDebounce=setTimeout(refresh,250);
+  });
+  await refresh();
+}
+
+function renderHistoryResults(container,deliveries,photoCounts){
+  container.innerHTML='';
+  if(!deliveries.length){
+    container.appendChild(dv({cls:'empty'},'No deliveries match the current filters.'));
+    return;
+  }
+  // Group by scheduled_date
+  const groups={};
+  deliveries.forEach(function(d){
+    const k=d.scheduledDate||'';
+    if(!groups[k])groups[k]=[];
+    groups[k].push(d);
+  });
+  const sortedDates=Object.keys(groups).sort().reverse();
+  sortedDates.forEach(function(dateStr){
+    const card=dv({cls:'hist-date-card'});
+    const dateLabel=fmtD(dateStr);
+    const dayDels=groups[dateStr];
+    card.appendChild(dv({cls:'hist-date-header'},
+      dateLabel,
+      sp({cls:'hist-date-count'},dayDels.length+' deliver'+(dayDels.length===1?'y':'ies'))
+    ));
+    dayDels.forEach(function(d){renderHistoryRow(card,d,photoCounts[d.id]||0);});
+    container.appendChild(card);
+  });
+}
+
+function renderHistoryRow(card,delivery,photoCount){
+  const row=dv({cls:'hist-row'});
+  const main=dv({cls:'hist-row-main'});
+  main.appendChild(dv({cls:'hist-row-cust'},(delivery.customer||'(no customer)')));
+  if(delivery.address)main.appendChild(dv({cls:'hist-row-addr'},delivery.address));
+  // Meta line: order, status, signed badge, photo count, time
+  const meta=dv({cls:'hist-row-meta'});
+  meta.appendChild(bdg(delivery.deliveryOrder||'Delivery 1','gray'));
+  meta.appendChild(bdg(delivery.status,delivery.status==='Completed'?'green':delivery.status==='Cancelled'?'red':'amber'));
+  if(delivery.jobNumber)meta.appendChild(sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+delivery.jobNumber));
+  if(delivery.scheduledTime)meta.appendChild(sp({cls:'txs muted'},delivery.scheduledTime));
+  main.appendChild(meta);
+  row.appendChild(main);
+
+  // Right-side icons
+  const icons=dv({cls:'hist-row-icons'});
+  if(delivery.signedOffAt){
+    icons.appendChild(sp({cls:'hist-row-iconbox signed',title:'Signed by '+(delivery.signedOffByName||'')},'\u2713 Signed'));
+  }
+  if(photoCount>0){
+    icons.appendChild(sp({cls:'hist-row-iconbox has-photos',title:photoCount+' photo(s)'},'\ud83d\udcf7 '+photoCount));
+  }
+  row.appendChild(icons);
+
+  // Expansion section below the row (the existing activity log)
+  const expand=dv({cls:'hist-row-expand'});
+  const logSection=dv({cls:'del-log',st:{padding:'10px 0 0 0',background:'transparent'}});
+  expand.appendChild(logSection);
+  let loaded=false;
+  row.onclick=async function(){
+    const opening=!row.classList.contains('expanded');
+    row.classList.toggle('expanded',opening);
+    expand.style.display=opening?'block':'none';
+    if(opening&&!loaded){
+      await refreshDelLog(logSection,delivery);
+      loaded=true;
+    }
+  };
+
+  card.appendChild(row);
+  card.appendChild(expand);
+}
+
 async function pgMyDay(c){
   // Header
   const today=tod();
