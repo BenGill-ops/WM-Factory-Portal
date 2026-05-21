@@ -73,6 +73,29 @@ textarea{resize:vertical}
 .del-row{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid #f3f4f6;transition:background 0.1s}
 .del-row:hover{background:#fafaf9}
 .del-row.drag-top{border-top:2px solid var(--green)}
+.del-log{padding:10px 14px 14px 50px;background:#fafaf8;border-bottom:1px solid #f3f4f6;font-size:12px}
+.del-log-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.del-log-entry{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f3f4f6}
+.del-log-entry:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.del-log-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:#e5e7eb;color:#374151}
+.del-log-icon.note{background:#fef3c7;color:#92400e}
+.del-log-icon.status{background:#dbeafe;color:#1e40af}
+.del-log-icon.photo{background:#dcfce7;color:#15803d}
+.del-log-icon.signoff{background:#f0fdf4;color:#166534}
+.del-log-icon.created{background:#f3e8ff;color:#6b21a8}
+.del-log-body{flex:1;min-width:0}
+.del-log-detail{color:var(--text);line-height:1.4;word-break:break-word}
+.del-log-meta{font-size:10.5px;color:var(--muted);margin-top:2px}
+.del-log-delete{background:none;border:0;color:var(--muted);font-size:14px;cursor:pointer;padding:0 4px;visibility:hidden}
+.del-log-entry:hover .del-log-delete{visibility:visible}
+.del-log-delete:hover{color:var(--danger)}
+.del-log-addnote{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb}
+.del-log-addnote textarea{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;min-height:32px;background:#fff}
+.del-log-empty{color:var(--muted);font-style:italic;padding:4px 0}
+.del-activity-toggle{background:none;border:1px solid var(--border);color:var(--muted);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.del-activity-toggle:hover{background:#fafafa;color:var(--text)}
+.del-activity-toggle .arrow{transition:transform 0.15s}
+.del-activity-toggle.open .arrow{transform:rotate(180deg)}
 .drag-handle{color:#d1d5db;cursor:grab;font-size:16px;flex-shrink:0;padding:2px 4px;margin-top:2px}
 .stat-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:14px 16px;text-align:center}
 .stat-val{font-size:26px;font-weight:700}
@@ -211,7 +234,11 @@ const CDB={
   async unassignSWP(memberId,swpId){await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId+'&swp_id=eq.'+swpId,{method:'DELETE',headers:SH({'Prefer':''})});},
   async getQuizQuestions(swpId){try{const r=await fetch(SB+'/rest/v1/quiz_questions?swp_id=eq.'+swpId+'&is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getQuizResponses(signoffId){try{const r=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async saveQuizResponses(signoffId,responses){await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await r.json();}
+  async saveQuizResponses(signoffId,responses){await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await r.json();},
+  // --- Delivery activity log ---
+  async getDeliveryLog(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_log?delivery_id=eq.'+deliveryId+'&order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async addDeliveryNote(deliveryId,note){const body={delivery_id:deliveryId,action:'note',detail:note,user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
+  async deleteDeliveryLog(logId){await fetch(SB+'/rest/v1/delivery_log?id=eq.'+logId,{method:'DELETE',headers:SH({'Prefer':''})});}
 };
 function compStatus(so){
   if(!so||!so.self_signed_at)return 'unsigned';
@@ -1830,6 +1857,24 @@ function renderDelRow(card,d,pageC){
   if(d.address)info.appendChild(dv({cls:'txs muted'},d.address));
   info.appendChild(dv({cls:'txs muted'},fmtD(d.scheduledDate)+(d.scheduledTime?' · '+d.scheduledTime:'')+' · '+d.vehicle+(d.crew&&d.crew!=='Driver only'?' · '+d.crew:'')));
   row.appendChild(info);
+
+  // Activity log section (collapsed by default, content lazy-loaded)
+  const logSection=dv({cls:'del-log',st:{display:'none'}});
+  const toggleBtn=h('button',{cls:'del-activity-toggle',title:'Show activity log and notes'},
+    'Activity ',sp({cls:'arrow'},'▾'));
+  let logLoaded=false;
+  toggleBtn.onclick=async function(e){
+    e.stopPropagation();
+    const opening=logSection.style.display==='none';
+    logSection.style.display=opening?'block':'none';
+    toggleBtn.classList.toggle('open',opening);
+    if(opening&&!logLoaded){
+      await refreshDelLog(logSection,d);
+      logLoaded=true;
+    }
+  };
+  row.appendChild(toggleBtn);
+
   if(isManager()){
     row.appendChild(btn('×','btn-d btn-sm',async function(e){
       e.stopPropagation();
@@ -1838,7 +1883,81 @@ function renderDelRow(card,d,pageC){
     }));
   }
   card.appendChild(row);
+  card.appendChild(logSection);
   return row;
+}
+
+// Build/refresh the contents of a single delivery's activity-log section
+async function refreshDelLog(container,delivery){
+  container.innerHTML='';
+  container.appendChild(dv({cls:'del-log-title'},'Activity log'));
+  const listC=dv();
+  container.appendChild(listC);
+  const loading=dv({cls:'del-log-empty'},'Loading log...');
+  listC.appendChild(loading);
+  let entries=[];
+  try{ entries=await CDB.getDeliveryLog(delivery.id); }catch(e){ console.error(e); }
+  listC.innerHTML='';
+  if(!entries.length){
+    listC.appendChild(dv({cls:'del-log-empty'},'No activity yet for this delivery.'));
+  } else {
+    entries.forEach(function(entry){listC.appendChild(renderLogEntry(entry,delivery,container));});
+  }
+  // Add-note row
+  const noteRow=dv({cls:'del-log-addnote'});
+  const ta=h('textarea',{rows:'1',placeholder:'Add a note... (e.g. "Customer rescheduled to 3pm")'});
+  const saveBtn=btn('Add note','btn-p btn-sm',async function(){
+    const v=ta.value.trim();
+    if(!v)return;
+    saveBtn.disabled=true;saveBtn.textContent='Saving...';
+    try{
+      await CDB.addDeliveryNote(delivery.id,v);
+      ta.value='';
+      await refreshDelLog(container,delivery);
+    }catch(err){
+      alert('Could not add note: '+err.message);
+    }
+    saveBtn.disabled=false;saveBtn.textContent='Add note';
+  });
+  noteRow.appendChild(ta);noteRow.appendChild(saveBtn);
+  container.appendChild(noteRow);
+}
+
+function renderLogEntry(entry,delivery,container){
+  const iconText={created:'+',status_changed:'⟳',note:'✎',photo_added:'📷',signed_off:'✓',driver_assigned:'🚚'}[entry.action]||'•';
+  const iconCls={created:'created',status_changed:'status',note:'note',photo_added:'photo',signed_off:'signoff',driver_assigned:'status'}[entry.action]||'';
+  const row=dv({cls:'del-log-entry'});
+  row.appendChild(dv({cls:'del-log-icon '+iconCls},iconText));
+  const body=dv({cls:'del-log-body'});
+  const label={created:'Delivery created',status_changed:'Status: '+(entry.detail||''),note:entry.detail||'(empty note)',photo_added:'Photo added'+(entry.detail?': '+entry.detail:''),signed_off:'Signed off'+(entry.detail?' by '+entry.detail:''),driver_assigned:'Driver assigned'+(entry.detail?': '+entry.detail:'')}[entry.action]||(entry.detail||entry.action);
+  body.appendChild(dv({cls:'del-log-detail'},label));
+  const when=new Date(entry.created_at);
+  const ago=relativeTime(when);
+  const byWho=entry.user_name?(' by '+entry.user_name):'';
+  body.appendChild(dv({cls:'del-log-meta'},ago+byWho+' · '+when.toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})));
+  row.appendChild(body);
+  // Only show delete on manually-added notes, and only to managers (or note author)
+  if(entry.action==='note'&&(isManager()||(currentUser&&entry.user_id===currentUser.id))){
+    const delBtn=h('button',{cls:'del-log-delete',title:'Delete this note'},'×');
+    delBtn.onclick=async function(){
+      if(!confirm('Delete this note?'))return;
+      try{ await CDB.deleteDeliveryLog(entry.id); await refreshDelLog(container,delivery); }
+      catch(err){ alert('Could not delete: '+err.message); }
+    };
+    row.appendChild(delBtn);
+  }
+  return row;
+}
+
+function relativeTime(date){
+  const diffSec=Math.floor((Date.now()-date.getTime())/1000);
+  if(diffSec<60)return 'just now';
+  const m=Math.floor(diffSec/60);if(m<60)return m+' min'+(m===1?'':'s')+' ago';
+  const h=Math.floor(m/60);if(h<24)return h+' hour'+(h===1?'':'s')+' ago';
+  const d=Math.floor(h/24);if(d<14)return d+' day'+(d===1?'':'s')+' ago';
+  const w=Math.floor(d/7);if(w<8)return w+' week'+(w===1?'':'s')+' ago';
+  const mo=Math.floor(d/30);if(mo<12)return mo+' month'+(mo===1?'':'s')+' ago';
+  return Math.floor(d/365)+' year+ ago';
 }
 
 function renderDelKey(c){
