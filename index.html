@@ -96,6 +96,20 @@ textarea{resize:vertical}
 .del-activity-toggle:hover{background:#fafafa;color:var(--text)}
 .del-activity-toggle .arrow{transition:transform 0.15s}
 .del-activity-toggle.open .arrow{transform:rotate(180deg)}
+.del-log-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.del-signoff-card{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin:6px 0 10px 0;display:flex;gap:12px;align-items:center}
+.del-signoff-info{flex:1;min-width:0}
+.del-signoff-title{font-weight:700;color:#15803d;font-size:13px}
+.del-signoff-when{font-size:11px;color:var(--muted);margin-top:2px}
+.del-signature-thumb{max-width:140px;max-height:64px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer}
+.del-photos-grid{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px 0}
+.del-photo-thumb{position:relative;width:72px;height:72px;border-radius:6px;overflow:hidden;background:#f3f4f6;border:1px solid var(--border)}
+.del-photo-thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer;display:block}
+.del-photo-delete{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.65);color:#fff;border:0;width:18px;height:18px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;visibility:hidden}
+.del-photo-thumb:hover .del-photo-delete{visibility:visible}
+.sig-canvas{border:2px solid var(--border);border-radius:8px;touch-action:none;cursor:crosshair;background:#fff;display:block;width:100%;max-width:460px;height:200px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px}
+.lightbox img{max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
 .drag-handle{color:#d1d5db;cursor:grab;font-size:16px;flex-shrink:0;padding:2px 4px;margin-top:2px}
 .stat-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:14px 16px;text-align:center}
 .stat-val{font-size:26px;font-weight:700}
@@ -174,7 +188,7 @@ const XERO_FN=SB+'/functions/v1';
 const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SH=(x)=>Object.assign({'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation'},x||{});
-function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at};}
+function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at,signedOffAt:r.signed_off_at||'',signedOffByName:r.signed_off_by_name||'',signatureUrl:r.signature_url||'',assignedDriverId:r.assigned_driver_id||null,assignedDriverName:r.assigned_driver_name||''};}
 function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null};}
 const DB={
   async list(from,to){try{const r=await fetch(SB+'/rest/v1/deliveries?scheduled_date=gte.'+from+'&scheduled_date=lte.'+to+'&order=scheduled_date,delivery_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d.map(r2d):[];}catch(e){return[];}},
@@ -238,7 +252,49 @@ const CDB={
   // --- Delivery activity log ---
   async getDeliveryLog(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_log?delivery_id=eq.'+deliveryId+'&order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async addDeliveryNote(deliveryId,note){const body={delivery_id:deliveryId,action:'note',detail:note,user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async deleteDeliveryLog(logId){await fetch(SB+'/rest/v1/delivery_log?id=eq.'+logId,{method:'DELETE',headers:SH({'Prefer':''})});}
+  async deleteDeliveryLog(logId){await fetch(SB+'/rest/v1/delivery_log?id=eq.'+logId,{method:'DELETE',headers:SH({'Prefer':''})});},
+  // --- Generic delivery log writer (used by photos and sign-off) ---
+  async addDeliveryLogEntry(deliveryId,action,detail,metadata){
+    const body={delivery_id:deliveryId,action:action,detail:detail||null,metadata:metadata||{},user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};
+    const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok)throw new Error(JSON.stringify(d));
+    return Array.isArray(d)?d[0]:d;
+  },
+  // --- Delivery photos ---
+  async getDeliveryPhotos(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_photos?delivery_id=eq.'+deliveryId+'&order=taken_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async uploadDeliveryPhoto(file,deliveryId,explicitExt){
+    let ext=explicitExt;
+    if(!ext){ ext=(file.name?file.name.split('.').pop():'')||'jpg'; }
+    const path='deliveries/'+deliveryId+'-'+Date.now()+'.'+ext;
+    const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
+    if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
+    return SB+'/storage/v1/object/public/delivery-photos/'+path;
+  },
+  async uploadDeliverySignature(blob,deliveryId){
+    const path='signatures/'+deliveryId+'-'+Date.now()+'.png';
+    const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'image/png','x-upsert':'true'},body:blob});
+    if(!r.ok){const e=await r.text();throw new Error('Signature upload failed: '+e);}
+    return SB+'/storage/v1/object/public/delivery-photos/'+path;
+  },
+  async addDeliveryPhotoRecord(deliveryId,photoUrl,caption){
+    const body={delivery_id:deliveryId,photo_url:photoUrl,caption:caption||null,taken_by_id:currentUser?currentUser.id:null,taken_by_name:currentUser?currentUser.name:''};
+    const r=await fetch(SB+'/rest/v1/delivery_photos',{method:'POST',headers:SH(),body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok)throw new Error(JSON.stringify(d));
+    return Array.isArray(d)?d[0]:d;
+  },
+  async deleteDeliveryPhoto(photoId){await fetch(SB+'/rest/v1/delivery_photos?id=eq.'+photoId,{method:'DELETE',headers:SH({'Prefer':''})});},
+  // --- Sign-off (updates the delivery row + writes a log entry) ---
+  async setDeliverySignoff(deliveryId,customerName,signatureUrl){
+    const now=new Date().toISOString();
+    const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId,{method:'PATCH',headers:SH(),body:JSON.stringify({signed_off_at:now,signed_off_by_name:customerName,signature_url:signatureUrl})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(JSON.stringify(d));
+    return Array.isArray(d)?d[0]:d;
+  },
+  // --- Refetch a single delivery (used after sign-off to refresh local state) ---
+  async getDeliveryById(deliveryId){try{const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId+'&limit=1',{headers:SH()});const d=await r.json();return Array.isArray(d)&&d.length?r2d(d[0]):null;}catch(e){return null;}}
 };
 function compStatus(so){
   if(!so||!so.self_signed_at)return 'unsigned';
@@ -1914,7 +1970,69 @@ function renderDelRow(card,d,pageC){
 // Build/refresh the contents of a single delivery's activity-log section
 async function refreshDelLog(container,delivery){
   container.innerHTML='';
-  container.appendChild(dv({cls:'del-log-title'},'Activity log'));
+
+  // Header row with title + action buttons (Take Photo, Get Sign-off)
+  const header=dv({cls:'row',st:{alignItems:'center',marginBottom:'8px'}});
+  header.appendChild(dv({cls:'del-log-title',st:{margin:'0'}},'Activity'));
+  const actions=dv({cls:'del-log-actions'});
+  actions.appendChild(btn('\ud83d\udcf7 Take Photo','btn-o btn-sm',function(){
+    capturePhoto(delivery,async function(){await refreshDelLog(container,delivery);});
+  }));
+  if(!delivery.signedOffAt){
+    actions.appendChild(btn('\u270d\ufe0f Get Sign-off','btn-p btn-sm',function(){
+      openSignatureModal(delivery,async function(){
+        const fresh=await CDB.getDeliveryById(delivery.id);
+        if(fresh)Object.assign(delivery,fresh);
+        await refreshDelLog(container,delivery);
+      });
+    }));
+  }
+  header.appendChild(actions);
+  container.appendChild(header);
+
+  // Sign-off summary card
+  if(delivery.signedOffAt){
+    const sigCard=dv({cls:'del-signoff-card'});
+    const info=dv({cls:'del-signoff-info'});
+    info.appendChild(dv({cls:'del-signoff-title'},'\u2713 Signed off by '+(delivery.signedOffByName||'(no name)')));
+    info.appendChild(dv({cls:'del-signoff-when'},new Date(delivery.signedOffAt).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})));
+    sigCard.appendChild(info);
+    if(delivery.signatureUrl){
+      const img=h('img',{src:delivery.signatureUrl,cls:'del-signature-thumb',title:'Click to view full size'});
+      img.onclick=function(){openLightbox(delivery.signatureUrl);};
+      sigCard.appendChild(img);
+    }
+    container.appendChild(sigCard);
+  }
+
+  // Photos grid
+  let photos=[];
+  try{ photos=await CDB.getDeliveryPhotos(delivery.id); }catch(e){console.error(e);}
+  if(photos.length){
+    container.appendChild(dv({cls:'del-log-title'},'Photos ('+photos.length+')'));
+    const grid=dv({cls:'del-photos-grid'});
+    photos.forEach(function(p){
+      const thumb=dv({cls:'del-photo-thumb'});
+      const img=h('img',{src:p.photo_url,title:'Click to view full size'});
+      img.onclick=function(){openLightbox(p.photo_url);};
+      thumb.appendChild(img);
+      if(isManager()){
+        const del=h('button',{cls:'del-photo-delete',title:'Delete photo'},'\u00d7');
+        del.onclick=async function(e){
+          e.stopPropagation();
+          if(!confirm('Delete this photo? This cannot be undone.'))return;
+          try{await CDB.deleteDeliveryPhoto(p.id);await refreshDelLog(container,delivery);}
+          catch(err){alert('Delete failed: '+err.message);}
+        };
+        thumb.appendChild(del);
+      }
+      grid.appendChild(thumb);
+    });
+    container.appendChild(grid);
+  }
+
+  // Activity timeline
+  container.appendChild(dv({cls:'del-log-title'},'Timeline'));
   const listC=dv();
   container.appendChild(listC);
   const loading=dv({cls:'del-log-empty'},'Loading log...');
@@ -1927,6 +2045,7 @@ async function refreshDelLog(container,delivery){
   } else {
     entries.forEach(function(entry){listC.appendChild(renderLogEntry(entry,delivery,container));});
   }
+
   // Add-note row
   const noteRow=dv({cls:'del-log-addnote'});
   const ta=h('textarea',{rows:'1',placeholder:'Add a note... (e.g. "Customer rescheduled to 3pm")'});
@@ -1945,6 +2064,91 @@ async function refreshDelLog(container,delivery){
   });
   noteRow.appendChild(ta);noteRow.appendChild(saveBtn);
   container.appendChild(noteRow);
+}
+
+// --- Photo capture: opens the native camera (mobile) or file picker (desktop) -
+function capturePhoto(delivery,refresh){
+  const inp=h('input',{type:'file',accept:'image/*',capture:'environment',st:{display:'none'}});
+  inp.onchange=async function(e){
+    const file=e.target.files&&e.target.files[0];
+    inp.remove();
+    if(!file)return;
+    try{
+      const url=await CDB.uploadDeliveryPhoto(file,delivery.id);
+      const rec=await CDB.addDeliveryPhotoRecord(delivery.id,url,null);
+      await CDB.addDeliveryLogEntry(delivery.id,'photo_added','Photo attached',{photo_id:rec.id,photo_url:url});
+      if(refresh)await refresh();
+    }catch(err){
+      alert('Photo upload failed: '+err.message);
+    }
+  };
+  document.body.appendChild(inp);
+  inp.click();
+}
+
+// --- Signature canvas modal --------------------------------------------------
+function openSignatureModal(delivery,onSaved){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'500px',maxWidth:'95vw'}});
+  modal.appendChild(dv({cls:'modal-title'},'Customer Sign-off'));
+  modal.appendChild(dv({cls:'txs muted mb3'},'Have the customer sign below to confirm they received this delivery.'));
+
+  const nameLabel=h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Customer name *');
+  const nameIn=h('input',{type:'text',placeholder:'Name of person receiving delivery',st:{width:'100%',padding:'8px 10px',border:'1px solid var(--border)',borderRadius:'6px',fontSize:'14px',fontFamily:'inherit',marginBottom:'12px'}});
+  modal.appendChild(nameLabel);
+  modal.appendChild(nameIn);
+
+  modal.appendChild(h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Signature *'));
+  const canvas=h('canvas',{cls:'sig-canvas',width:'460',height:'200'});
+  modal.appendChild(canvas);
+  modal.appendChild(dv({cls:'txs muted',st:{marginTop:'4px'}},'Sign with your finger on a phone/tablet, or click and drag with a mouse.'));
+
+  const ctx=canvas.getContext('2d');
+  ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f172a';
+  let drawing=false,hasInk=false;
+  function pos(e){
+    const r=canvas.getBoundingClientRect();
+    return{x:(e.clientX-r.left)*(canvas.width/r.width),y:(e.clientY-r.top)*(canvas.height/r.height)};
+  }
+  canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId);drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();});
+  canvas.addEventListener('pointermove',function(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasInk=true;e.preventDefault();});
+  canvas.addEventListener('pointerup',function(e){if(!drawing)return;drawing=false;try{canvas.releasePointerCapture(e.pointerId);}catch(_){}});
+  canvas.addEventListener('pointercancel',function(){drawing=false;});
+
+  const clearBtn=btn('Clear','btn-o btn-sm',function(){ctx.clearRect(0,0,canvas.width,canvas.height);hasInk=false;});
+  const cancelBtn=btn('Cancel','btn-o',function(){overlay.remove();});
+  const saveBtn=btn('Save sign-off','btn-p',async function(){
+    const name=nameIn.value.trim();
+    if(!name){alert('Please enter the customer name.');nameIn.focus();return;}
+    if(!hasInk){alert('Please draw the signature on the pad.');return;}
+    saveBtn.disabled=true;saveBtn.textContent='Saving...';
+    canvas.toBlob(async function(blob){
+      try{
+        const url=await CDB.uploadDeliverySignature(blob,delivery.id);
+        await CDB.setDeliverySignoff(delivery.id,name,url);
+        await CDB.addDeliveryLogEntry(delivery.id,'signed_off',name,{signature_url:url});
+        overlay.remove();
+        if(onSaved)await onSaved();
+      }catch(err){
+        alert('Sign-off failed: '+err.message);
+        saveBtn.disabled=false;saveBtn.textContent='Save sign-off';
+      }
+    },'image/png');
+  });
+
+  modal.appendChild(dv({cls:'row gap2 mt3'},clearBtn,dv({st:{flex:'1'}}),cancelBtn,saveBtn));
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  setTimeout(function(){nameIn.focus();},50);
+}
+
+// --- Lightbox for viewing photos / signature full-size ----------------------
+function openLightbox(url){
+  const overlay=dv({cls:'lightbox'});
+  overlay.onclick=function(){overlay.remove();};
+  const img=h('img',{src:url});
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
 }
 
 function renderLogEntry(entry,delivery,container){
