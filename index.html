@@ -2,15 +2,15 @@
 <!-- saved from url=(0051)https://wm-factory-portal.pages.dev/?xero=connected -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>Window Makers Factory Portal</title>
 <link href="./Window Makers Factory Portal_files/css2" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',system-ui,sans-serif;background:#f0f0f0;color:#1a1a1a;height:100vh;overflow:hidden}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f0f0f0;color:#1a1a1a;height:100vh;height:100dvh;overflow:hidden}
 input,select,textarea,button{font-family:inherit}
 :root{--green:#4a9a0f;--green-light:#6DC22A;--green-dark:#3a7a0a;--sidebar:#1c1c1c;--sidebar-text:rgba(255,255,255,0.78);--border:#e5e7eb;--card:#ffffff;--text:#1a1a1a;--muted:#6b7280;--danger:#dc2626}
-#app{display:flex;height:100vh;overflow:hidden}
+#app{display:flex;height:100vh;height:100dvh;overflow:hidden}
 #sidebar{width:200px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;overflow-y:auto}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #topbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
@@ -117,9 +117,14 @@ textarea{resize:vertical}
 .myday-card.overdue{border-color:#fca5a5;border-width:2px}
 .myday-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
 .myday-order{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;background:#f3f4f6;padding:4px 10px;border-radius:14px}
-.myday-customer{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3}
-.myday-address{font-size:14px;color:#4b5563;margin-bottom:10px;line-height:1.4}
-.myday-meta{font-size:12px;color:var(--muted);margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.myday-job{font-size:26px;font-weight:800;color:var(--green-dark);margin-bottom:2px;line-height:1.1;letter-spacing:-0.01em;font-family:'DM Sans',system-ui,sans-serif}
+.myday-customer{font-size:21px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.25}
+.myday-address{font-size:16px;color:#374151;margin-bottom:10px;line-height:1.4;font-weight:500}
+.myday-meta{font-size:12.5px;color:var(--muted);margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.myday-notes{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13.5px;color:#92400e;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.myday-notes-label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#a16207;margin-bottom:4px;display:block}
+.myday-openform{width:100%;background:#fff;border:1.5px dashed #d1d5db;color:#374151;padding:11px;font-size:13.5px;font-weight:600;border-radius:10px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:all 0.12s}
+.myday-openform:hover{border-color:var(--green);color:var(--green-dark);background:#f8fef4}
 .myday-signed-banner{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px}
 .myday-notpaid{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:700;margin-bottom:12px;text-align:center}
 .myday-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
@@ -210,17 +215,19 @@ body.nav-open #nav-backdrop{display:block}
   #nav-toggle{display:inline-flex}
   #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%);transition:transform 0.22s ease;box-shadow:6px 0 24px rgba(0,0,0,0.18);width:248px}
   body.nav-open #sidebar{transform:translateX(0)}
-  #content{padding:14px 14px}
+  #content{padding:14px 14px 80px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
   #topbar{padding:8px 14px}
-  .myday-list{max-width:100%}
-  .myday-customer{font-size:17px}
+  .myday-list{max-width:100%;padding-bottom:120px}
+  .myday-customer{font-size:19px}
+  .myday-job{font-size:24px}
+  .myday-address{font-size:15px}
   .myday-actions .btn{min-height:48px;font-size:14px}
   .myday-complete{min-height:52px;font-size:15px}
   .page-title{font-size:19px}
   .tab-bar{overflow-x:auto;white-space:nowrap}
 }
 @media (max-width:640px){
-  #content{padding:10px 10px}
+  #content{padding:10px 10px 80px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
   .myday-card{padding:14px}
   .myday-summary{padding:10px 12px;gap:10px}
   .myday-stat-val{font-size:19px}
@@ -1967,17 +1974,31 @@ function renderMyDayCard(delivery,pageC){
     bdg(delivery.status,completed?'green':delivery.status==='Cancelled'?'red':ov?'red':'gray')
   ));
 
-  // Customer
+  // Job number — big, bold, top
+  if(delivery.jobNumber)card.appendChild(dv({cls:'myday-job'},'#'+delivery.jobNumber));
+  // Customer — big, bold
   if(delivery.customer)card.appendChild(dv({cls:'myday-customer'},delivery.customer));
-  // Address
-  if(delivery.address)card.appendChild(dv({cls:'myday-address'},delivery.address));
-  // Meta line
+  // Address — prominent for the driver
+  if(delivery.address)card.appendChild(dv({cls:'myday-address'},'\ud83d\udccd '+delivery.address));
+  // Meta line (no longer includes job number — it's the big header)
   const meta=[];
-  if(delivery.jobNumber)meta.push('#'+delivery.jobNumber);
   if(delivery.vehicle)meta.push(delivery.vehicle);
   if(delivery.scheduledTime)meta.push(delivery.scheduledTime);
   if(delivery.crew&&delivery.crew!=='Driver only')meta.push(delivery.crew);
-  card.appendChild(dv({cls:'myday-meta'},meta.join(' \u00b7 ')));
+  if(meta.length)card.appendChild(dv({cls:'myday-meta'},meta.join(' \u00b7 ')));
+  // Notes preview — what the driver should be delivering
+  if(delivery.notes){
+    const notesBox=dv({cls:'myday-notes'});
+    notesBox.appendChild(dv({cls:'myday-notes-label'},'\ud83d\udccb What you\u2019re delivering'));
+    notesBox.appendChild(document.createTextNode(delivery.notes));
+    card.appendChild(notesBox);
+  }
+  // Open entry form — view all details / add notes
+  const openFormBtn=h('button',{cls:'myday-openform',onclick:function(){
+    openDelForm(delivery,null,document.getElementById('content'));
+  }});
+  openFormBtn.appendChild(document.createTextNode('\ud83d\udcdd Open entry form (view / edit notes)'));
+  card.appendChild(openFormBtn);
 
   // NOT PAID banner (prominent)
   if(!delivery.isPaid){
