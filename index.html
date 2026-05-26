@@ -390,7 +390,7 @@ const CREWS=['Driver only','Driver +1','Driver +2','Other'];
 const DEPTS=['Operations','Fabrication','Glass','Aluminium','Dispatch','Admin','Installation','Maintenance'];
 function ago(iso){const d=Date.now()-new Date(iso).getTime(),m=Math.floor(d/60000);if(m<60)return m+'m ago';const hh=Math.floor(m/60);if(hh<24)return hh+'h ago';return Math.floor(hh/24)+'d ago';}
 function fmtD(s){return new Date(s+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});}
-function iso(d){return d.toISOString().split('T')[0];}
+function iso(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+da;}
 function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 function sowMon(d){const r=new Date(d);r.setDate(r.getDate()-((r.getDay()+6)%7));return r;}
 function weekRangeLabel(d){
