@@ -202,6 +202,18 @@ textarea{resize:vertical}
 .tab-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:700}
 .comp-dot{width:28px;height:28px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;transition:transform 0.1s;cursor:pointer}
 .comp-dot:hover{transform:scale(1.2)}
+/* === Work-type tags (DEL / SCR / SW) === */
+.wt-tag{display:inline-block;font-size:9.5px;font-weight:800;padding:1.5px 5px;border-radius:3px;color:#fff;letter-spacing:0.04em;line-height:1.2;vertical-align:middle}
+.wt-DEL{background:#15803d}
+.wt-SCR{background:#1d4ed8}
+.wt-SW{background:#c2410c}
+.wt-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;align-items:center}
+.wt-filter-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-right:4px}
+.wt-filter-btn{background:transparent;border:1.5px solid #d1d5db;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;color:#9ca3af;transition:all 0.12s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.wt-filter-btn.on.wt-DEL-btn{background:#15803d;color:#fff;border-color:#15803d}
+.wt-filter-btn.on.wt-SCR-btn{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.wt-filter-btn.on.wt-SW-btn{background:#c2410c;color:#fff;border-color:#c2410c}
+.wt-filter-btn:hover{transform:translateY(-1px)}
 /* === Responsive sidebar drawer (tablet & phone) === */
 #nav-toggle{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0}
 #nav-toggle:hover{background:#fafafa}
@@ -283,8 +295,8 @@ const XERO_FN=SB+'/functions/v1';
 const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SH=(x)=>Object.assign({'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation'},x||{});
-function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at,signedOffAt:r.signed_off_at||'',signedOffByName:r.signed_off_by_name||'',signatureUrl:r.signature_url||'',assignedDriverId:r.assigned_driver_id||null,assignedDriverName:r.assigned_driver_name||''};}
-function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null};}
+function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at,signedOffAt:r.signed_off_at||'',signedOffByName:r.signed_off_by_name||'',signatureUrl:r.signature_url||'',assignedDriverId:r.assigned_driver_id||null,assignedDriverName:r.assigned_driver_name||'',workType:r.work_type||'DEL'};}
+function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null,work_type:d.workType||'DEL'};}
 const DB={
   async list(from,to){try{const r=await fetch(SB+'/rest/v1/deliveries?scheduled_date=gte.'+from+'&scheduled_date=lte.'+to+'&order=scheduled_date,delivery_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d.map(r2d):[];}catch(e){return[];}},
   async create(d){const r=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(d))});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
@@ -411,6 +423,26 @@ function compStatus(so){
 function statusColor(s){return{current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#e5e7eb'}[s]||'#e5e7eb';}
 function statusLabel(s){return{current:'Current','due-soon':'Due Soon',overdue:'Overdue','self-only':'Awaiting Assessor',unsigned:'Not Signed'}[s]||'Unknown';}
 let currentUser=null;
+let workFilter=(function(){try{const s=localStorage.getItem('wm_work_filter');if(s){const o=JSON.parse(s);return{DEL:o.DEL!==false,SCR:o.SCR!==false,SW:o.SW!==false};}}catch(_){}return{DEL:true,SCR:true,SW:true};})();
+function saveWorkFilter(){try{localStorage.setItem('wm_work_filter',JSON.stringify(workFilter));}catch(_){}}
+function filterByWorkType(arr){return arr.filter(function(d){return workFilter[d.workType||'DEL'];});}
+const WT_LABELS={DEL:'Deliveries',SCR:'Screens',SW:'Site work'};
+function wtTag(code){const c=code||'DEL';return '<span class="wt-tag wt-'+c+'">'+c+'</span>';}
+function buildWorkFilterPills(c){
+  const row=dv({cls:'wt-filter'});
+  row.appendChild(sp({cls:'wt-filter-lbl'},'Show:'));
+  [['DEL','Deliveries'],['SCR','Screens'],['SW','Site work']].forEach(function(p){
+    const code=p[0],label=p[1];
+    const b=h('button',{cls:'wt-filter-btn wt-'+code+'-btn'+(workFilter[code]?' on':''),onclick:function(){
+      workFilter[code]=!workFilter[code];
+      saveWorkFilter();
+      c.innerHTML='';pgDel(c);
+    }});
+    b.appendChild(document.createTextNode(code+' · '+label));
+    row.appendChild(b);
+  });
+  return row;
+}
 function isAdmin(){return currentUser&&currentUser.role_level==='admin';}
 function isManager(){return currentUser&&['admin','manager'].includes(currentUser.role_level);}
 function isSupervisor(){return currentUser&&['admin','manager','supervisor'].includes(currentUser.role_level);}
@@ -1922,6 +1954,7 @@ async function renderMyDayInto(c){
   c.appendChild(loading);
   let allToday=[];
   try{ allToday=await DB.list(todayStr,todayStr); }catch(e){console.error(e);}
+  allToday=filterByWorkType(allToday);
   loading.remove();
 
   // Driver-assignment filter: show if no driver assigned OR assigned to me OR I am a manager
@@ -1968,8 +2001,10 @@ function renderMyDayCard(delivery,pageC){
   const card=dv({cls:'myday-card'+(completed?' completed':'')+(ov?' overdue':'')});
   card.setAttribute('data-del-id',delivery.id);
 
-  // Top row: order pill + status badge
+  // Top row: work-type tag + order pill + status badge
+  const wtCode=delivery.workType||'DEL';
   card.appendChild(dv({cls:'myday-top'},
+    sp({cls:'wt-tag wt-'+wtCode,st:{fontSize:'11px',padding:'3px 7px'}},wtCode),
     sp({cls:'myday-order'},delivery.deliveryOrder||'Delivery 1'),
     bdg(delivery.status,completed?'green':delivery.status==='Cancelled'?'red':ov?'red':'gray')
   ));
@@ -2149,6 +2184,9 @@ async function pgDel(c){
     )
   ));
   // View toggle (5 buttons: Month / Week / List / My Day / History)
+  // Work-type filter pills (DEL / SCR / SW)
+  c.appendChild(buildWorkFilterPills(c));
+
   const tvRow=dv({cls:'row gap2 mb3'});
   function vbtn(label,id){ return btn(label,'btn-'+(calView===id?'p':'o')+' btn-sm',function(){calView=id;c.innerHTML='';pgDel(c);}); }
   tvRow.appendChild(vbtn('Month','month'));
@@ -2172,6 +2210,7 @@ async function pgDel(c){
   }
   const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
   deliveries=await DB.list(iso(fromDate),iso(toDate));
+  deliveries=filterByWorkType(deliveries);
   loading.remove();
 
   if(calView==='list'){
@@ -2331,7 +2370,12 @@ function makePill(d){
   const pillBg=d.status==='Cancelled'?'#6b7280':overdue&&d.isPaid?'#b45309':bg;
   const pill=dv({cls:'cal-pill',st:{background:pillBg,marginBottom:'2px',cursor:'pointer'}});
   if(!d.isPaid){pill.appendChild(dv({cls:'not-paid-tag'},'⚠ NOT PAID — DO NOT DELIVER'));}
-  pill.appendChild(dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.8'}},d.deliveryOrder));
+  // Work-type tag (DEL/SCR/SW)
+  const wtt=document.createElement('span');wtt.className='wt-tag wt-'+(d.workType||'DEL');wtt.textContent=(d.workType||'DEL');
+  const orderRow=dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.85',display:'flex',alignItems:'center',gap:'4px'}});
+  orderRow.appendChild(wtt);
+  orderRow.appendChild(document.createTextNode(d.deliveryOrder||''));
+  pill.appendChild(orderRow);
   if(d.customer)pill.appendChild(dv({st:{fontSize:'11px',lineHeight:'1.3'}},d.customer));
   if(d.scheduledTime)pill.appendChild(dv({st:{fontSize:'10px',opacity:'0.8'}},d.scheduledTime));
   pill.onclick=function(e){e.stopPropagation();openDelForm(d,null,document.getElementById('content'));};
@@ -2383,7 +2427,9 @@ function renderDelRow(card,d,pageC){
   row.appendChild(handle);
   // Info
   const info=dv({st:{flex:'1',cursor:'pointer'},onclick:function(){openDelForm(d,null,pageC);}});
-  info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap'}},
+  const wtBadge=sp({cls:'wt-tag wt-'+(d.workType||'DEL')},(d.workType||'DEL'));
+  info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap',alignItems:'center'}},
+    wtBadge,
     d.jobNumber&&sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+d.jobNumber),
     bdg(d.type,d.type==='Incoming'?'blue':'green'),
     bdg(d.deliveryOrder,'gray'),
@@ -2648,8 +2694,9 @@ function relativeTime(date){
 function renderDelKey(c){
   const key=dv({cls:'row gap3 mt3',st:{flexWrap:'wrap',padding:'10px 14px',background:'#fff',borderRadius:'10px',border:'1px solid var(--border)'}});
   const items=[
-    {col:'#166534',label:'Outgoing Delivery'},
-    {col:'#1d4ed8',label:'Incoming Delivery'},
+    {col:'#15803d',label:'DEL — Delivery',bold:true},
+    {col:'#1d4ed8',label:'SCR — Screens',bold:true},
+    {col:'#c2410c',label:'SW — Site work',bold:true},
     {col:'#dc2626',label:'NOT PAID — Do Not Deliver',bold:true},
     {col:'#f59e0b',label:'Overdue / Undelivered'},
     {col:'#6b7280',label:'Cancelled'},
@@ -2734,6 +2781,13 @@ function openDelForm(d,dateStr,c){
   const descIn=inp(d?d.description:'','Description');
   const dateIn=h('input',{type:'date',value:d?d.scheduledDate:dateStr||iso(calDate)});
   const timeIn=h('input',{type:'time',value:d?d.scheduledTime||'':''});
+  // Work type (DEL/SCR/SW) — built manually so labels are user-friendly while values are codes
+  const workSel=h('select',{});
+  [['DEL','📦 Delivery'],['SCR','🪟 Screens'],['SW','🔧 Site work']].forEach(function(p){
+    const opt=h('option',{value:p[0]},p[1]);
+    if(p[0]===(d?(d.workType||'DEL'):'DEL'))opt.selected=true;
+    workSel.appendChild(opt);
+  });
   const typeSel=sel(d?d.type:'Outgoing','Outgoing','Incoming');
   const statusSel=sel(d?d.status:'Scheduled','Scheduled','In Progress','Completed','Cancelled');
   const vehSel=sel(d?d.vehicle:'Truck',...VEHICLES);
@@ -2747,7 +2801,8 @@ function openDelForm(d,dateStr,c){
   modal.appendChild(g2(frow('Job #',jobIn),frow('Customer',custIn)));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Address'),addrIn));
   modal.appendChild(g2(frow('Date',dateIn),frow('Time (optional)',timeIn)));
-  modal.appendChild(g2(frow('Type',typeSel),frow('Status',statusSel)));
+  modal.appendChild(g2(frow('Work Type',workSel),frow('Type (Outgoing/Incoming)',typeSel)));
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Status'),statusSel));
   modal.appendChild(g2(frow('Vehicle',vehSel),frow('Crew',crewSel)));
   modal.appendChild(g2(frow('Delivery Order',orderSel),frow('Sequence',seqSel)));
   modal.appendChild(g2(frow('Bay Number',bayIn),frow('Description',descIn)));
@@ -2765,7 +2820,7 @@ function openDelForm(d,dateStr,c){
   btns.appendChild(btn('Cancel','btn-o',function(){overlay.remove();}));
   btns.appendChild(btn(isNew?'Create':'Save','btn-p',async function(){
     if(!dateIn.value)return alert('Date required');
-    const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
+    const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,workType:workSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
     if(isNew){await DB.create(data);}else{await DB.update(d.id,data);}
     overlay.remove();c.innerHTML='';pgDel(c);
   }));
