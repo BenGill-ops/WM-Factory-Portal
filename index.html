@@ -2821,8 +2821,18 @@ function openDelForm(d,dateStr,c){
   btns.appendChild(btn(isNew?'Create':'Save','btn-p',async function(){
     if(!dateIn.value)return alert('Date required');
     const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,workType:workSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
-    if(isNew){await DB.create(data);}else{await DB.update(d.id,data);}
-    overlay.remove();c.innerHTML='';pgDel(c);
+    try{
+      let res;
+      if(isNew){res=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(data))});}
+      else{res=await fetch(SB+'/rest/v1/deliveries?id=eq.'+d.id,{method:'PATCH',headers:SH(),body:JSON.stringify(d2r(data))});}
+      if(!res.ok){
+        const errText=await res.text();
+        let msg=errText;try{const ej=JSON.parse(errText);msg=ej.message||ej.hint||errText;}catch(_){}
+        if(/work_type/i.test(msg)){alert('Save failed: the work_type column is missing from your database.\n\nThe SQL migration (_migration-work-type.sql) has not been run yet.\n\n1. Open Supabase Dashboard → SQL Editor\n2. Paste the contents of _migration-work-type.sql\n3. Click Run\n4. Try saving again.');return;}
+        alert('Save failed ('+res.status+'):\n\n'+msg);return;
+      }
+      overlay.remove();c.innerHTML='';pgDel(c);
+    }catch(err){alert('Save failed: '+(err&&err.message||err));}
   }));
   modal.appendChild(btns);
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
