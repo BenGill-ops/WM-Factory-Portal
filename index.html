@@ -130,6 +130,14 @@ textarea{resize:vertical}
 .myday-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .myday-actions .btn{padding:14px 12px;font-size:14px;justify-content:center;font-weight:600}
 .myday-complete{width:100%;padding:14px;font-size:15px;justify-content:center;font-weight:700;margin-bottom:6px}
+.myday-tabs{display:flex;gap:6px;margin-bottom:14px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px;max-width:620px;margin-left:auto;margin-right:auto}
+.myday-tab{flex:1;background:transparent;border:0;padding:10px 8px;border-radius:8px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.12s}
+.myday-tab:hover{background:#fafaf8;color:var(--text)}
+.myday-tab.on.tab-DEL{background:#15803d;color:#fff}
+.myday-tab.on.tab-SCR{background:#1d4ed8;color:#fff}
+.myday-tab.on.tab-SW{background:#c2410c;color:#fff}
+.myday-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:10px;font-size:11px;font-weight:800;background:rgba(0,0,0,0.08);color:inherit}
+.myday-tab.on .myday-tab-count{background:rgba(255,255,255,0.25)}
 .myday-empty{text-align:center;padding:60px 20px;color:var(--muted)}
 .myday-empty-icon{font-size:42px;margin-bottom:8px;opacity:0.5}
 .myday-summary{display:flex;gap:14px;justify-content:center;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:14px;flex-wrap:wrap}
@@ -423,6 +431,8 @@ function compStatus(so){
 function statusColor(s){return{current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#e5e7eb'}[s]||'#e5e7eb';}
 function statusLabel(s){return{current:'Current','due-soon':'Due Soon',overdue:'Overdue','self-only':'Awaiting Assessor',unsigned:'Not Signed'}[s]||'Unknown';}
 let currentUser=null;
+let mydayTab=(function(){try{const v=localStorage.getItem('wm_myday_tab');if(['DEL','SCR','SW'].indexOf(v)>=0)return v;}catch(_){}return 'DEL';})();
+function saveMyDayTab(){try{localStorage.setItem('wm_myday_tab',mydayTab);}catch(_){}}
 let workFilter=(function(){try{const s=localStorage.getItem('wm_work_filter');if(s){const o=JSON.parse(s);return{DEL:o.DEL!==false,SCR:o.SCR!==false,SW:o.SW!==false};}}catch(_){}return{DEL:true,SCR:true,SW:true};})();
 function saveWorkFilter(){try{localStorage.setItem('wm_work_filter',JSON.stringify(workFilter));}catch(_){}}
 function filterByWorkType(arr){return arr.filter(function(d){return workFilter[d.workType||'DEL'];});}
@@ -1954,15 +1964,31 @@ async function renderMyDayInto(c){
   c.appendChild(loading);
   let allToday=[];
   try{ allToday=await DB.list(todayStr,todayStr); }catch(e){console.error(e);}
-  allToday=filterByWorkType(allToday);
   loading.remove();
 
-  // Driver-assignment filter: show if no driver assigned OR assigned to me OR I am a manager
-  const visible=allToday.filter(function(d){
-    if(isManager())return true;
-    if(!d.assignedDriverId)return true;
-    return currentUser&&d.assignedDriverId===currentUser.id;
-  }).filter(function(d){return d.status!=='Cancelled';});
+  // Counts per work type for the tab bar (apply driver/cancelled filter first)
+  const driverOK=function(d){if(isManager())return true;if(!d.assignedDriverId)return true;return currentUser&&d.assignedDriverId===currentUser.id;};
+  const todayVisible=allToday.filter(driverOK).filter(function(d){return d.status!=='Cancelled';});
+  const counts={DEL:0,SCR:0,SW:0};
+  todayVisible.forEach(function(d){const wt=d.workType||'DEL';if(counts[wt]!=null)counts[wt]++;});
+
+  // My Day tab bar — Deliveries / Screens / Site work
+  const tabBar=dv({cls:'myday-tabs'});
+  [['DEL','📦 Deliveries'],['SCR','🪟 Screens'],['SW','🔧 Site work']].forEach(function(p){
+    const code=p[0],lbl=p[1];
+    const tb=h('button',{cls:'myday-tab tab-'+code+(mydayTab===code?' on':''),onclick:function(){
+      if(mydayTab===code)return;
+      mydayTab=code;saveMyDayTab();
+      c.innerHTML='';pgDel(c);
+    }});
+    tb.appendChild(document.createTextNode(lbl));
+    tb.appendChild(sp({cls:'myday-tab-count'},''+counts[code]));
+    tabBar.appendChild(tb);
+  });
+  c.appendChild(tabBar);
+
+  // Filter to the active tab
+  const visible=todayVisible.filter(function(d){return (d.workType||'DEL')===mydayTab;});
 
   // Sort by Delivery Order (1, 2, 3...)
   visible.sort(function(a,b){
@@ -1981,10 +2007,11 @@ async function renderMyDayInto(c){
   c.appendChild(summary);
 
   if(!visible.length){
+    const labelMap={DEL:'deliveries',SCR:'screen jobs',SW:'site work'};
     c.appendChild(dv({cls:'myday-empty'},
       dv({cls:'myday-empty-icon'},'\u2728'),
-      dv({},'No deliveries scheduled for today.'),
-      dv({cls:'txs',st:{marginTop:'6px'}},'Take the rest of the day off \u2014 just kidding.')
+      dv({},'No '+labelMap[mydayTab]+' scheduled for today.'),
+      dv({cls:'txs',st:{marginTop:'6px'}},'Try the other tabs above \u2014 or take the rest of the day off (just kidding).')
     ));
     return;
   }
