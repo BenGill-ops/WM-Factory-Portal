@@ -2,15 +2,15 @@
 <!-- saved from url=(0051)https://wm-factory-portal.pages.dev/?xero=connected -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Window Makers Factory Portal</title>
 <link href="./Window Makers Factory Portal_files/css2" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',system-ui,sans-serif;background:#f0f0f0;color:#1a1a1a;height:100vh;height:100dvh;overflow:hidden}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f0f0f0;color:#1a1a1a;height:100vh;overflow:hidden}
 input,select,textarea,button{font-family:inherit}
 :root{--green:#4a9a0f;--green-light:#6DC22A;--green-dark:#3a7a0a;--sidebar:#1c1c1c;--sidebar-text:rgba(255,255,255,0.78);--border:#e5e7eb;--card:#ffffff;--text:#1a1a1a;--muted:#6b7280;--danger:#dc2626}
-#app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+#app{display:flex;height:100vh;overflow:hidden}
 #sidebar{width:200px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;overflow-y:auto}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #topbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
@@ -73,112 +73,6 @@ textarea{resize:vertical}
 .del-row{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid #f3f4f6;transition:background 0.1s}
 .del-row:hover{background:#fafaf9}
 .del-row.drag-top{border-top:2px solid var(--green)}
-.del-log{padding:10px 14px 14px 50px;background:#fafaf8;border-bottom:1px solid #f3f4f6;font-size:12px}
-.del-log-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
-.del-log-entry{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f3f4f6}
-.del-log-entry:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
-.del-log-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:#e5e7eb;color:#374151}
-.del-log-icon.note{background:#fef3c7;color:#92400e}
-.del-log-icon.status{background:#dbeafe;color:#1e40af}
-.del-log-icon.photo{background:#dcfce7;color:#15803d}
-.del-log-icon.signoff{background:#f0fdf4;color:#166534}
-.del-log-icon.created{background:#f3e8ff;color:#6b21a8}
-.del-log-body{flex:1;min-width:0}
-.del-log-detail{color:var(--text);line-height:1.4;word-break:break-word}
-.del-log-meta{font-size:10.5px;color:var(--muted);margin-top:2px}
-.del-log-delete{background:none;border:0;color:var(--muted);font-size:14px;cursor:pointer;padding:0 4px;visibility:hidden}
-.del-log-entry:hover .del-log-delete{visibility:visible}
-.del-log-delete:hover{color:var(--danger)}
-.del-log-addnote{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb}
-.del-log-addnote textarea{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;min-height:32px;background:#fff}
-.del-log-empty{color:var(--muted);font-style:italic;padding:4px 0}
-.del-activity-toggle{background:none;border:1px solid var(--border);color:var(--muted);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;display:inline-flex;align-items:center;gap:4px}
-.del-activity-toggle:hover{background:#fafafa;color:var(--text)}
-.del-activity-toggle .arrow{transition:transform 0.15s}
-.del-activity-toggle.open .arrow{transform:rotate(180deg)}
-.del-log-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
-.del-signoff-card{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin:6px 0 10px 0;display:flex;gap:12px;align-items:center}
-.del-signoff-info{flex:1;min-width:0}
-.del-signoff-title{font-weight:700;color:#15803d;font-size:13px}
-.del-signoff-when{font-size:11px;color:var(--muted);margin-top:2px}
-.del-signature-thumb{max-width:140px;max-height:64px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer}
-.del-photos-grid{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px 0}
-.del-photo-thumb{position:relative;width:72px;height:72px;border-radius:6px;overflow:hidden;background:#f3f4f6;border:1px solid var(--border)}
-.del-photo-thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer;display:block}
-.del-photo-delete{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.65);color:#fff;border:0;width:18px;height:18px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;visibility:hidden}
-.del-photo-thumb:hover .del-photo-delete{visibility:visible}
-.sig-canvas{border:2px solid var(--border);border-radius:8px;touch-action:none;cursor:crosshair;background:#fff;display:block;width:100%;max-width:460px;height:200px}
-.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px}
-.lightbox img{max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
-/* === My Day driver page === */
-.myday-list{display:flex;flex-direction:column;gap:14px;max-width:620px;margin:0 auto}
-.myday-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 2px 6px rgba(0,0,0,0.04);transition:all 0.15s}
-.myday-card.completed{opacity:0.55;border-color:var(--green)}
-.myday-card.overdue{border-color:#fca5a5;border-width:2px}
-.myday-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
-.myday-order{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;background:#f3f4f6;padding:4px 10px;border-radius:14px}
-.myday-job{font-size:26px;font-weight:800;color:var(--green-dark);margin-bottom:2px;line-height:1.1;letter-spacing:-0.01em;font-family:'DM Sans',system-ui,sans-serif}
-.myday-customer{font-size:21px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.25}
-.myday-address{font-size:16px;color:#374151;margin-bottom:10px;line-height:1.4;font-weight:500}
-.myday-meta{font-size:12.5px;color:var(--muted);margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.myday-notes{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13.5px;color:#92400e;line-height:1.5;white-space:pre-wrap;word-break:break-word}
-.myday-notes-label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#a16207;margin-bottom:4px;display:block}
-.myday-openform{width:100%;background:#fff;border:1.5px dashed #d1d5db;color:#374151;padding:11px;font-size:13.5px;font-weight:600;border-radius:10px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:all 0.12s}
-.myday-openform:hover{border-color:var(--green);color:var(--green-dark);background:#f8fef4}
-.myday-signed-banner{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px}
-.myday-notpaid{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:700;margin-bottom:12px;text-align:center}
-.myday-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.myday-actions .btn{padding:14px 12px;font-size:14px;justify-content:center;font-weight:600}
-.myday-complete{width:100%;padding:14px;font-size:15px;justify-content:center;font-weight:700;margin-bottom:6px}
-.myday-tabs{display:flex;gap:6px;margin-bottom:14px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px;max-width:620px;margin-left:auto;margin-right:auto}
-.myday-tab{flex:1;background:transparent;border:0;padding:10px 8px;border-radius:8px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.12s}
-.myday-tab:hover{background:#fafaf8;color:var(--text)}
-.myday-tab.on.tab-DEL{background:#15803d;color:#fff}
-.myday-tab.on.tab-SCR{background:#1d4ed8;color:#fff}
-.myday-tab.on.tab-SW{background:#c2410c;color:#fff}
-.myday-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:10px;font-size:11px;font-weight:800;background:rgba(0,0,0,0.08);color:inherit}
-.myday-tab.on .myday-tab-count{background:rgba(255,255,255,0.25)}
-.myday-empty{text-align:center;padding:60px 20px;color:var(--muted)}
-.myday-empty-icon{font-size:42px;margin-bottom:8px;opacity:0.5}
-.myday-summary{display:flex;gap:14px;justify-content:center;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:14px;flex-wrap:wrap}
-.myday-stat{text-align:center;min-width:80px}
-.myday-stat-val{font-size:22px;font-weight:700;color:var(--text)}
-.myday-stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px}
-.myday-activity-link{font-size:12px;color:var(--brand);background:none;border:0;cursor:pointer;font-weight:600;padding:6px 0;font-family:inherit}
-.myday-activity-link:hover{text-decoration:underline}
-@media (max-width:480px){
-  .myday-card{padding:14px;border-radius:12px}
-  .myday-customer{font-size:16px}
-  .myday-actions{grid-template-columns:1fr}
-}
-/* === Delivery History page === */
-.hist-filters{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;align-items:end}
-.hist-filters .fg{margin:0}
-.hist-filters label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;display:block}
-.hist-filters input[type=date],.hist-filters input[type=search]{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%;font-family:inherit}
-.hist-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px}
-.hist-pills button{background:transparent;border:0;color:var(--muted);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
-.hist-pills button:hover{background:#fafafa;color:var(--text)}
-.hist-pills button.on{background:var(--green);color:#fff}
-.hist-pills .count{margin-left:4px;font-size:10.5px;opacity:0.7}
-.hist-pills button.on .count{opacity:0.95}
-.hist-date-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
-.hist-date-header{background:#fafaf7;padding:10px 14px;font-size:13px;font-weight:700;color:var(--text);border-bottom:1px solid var(--border)}
-.hist-date-count{font-weight:500;color:var(--muted);margin-left:8px}
-.hist-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.1s}
-.hist-row:last-child{border-bottom:0}
-.hist-row:hover{background:#fafaf9}
-.hist-row-main{flex:1;min-width:0}
-.hist-row-cust{font-weight:600;font-size:13.5px;color:var(--text);margin-bottom:2px}
-.hist-row-addr{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hist-row-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px}
-.hist-row-icons{display:flex;gap:4px;align-items:center}
-.hist-row-iconbox{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151}
-.hist-row-iconbox.signed{background:#f0fdf4;color:#15803d}
-.hist-row-iconbox.has-photos{background:#eff6ff;color:#1d4ed8}
-.hist-row-expand{padding:0 14px 14px 14px;background:#fafaf8;border-bottom:1px solid #f3f4f6;display:none}
-.hist-row.expanded + .hist-row-expand{display:block}
-@media (max-width:600px){.hist-filters{grid-template-columns:1fr}}
 .drag-handle{color:#d1d5db;cursor:grab;font-size:16px;flex-shrink:0;padding:2px 4px;margin-top:2px}
 .stat-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:14px 16px;text-align:center}
 .stat-val{font-size:26px;font-weight:700}
@@ -210,50 +104,6 @@ textarea{resize:vertical}
 .tab-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:700}
 .comp-dot{width:28px;height:28px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;transition:transform 0.1s;cursor:pointer}
 .comp-dot:hover{transform:scale(1.2)}
-/* === Work-type tags (DEL / SCR / SW) === */
-.wt-tag{display:inline-block;font-size:9.5px;font-weight:800;padding:1.5px 5px;border-radius:3px;color:#fff;letter-spacing:0.04em;line-height:1.2;vertical-align:middle}
-.wt-DEL{background:#15803d}
-.wt-SCR{background:#1d4ed8}
-.wt-SW{background:#c2410c}
-.wt-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;align-items:center}
-.wt-filter-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-right:4px}
-.wt-filter-btn{background:transparent;border:1.5px solid #d1d5db;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;color:#9ca3af;transition:all 0.12s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
-.wt-filter-btn.on.wt-DEL-btn{background:#15803d;color:#fff;border-color:#15803d}
-.wt-filter-btn.on.wt-SCR-btn{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
-.wt-filter-btn.on.wt-SW-btn{background:#c2410c;color:#fff;border-color:#c2410c}
-.wt-filter-btn:hover{transform:translateY(-1px)}
-/* === Responsive sidebar drawer (tablet & phone) === */
-#nav-toggle{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0}
-#nav-toggle:hover{background:#fafafa}
-#nav-toggle span{display:block;width:18px;height:2px;background:#374151;position:relative;border-radius:2px}
-#nav-toggle span::before,#nav-toggle span::after{content:'';position:absolute;left:0;width:18px;height:2px;background:#374151;border-radius:2px}
-#nav-toggle span::before{top:-6px}
-#nav-toggle span::after{top:6px}
-#nav-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:95}
-body.nav-open #nav-backdrop{display:block}
-@media (max-width:1024px){
-  #nav-toggle{display:inline-flex}
-  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%);transition:transform 0.22s ease;box-shadow:6px 0 24px rgba(0,0,0,0.18);width:248px}
-  body.nav-open #sidebar{transform:translateX(0)}
-  #content{padding:14px 14px 80px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
-  #topbar{padding:8px 14px}
-  .myday-list{max-width:100%;padding-bottom:120px}
-  .myday-customer{font-size:19px}
-  .myday-job{font-size:24px}
-  .myday-address{font-size:15px}
-  .myday-actions .btn{min-height:48px;font-size:14px}
-  .myday-complete{min-height:52px;font-size:15px}
-  .page-title{font-size:19px}
-  .tab-bar{overflow-x:auto;white-space:nowrap}
-}
-@media (max-width:640px){
-  #content{padding:10px 10px 80px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
-  .myday-card{padding:14px}
-  .myday-summary{padding:10px 12px;gap:10px}
-  .myday-stat-val{font-size:19px}
-  .modal{padding:16px 18px;width:100%}
-  .sig-canvas{height:180px}
-}
 </style>
 </head>
 <body>
@@ -268,14 +118,12 @@ body.nav-open #nav-backdrop{display:block}
   </div>
   <div id="main">
     <div id="topbar">
-      <button id="nav-toggle" aria-label="Open menu" onclick="document.body.classList.toggle('nav-open')"><span></span></button>
       <span class="topbar-pg" id="topbar-title">Deliveries</span>
       <div style="margin-left:auto" id="topbar-right"><div class="manager-badge" style="background: rgb(249, 250, 251); border: 1px solid var(--border);"><div class="sb-av" style="width: 22px; height: 22px; font-size: 10px; background: rgb(124, 58, 237);">B</div><span style="font-size: 12px; font-weight: 600; color: rgb(124, 58, 237);">Ben Gill (Admin)</span></div></div>
     </div>
     <div id="content"><div class="row jb mb3"><div><h1 class="page-title">Deliveries</h1><div class="page-sub">Schedule and manage deliveries</div></div><div class="row gap2"><button class="btn btn-p">+ New Delivery</button><button class="btn btn-o btn-sm">◀</button><div style="font-weight: 600; font-size: 13px; padding: 6px 8px; min-width: 140px; text-align: center;">May 2026</div><button class="btn btn-o btn-sm">▶</button></div></div><div class="row gap2 mb3"><button class="btn btn-o btn-sm">Month</button><button class="btn btn-p btn-sm">Week</button><button class="btn btn-o btn-sm">List</button></div><div class="cal-hdr-row"><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Mon</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">18</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--green);">Tue</div><div style="font-size: 16px; font-weight: 700; color: var(--green);">19</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Wed</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">20</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Thu</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">21</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Fri</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">22</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Sat</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">23</div></div></div><div class="cal-grid"><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell c-today" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div><div class="cal-pill" draggable="true" style="background: rgb(220, 38, 38); margin-bottom: 2px; cursor: pointer;"><div class="not-paid-tag">⚠ NOT PAID — DO NOT DELIVER</div><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Kearny Build</div></div><div class="cal-pill" draggable="true" style="background: rgb(220, 38, 38); margin-bottom: 2px; cursor: pointer;"><div class="not-paid-tag">⚠ NOT PAID — DO NOT DELIVER</div><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Carter Developments</div></div><div class="cal-pill" draggable="true" style="background: rgb(180, 83, 9); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Ivo Constructions</div></div><div class="cal-pill" draggable="true" style="background: rgb(180, 83, 9); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Omaley Building</div></div><div class="cal-pill" draggable="true" style="background: rgb(22, 101, 52); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">alister </div><div style="font-size: 10px; opacity: 0.8;">09:09</div></div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div><div class="cal-pill" draggable="true" style="background: rgb(220, 38, 38); margin-bottom: 2px; cursor: pointer;"><div class="not-paid-tag">⚠ NOT PAID — DO NOT DELIVER</div><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 2</div><div style="font-size: 11px; line-height: 1.3;">Biton Building</div><div style="font-size: 10px; opacity: 0.8;">08:00</div></div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div><div class="cal-pill" draggable="true" style="background: rgb(22, 101, 52); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">David Dawe</div><div style="font-size: 10px; opacity: 0.8;">11:27</div></div><div class="cal-pill" draggable="true" style="background: rgb(22, 101, 52); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Omaley Building</div><div style="font-size: 10px; opacity: 0.8;">08:00</div></div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div></div><div class="row gap3 mt3" style="flex-wrap: wrap; padding: 10px 14px; background: rgb(255, 255, 255); border-radius: 10px; border: 1px solid var(--border);"><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(22, 101, 52); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Outgoing Delivery</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(29, 78, 216); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Incoming Delivery</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(220, 38, 38); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 700; color: rgb(220, 38, 38);">NOT PAID — Do Not Deliver</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(245, 158, 11); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Overdue / Undelivered</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(107, 114, 128); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Cancelled</span></div></div></div>
   </div>
 </div>
-<div id="nav-backdrop" onclick="document.body.classList.remove('nav-open')"></div>
 <div id="login-screen" style="position: fixed; inset: 0px; background: rgb(28, 28, 28); z-index: 200; display: none; align-items: center; justify-content: center;">
   <div style="width:380px;max-width:95vw">
     <div style="text-align:center;margin-bottom:28px">
@@ -302,9 +150,30 @@ const SB='https://souwlbqovhhmjrfpxunv.supabase.co';
 const XERO_FN=SB+'/functions/v1';
 const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
-const SH=(x)=>Object.assign({'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation'},x||{});
-function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at,signedOffAt:r.signed_off_at||'',signedOffByName:r.signed_off_by_name||'',signatureUrl:r.signature_url||'',assignedDriverId:r.assigned_driver_id||null,assignedDriverName:r.assigned_driver_name||'',workType:r.work_type||'DEL'};}
-function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null,work_type:d.workType||'DEL'};}
+// ── AUTH SESSION (Supabase Auth) ──────────────────────────────────────
+// Logged-out visitors browse read-only with the anon key; logged-in staff
+// get a real session token which RLS policies check server-side.
+let session=null;
+try{session=JSON.parse(localStorage.getItem('wm_session')||'null');}catch(e){session=null;}
+function authToken(){return (session&&session.access_token)?session.access_token:SK;}
+function saveSession(s){session=s;localStorage.setItem('wm_session',JSON.stringify(s));}
+function clearSession(){session=null;localStorage.removeItem('wm_session');localStorage.removeItem('wm_user');}
+async function refreshSession(){
+  if(!session||!session.refresh_token)return false;
+  try{
+    const r=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':ANON,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});
+    const d=await r.json();
+    if(!r.ok||!d.access_token){clearSession();currentUser=null;renderNav&&renderNav();renderTop&&renderTop();return false;}
+    saveSession({access_token:d.access_token,refresh_token:d.refresh_token,expires_at:Date.now()+((d.expires_in||3600)*1000)});
+    return true;
+  }catch(e){return false;}
+}
+// Keep the token fresh (checks every 5 min; refreshes when <15 min left)
+setInterval(function(){if(session&&session.expires_at-Date.now()<15*60*1000)refreshSession();},5*60*1000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&session&&session.expires_at-Date.now()<15*60*1000)refreshSession();});
+const SH=(x)=>Object.assign({'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'application/json','Prefer':'return=representation'},x||{});
+function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at};}
+function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null};}
 const DB={
   async list(from,to){try{const r=await fetch(SB+'/rest/v1/deliveries?scheduled_date=gte.'+from+'&scheduled_date=lte.'+to+'&order=scheduled_date,delivery_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d.map(r2d):[];}catch(e){return[];}},
   async create(d){const r=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(d))});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
@@ -322,7 +191,7 @@ const CDB={
   async uploadLeanPhoto(file,itemId,type){
     const ext=file.name.split('.').pop();
     const path='lean/'+itemId+'-'+type+'-'+Date.now()+'.'+ext;
-    const r=await fetch(SB+'/storage/v1/object/lean-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type,'x-upsert':'true'},body:file});
+    const r=await fetch(SB+'/storage/v1/object/lean-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type,'x-upsert':'true'},body:file});
     if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
     return SB+'/storage/v1/object/public/lean-photos/'+path;
   },
@@ -334,7 +203,7 @@ const CDB={
   async uploadSafetyPhoto(file,refNo){
     const ext=file.name.split('.').pop();
     const path='alerts/'+refNo+'-'+Date.now()+'.'+ext;
-    const r=await fetch(SB+'/storage/v1/object/safety-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type,'x-upsert':'true'},body:file});
+    const r=await fetch(SB+'/storage/v1/object/safety-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type,'x-upsert':'true'},body:file});
     if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
     return SB+'/storage/v1/object/public/safety-photos/'+path;
   },
@@ -363,64 +232,7 @@ const CDB={
   async unassignSWP(memberId,swpId){await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId+'&swp_id=eq.'+swpId,{method:'DELETE',headers:SH({'Prefer':''})});},
   async getQuizQuestions(swpId){try{const r=await fetch(SB+'/rest/v1/quiz_questions?swp_id=eq.'+swpId+'&is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getQuizResponses(signoffId){try{const r=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async saveQuizResponses(signoffId,responses){await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await r.json();},
-  // --- Delivery activity log ---
-  async getDeliveryLog(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_log?delivery_id=eq.'+deliveryId+'&order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async addDeliveryNote(deliveryId,note){const body={delivery_id:deliveryId,action:'note',detail:note,user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async deleteDeliveryLog(logId){await fetch(SB+'/rest/v1/delivery_log?id=eq.'+logId,{method:'DELETE',headers:SH({'Prefer':''})});},
-  // --- Generic delivery log writer (used by photos and sign-off) ---
-  async addDeliveryLogEntry(deliveryId,action,detail,metadata){
-    const body={delivery_id:deliveryId,action:action,detail:detail||null,metadata:metadata||{},user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};
-    const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});
-    const d=await r.json();
-    if(!r.ok)throw new Error(JSON.stringify(d));
-    return Array.isArray(d)?d[0]:d;
-  },
-  // --- Delivery photos ---
-  async getDeliveryPhotos(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_photos?delivery_id=eq.'+deliveryId+'&order=taken_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async uploadDeliveryPhoto(file,deliveryId,explicitExt){
-    let ext=explicitExt;
-    if(!ext){ ext=(file.name?file.name.split('.').pop():'')||'jpg'; }
-    const path='deliveries/'+deliveryId+'-'+Date.now()+'.'+ext;
-    const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
-    if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
-    return SB+'/storage/v1/object/public/delivery-photos/'+path;
-  },
-  async uploadDeliverySignature(blob,deliveryId){
-    const path='signatures/'+deliveryId+'-'+Date.now()+'.png';
-    const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'image/png','x-upsert':'true'},body:blob});
-    if(!r.ok){const e=await r.text();throw new Error('Signature upload failed: '+e);}
-    return SB+'/storage/v1/object/public/delivery-photos/'+path;
-  },
-  async addDeliveryPhotoRecord(deliveryId,photoUrl,caption){
-    const body={delivery_id:deliveryId,photo_url:photoUrl,caption:caption||null,taken_by_id:currentUser?currentUser.id:null,taken_by_name:currentUser?currentUser.name:''};
-    const r=await fetch(SB+'/rest/v1/delivery_photos',{method:'POST',headers:SH(),body:JSON.stringify(body)});
-    const d=await r.json();
-    if(!r.ok)throw new Error(JSON.stringify(d));
-    return Array.isArray(d)?d[0]:d;
-  },
-  async deleteDeliveryPhoto(photoId){await fetch(SB+'/rest/v1/delivery_photos?id=eq.'+photoId,{method:'DELETE',headers:SH({'Prefer':''})});},
-  // --- Sign-off (updates the delivery row + writes a log entry) ---
-  async setDeliverySignoff(deliveryId,customerName,signatureUrl){
-    const now=new Date().toISOString();
-    const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId,{method:'PATCH',headers:SH(),body:JSON.stringify({signed_off_at:now,signed_off_by_name:customerName,signature_url:signatureUrl})});
-    const d=await r.json();
-    if(!r.ok)throw new Error(JSON.stringify(d));
-    return Array.isArray(d)?d[0]:d;
-  },
-  // --- Refetch a single delivery (used after sign-off to refresh local state) ---
-  async getDeliveryById(deliveryId){try{const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId+'&limit=1',{headers:SH()});const d=await r.json();return Array.isArray(d)&&d.length?r2d(d[0]):null;}catch(e){return null;}},
-  // Bulk lookup: how many photos does each delivery have? Returns { deliveryId: count, ... }
-  async getPhotoCountsForDeliveries(deliveryIds){
-    if(!deliveryIds||!deliveryIds.length)return{};
-    try{
-      const r=await fetch(SB+'/rest/v1/delivery_photos?delivery_id=in.('+deliveryIds.join(',')+')&select=delivery_id',{headers:SH()});
-      const d=await r.json();
-      const counts={};
-      if(Array.isArray(d))d.forEach(function(p){counts[p.delivery_id]=(counts[p.delivery_id]||0)+1;});
-      return counts;
-    }catch(e){return{};}
-  }
+  async saveQuizResponses(signoffId,responses){await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await r.json();}
 };
 function compStatus(so){
   if(!so||!so.self_signed_at)return 'unsigned';
@@ -431,28 +243,6 @@ function compStatus(so){
 function statusColor(s){return{current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#e5e7eb'}[s]||'#e5e7eb';}
 function statusLabel(s){return{current:'Current','due-soon':'Due Soon',overdue:'Overdue','self-only':'Awaiting Assessor',unsigned:'Not Signed'}[s]||'Unknown';}
 let currentUser=null;
-let mydayTab=(function(){try{const v=localStorage.getItem('wm_myday_tab');if(['DEL','SCR','SW'].indexOf(v)>=0)return v;}catch(_){}return 'DEL';})();
-function saveMyDayTab(){try{localStorage.setItem('wm_myday_tab',mydayTab);}catch(_){}}
-let workFilter=(function(){try{const s=localStorage.getItem('wm_work_filter');if(s){const o=JSON.parse(s);return{DEL:o.DEL!==false,SCR:o.SCR!==false,SW:o.SW!==false};}}catch(_){}return{DEL:true,SCR:true,SW:true};})();
-function saveWorkFilter(){try{localStorage.setItem('wm_work_filter',JSON.stringify(workFilter));}catch(_){}}
-function filterByWorkType(arr){return arr.filter(function(d){return workFilter[d.workType||'DEL'];});}
-const WT_LABELS={DEL:'Deliveries',SCR:'Screens',SW:'Site work'};
-function wtTag(code){const c=code||'DEL';return '<span class="wt-tag wt-'+c+'">'+c+'</span>';}
-function buildWorkFilterPills(c){
-  const row=dv({cls:'wt-filter'});
-  row.appendChild(sp({cls:'wt-filter-lbl'},'Show:'));
-  [['DEL','Deliveries'],['SCR','Screens'],['SW','Site work']].forEach(function(p){
-    const code=p[0],label=p[1];
-    const b=h('button',{cls:'wt-filter-btn wt-'+code+'-btn'+(workFilter[code]?' on':''),onclick:function(){
-      workFilter[code]=!workFilter[code];
-      saveWorkFilter();
-      c.innerHTML='';pgDel(c);
-    }});
-    b.appendChild(document.createTextNode(code+' · '+label));
-    row.appendChild(b);
-  });
-  return row;
-}
 function isAdmin(){return currentUser&&currentUser.role_level==='admin';}
 function isManager(){return currentUser&&['admin','manager'].includes(currentUser.role_level);}
 function isSupervisor(){return currentUser&&['admin','manager','supervisor'].includes(currentUser.role_level);}
@@ -471,22 +261,10 @@ const CREWS=['Driver only','Driver +1','Driver +2','Other'];
 const DEPTS=['Operations','Fabrication','Glass','Aluminium','Dispatch','Admin','Installation','Maintenance'];
 function ago(iso){const d=Date.now()-new Date(iso).getTime(),m=Math.floor(d/60000);if(m<60)return m+'m ago';const hh=Math.floor(m/60);if(hh<24)return hh+'h ago';return Math.floor(hh/24)+'d ago';}
 function fmtD(s){return new Date(s+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});}
-function iso(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+da;}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 function sowMon(d){const r=new Date(d);r.setDate(r.getDate()-((r.getDay()+6)%7));return r;}
-function weekRangeLabel(d){
-  // "Mon 18 - Sat 23 May 2026" style. Handles month/year rollovers.
-  const start=sowMon(d), end=addD(start,5); // Mon-Sat (Sunday is skipped in delivery view)
-  const sameMonth=start.getMonth()===end.getMonth()&&start.getFullYear()===end.getFullYear();
-  const sameYear=start.getFullYear()===end.getFullYear();
-  if(sameMonth){
-    return start.getDate()+' - '+end.getDate()+' '+end.toLocaleDateString('en-AU',{month:'short',year:'numeric'});
-  }
-  if(sameYear){
-    return start.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' - '+end.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
-  }
-  return start.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})+' - '+end.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
-}
 function tod(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function h(tag,attrs){
   const e=document.createElement(tag);
@@ -551,7 +329,7 @@ function renderTop(){
       'Sign In'));
   }
 }
-function go(p){page=p;selDay=null;document.body.classList.remove('nav-open');renderNav();renderTop();renderPage();}
+function go(p){page=p;selDay=null;renderNav();renderTop();renderPage();}
 function renderPage(){
   const c=document.getElementById('content');c.innerHTML='';
   const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
@@ -577,12 +355,18 @@ async function doLogin(){
   if(!selEl.value)return alert('Please select your name');
   if(!pwd)return alert('Please enter your password');
   try{
-    const r=await fetch(SB+'/rest/v1/team_members?id=eq.'+selEl.value+'&is_active=eq.true',{headers:SH()});
+    const r=await fetch(SB+'/rest/v1/team_members?id=eq.'+selEl.value+'&is_active=eq.true',{headers:{'apikey':ANON,'Authorization':'Bearer '+ANON}});
     const members=await r.json();
-    if(!Array.isArray(members)||!members.length){errEl.style.display='block';return;}
+    if(!Array.isArray(members)||!members.length){errEl.textContent='User not found or inactive.';errEl.style.display='block';return;}
     const m=members[0];
-    if(m.password_hash!==pwd){errEl.style.display='block';document.getElementById('login-pwd').value='';return;}
+    if(!m.login_email){errEl.textContent='No login set up for you yet — please ask a manager.';errEl.style.display='block';return;}
+    // Real authentication via Supabase Auth (password is verified server-side)
+    const ar=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':ANON,'Content-Type':'application/json'},body:JSON.stringify({email:m.login_email,password:pwd})});
+    const ad=await ar.json();
+    if(!ar.ok||!ad.access_token){errEl.textContent='Incorrect password. Please try again.';errEl.style.display='block';document.getElementById('login-pwd').value='';return;}
+    saveSession({access_token:ad.access_token,refresh_token:ad.refresh_token,expires_at:Date.now()+((ad.expires_in||3600)*1000)});
     currentUser={id:m.id,name:m.name,role_level:m.role_level||'team_member',is_assessor:m.is_assessor||false,role:m.role};
+    localStorage.setItem('wm_user',JSON.stringify(currentUser));
     document.getElementById('login-screen').style.display='none';
     document.getElementById('login-pwd').value='';
     page='dashboard';
@@ -590,6 +374,8 @@ async function doLogin(){
   }catch(e){errEl.textContent='Login failed. Please try again.';errEl.style.display='block';}
 }
 function doLogout(){
+  if(session)fetch(SB+'/auth/v1/logout',{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+session.access_token}}).catch(function(){});
+  clearSession();
   currentUser=null;
   document.getElementById('login-screen').style.display='none';
   document.getElementById('login-name').value='';
@@ -857,7 +643,8 @@ function renderMemberSWPs(c,member,swps,lk,signoffs,members){
 }
 
 async function openSOMdl(member,swp,so,onSave){
-  if(currentUser&&currentUser.role_level==='team_member'&&currentUser.id!==member.id){alert('You can only sign off your own SWPs.');return;}
+  if(!currentUser){alert('Please sign in first to complete a sign-off.');return;}
+  if(currentUser.role_level==='team_member'&&currentUser.id!==member.id){alert('You can only sign off your own SWPs.');return;}
   document.getElementById('so-modal')&&document.getElementById('so-modal').remove();
 
   // Load competency items
@@ -1423,7 +1210,7 @@ function renderLeanRegister(wrap,members){
     const nameTd=document.createElement('td');nameTd.style.cssText='padding:8px 12px;font-weight:600';
     const ini=m.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
     const rc={admin:'#7c3aed',manager:'#15803d',supervisor:'#0369a1',team_member:'#374151'};
-    nameTd.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:'+(rc[m.role_level]||'#374151')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+ini+'</div>'+m.name+'</div>';
+    nameTd.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:'+(rc[m.role_level]||'#374151')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+esc(ini)+'</div>'+esc(m.name)+'</div>';
     row.appendChild(nameTd);
     // Counts
     [submitted,inProgress,completed,total].forEach(function(v,i){
@@ -1769,367 +1556,6 @@ function showLeanForm(wrap,members,item,prefilledBy){
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
 }
 // ── PRODUCTION STATUS ─────────────────────────────────────────────────
-// State persisted across re-renders of the history page
-let histFilters = { from:null, to:null, search:'', status:'all' };
-
-async function renderHistoryInto(c){
-  // Default date range: last 30 days
-  const today=tod();
-  if(!histFilters.from){
-    const start=new Date(today);start.setDate(start.getDate()-30);
-    histFilters.from=iso(start);
-  }
-  if(!histFilters.to){ histFilters.to=iso(today); }
-
-  // Filter row
-  const filterCard=dv({cls:'hist-filters'});
-  const fromIn=h('input',{type:'date',value:histFilters.from});
-  const toIn=h('input',{type:'date',value:histFilters.to});
-  const searchIn=h('input',{type:'search',placeholder:'Customer name, job #, address...',value:histFilters.search});
-  filterCard.appendChild(dv({cls:'fg'},h('label',{},'From'),fromIn));
-  filterCard.appendChild(dv({cls:'fg'},h('label',{},'To'),toIn));
-  filterCard.appendChild(dv({cls:'fg'},h('label',{},'Search'),searchIn));
-  c.appendChild(filterCard);
-
-  // Status pill row
-  const pillsRow=dv({cls:'hist-pills'});
-  c.appendChild(pillsRow);
-
-  // Results container
-  const resultsC=dv();
-  c.appendChild(resultsC);
-
-  async function refresh(){
-    histFilters.from=fromIn.value;
-    histFilters.to=toIn.value;
-    histFilters.search=searchIn.value.trim();
-    if(!histFilters.from||!histFilters.to){return;}
-    resultsC.innerHTML='<div class="empty">Loading...</div>';
-    let dels=[];
-    try{ dels=await DB.list(histFilters.from,histFilters.to); }catch(e){console.error(e);}
-    // Search filter
-    const q=histFilters.search.toLowerCase();
-    if(q){
-      dels=dels.filter(function(d){
-        return ((d.customer||'').toLowerCase().indexOf(q)>=0)
-          || ((d.jobNumber||'').toLowerCase().indexOf(q)>=0)
-          || ((d.address||'').toLowerCase().indexOf(q)>=0);
-      });
-    }
-    // Status counts (computed BEFORE pill filter so we can show totals on each pill)
-    const counts={
-      all:dels.length,
-      completed:dels.filter(function(d){return d.status==='Completed';}).length,
-      signed:dels.filter(function(d){return !!d.signedOffAt;}).length,
-      cancelled:dels.filter(function(d){return d.status==='Cancelled';}).length,
-      open:dels.filter(function(d){return d.status!=='Completed'&&d.status!=='Cancelled';}).length
-    };
-    // Build pills
-    pillsRow.innerHTML='';
-    [
-      ['all','All'],
-      ['completed','Completed'],
-      ['signed','Signed off'],
-      ['cancelled','Cancelled'],
-      ['open','Still open']
-    ].forEach(function(p){
-      const b=h('button',{cls:histFilters.status===p[0]?'on':''},
-        p[1],sp({cls:'count'},'('+counts[p[0]]+')'));
-      b.onclick=function(){ histFilters.status=p[0]; refresh(); };
-      pillsRow.appendChild(b);
-    });
-    // Apply pill filter
-    let filtered=dels;
-    if(histFilters.status==='completed')filtered=dels.filter(function(d){return d.status==='Completed';});
-    else if(histFilters.status==='signed')filtered=dels.filter(function(d){return !!d.signedOffAt;});
-    else if(histFilters.status==='cancelled')filtered=dels.filter(function(d){return d.status==='Cancelled';});
-    else if(histFilters.status==='open')filtered=dels.filter(function(d){return d.status!=='Completed'&&d.status!=='Cancelled';});
-
-    // Sort newest date first, then by delivery_order
-    filtered.sort(function(a,b){
-      if(a.scheduledDate!==b.scheduledDate)return b.scheduledDate.localeCompare(a.scheduledDate);
-      return (ORDERS.indexOf(a.deliveryOrder)+99)-(ORDERS.indexOf(b.deliveryOrder)+99);
-    });
-
-    // Bulk photo count
-    const ids=filtered.map(function(d){return d.id;});
-    let photoCounts={};
-    try{ photoCounts=await CDB.getPhotoCountsForDeliveries(ids); }catch(e){}
-
-    renderHistoryResults(resultsC,filtered,photoCounts);
-  }
-
-  fromIn.addEventListener('change',refresh);
-  toIn.addEventListener('change',refresh);
-  let searchDebounce;
-  searchIn.addEventListener('input',function(){
-    clearTimeout(searchDebounce);
-    searchDebounce=setTimeout(refresh,250);
-  });
-  await refresh();
-}
-
-function renderHistoryResults(container,deliveries,photoCounts){
-  container.innerHTML='';
-  if(!deliveries.length){
-    container.appendChild(dv({cls:'empty'},'No deliveries match the current filters.'));
-    return;
-  }
-  // Group by scheduled_date
-  const groups={};
-  deliveries.forEach(function(d){
-    const k=d.scheduledDate||'';
-    if(!groups[k])groups[k]=[];
-    groups[k].push(d);
-  });
-  const sortedDates=Object.keys(groups).sort().reverse();
-  sortedDates.forEach(function(dateStr){
-    const card=dv({cls:'hist-date-card'});
-    const dateLabel=fmtD(dateStr);
-    const dayDels=groups[dateStr];
-    card.appendChild(dv({cls:'hist-date-header'},
-      dateLabel,
-      sp({cls:'hist-date-count'},dayDels.length+' deliver'+(dayDels.length===1?'y':'ies'))
-    ));
-    dayDels.forEach(function(d){renderHistoryRow(card,d,photoCounts[d.id]||0);});
-    container.appendChild(card);
-  });
-}
-
-function renderHistoryRow(card,delivery,photoCount){
-  const row=dv({cls:'hist-row'});
-  const main=dv({cls:'hist-row-main'});
-  main.appendChild(dv({cls:'hist-row-cust'},(delivery.customer||'(no customer)')));
-  if(delivery.address)main.appendChild(dv({cls:'hist-row-addr'},delivery.address));
-  // Meta line: order, status, signed badge, photo count, time
-  const meta=dv({cls:'hist-row-meta'});
-  meta.appendChild(bdg(delivery.deliveryOrder||'Delivery 1','gray'));
-  meta.appendChild(bdg(delivery.status,delivery.status==='Completed'?'green':delivery.status==='Cancelled'?'red':'amber'));
-  if(delivery.jobNumber)meta.appendChild(sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+delivery.jobNumber));
-  if(delivery.scheduledTime)meta.appendChild(sp({cls:'txs muted'},delivery.scheduledTime));
-  main.appendChild(meta);
-  row.appendChild(main);
-
-  // Right-side icons
-  const icons=dv({cls:'hist-row-icons'});
-  if(delivery.signedOffAt){
-    icons.appendChild(sp({cls:'hist-row-iconbox signed',title:'Signed by '+(delivery.signedOffByName||'')},'\u2713 Signed'));
-  }
-  if(photoCount>0){
-    icons.appendChild(sp({cls:'hist-row-iconbox has-photos',title:photoCount+' photo(s)'},'\ud83d\udcf7 '+photoCount));
-  }
-  row.appendChild(icons);
-
-  // Expansion section below the row (the existing activity log)
-  const expand=dv({cls:'hist-row-expand'});
-  const logSection=dv({cls:'del-log',st:{padding:'10px 0 0 0',background:'transparent'}});
-  expand.appendChild(logSection);
-  let loaded=false;
-  row.onclick=async function(){
-    const opening=!row.classList.contains('expanded');
-    row.classList.toggle('expanded',opening);
-    expand.style.display=opening?'block':'none';
-    if(opening&&!loaded){
-      await refreshDelLog(logSection,delivery);
-      loaded=true;
-    }
-  };
-
-  card.appendChild(row);
-  card.appendChild(expand);
-}
-
-async function refreshMyDayKeepingCard(c,delId){
-  const sc=document.getElementById('content');
-  const y=sc?sc.scrollTop:0;
-  c.innerHTML='';
-  await pgDel(c);
-  if(sc)sc.scrollTop=y;
-  if(delId){
-    const cardEl=c.querySelector('[data-del-id="'+delId+'"]');
-    if(cardEl)cardEl.scrollIntoView({block:'nearest'});
-  }
-}
-
-async function renderMyDayInto(c){
-  const today=tod();
-  // Sub-header row with date pill and refresh
-  c.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},
-    sp({cls:'txs muted'},today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'}))
-  ));
-
-  // Fetch today's deliveries
-  const todayStr=iso(today);
-  const loading=dv({cls:'myday-empty'},'Loading today\u2019s deliveries...');
-  c.appendChild(loading);
-  let allToday=[];
-  try{ allToday=await DB.list(todayStr,todayStr); }catch(e){console.error(e);}
-  loading.remove();
-
-  // Counts per work type for the tab bar (apply driver/cancelled filter first)
-  const driverOK=function(d){if(isManager())return true;if(!d.assignedDriverId)return true;return currentUser&&d.assignedDriverId===currentUser.id;};
-  const todayVisible=allToday.filter(driverOK).filter(function(d){return d.status!=='Cancelled';});
-  const counts={DEL:0,SCR:0,SW:0};
-  todayVisible.forEach(function(d){const wt=d.workType||'DEL';if(counts[wt]!=null)counts[wt]++;});
-
-  // My Day tab bar — Deliveries / Screens / Site work
-  const tabBar=dv({cls:'myday-tabs'});
-  [['DEL','📦 Deliveries'],['SCR','🪟 Screens'],['SW','🔧 Site work']].forEach(function(p){
-    const code=p[0],lbl=p[1];
-    const tb=h('button',{cls:'myday-tab tab-'+code+(mydayTab===code?' on':''),onclick:function(){
-      if(mydayTab===code)return;
-      mydayTab=code;saveMyDayTab();
-      c.innerHTML='';pgDel(c);
-    }});
-    tb.appendChild(document.createTextNode(lbl));
-    tb.appendChild(sp({cls:'myday-tab-count'},''+counts[code]));
-    tabBar.appendChild(tb);
-  });
-  c.appendChild(tabBar);
-
-  // Filter to the active tab
-  const visible=todayVisible.filter(function(d){return (d.workType||'DEL')===mydayTab;});
-
-  // Sort by Delivery Order (1, 2, 3...)
-  visible.sort(function(a,b){
-    const oa=ORDERS.indexOf(a.deliveryOrder),ob=ORDERS.indexOf(b.deliveryOrder);
-    return (oa<0?99:oa)-(ob<0?99:ob);
-  });
-
-  // Summary stats
-  const completed=visible.filter(function(d){return d.status==='Completed';}).length;
-  const remaining=visible.length-completed;
-  const summary=dv({cls:'myday-summary'},
-    dv({cls:'myday-stat'},dv({cls:'myday-stat-val'},''+visible.length),dv({cls:'myday-stat-lbl'},'Total')),
-    dv({cls:'myday-stat'},dv({cls:'myday-stat-val',st:{color:'var(--green-dark)'}},''+completed),dv({cls:'myday-stat-lbl'},'Completed')),
-    dv({cls:'myday-stat'},dv({cls:'myday-stat-val',st:{color:'#d97706'}},''+remaining),dv({cls:'myday-stat-lbl'},'Remaining'))
-  );
-  c.appendChild(summary);
-
-  if(!visible.length){
-    const labelMap={DEL:'deliveries',SCR:'screen jobs',SW:'site work'};
-    c.appendChild(dv({cls:'myday-empty'},
-      dv({cls:'myday-empty-icon'},'\u2728'),
-      dv({},'No '+labelMap[mydayTab]+' scheduled for today.'),
-      dv({cls:'txs',st:{marginTop:'6px'}},'Try the other tabs above \u2014 or take the rest of the day off (just kidding).')
-    ));
-    return;
-  }
-
-  // Render one card per delivery
-  const list=dv({cls:'myday-list'});
-  c.appendChild(list);
-  visible.forEach(function(d){ list.appendChild(renderMyDayCard(d,c)); });
-}
-
-function renderMyDayCard(delivery,pageC){
-  const ov=new Date(delivery.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(delivery.status);
-  const completed=delivery.status==='Completed';
-  const card=dv({cls:'myday-card'+(completed?' completed':'')+(ov?' overdue':'')});
-  card.setAttribute('data-del-id',delivery.id);
-
-  // Top row: work-type tag + order pill + status badge
-  const wtCode=delivery.workType||'DEL';
-  card.appendChild(dv({cls:'myday-top'},
-    sp({cls:'wt-tag wt-'+wtCode,st:{fontSize:'11px',padding:'3px 7px'}},wtCode),
-    sp({cls:'myday-order'},delivery.deliveryOrder||'Delivery 1'),
-    bdg(delivery.status,completed?'green':delivery.status==='Cancelled'?'red':ov?'red':'gray')
-  ));
-
-  // Job number — big, bold, top
-  if(delivery.jobNumber)card.appendChild(dv({cls:'myday-job'},'#'+delivery.jobNumber));
-  // Customer — big, bold
-  if(delivery.customer)card.appendChild(dv({cls:'myday-customer'},delivery.customer));
-  // Address — prominent for the driver
-  if(delivery.address)card.appendChild(dv({cls:'myday-address'},'\ud83d\udccd '+delivery.address));
-  // Meta line (no longer includes job number — it's the big header)
-  const meta=[];
-  if(delivery.vehicle)meta.push(delivery.vehicle);
-  if(delivery.scheduledTime)meta.push(delivery.scheduledTime);
-  if(delivery.crew&&delivery.crew!=='Driver only')meta.push(delivery.crew);
-  if(meta.length)card.appendChild(dv({cls:'myday-meta'},meta.join(' \u00b7 ')));
-  // Notes preview — what the driver should be delivering
-  if(delivery.notes){
-    const notesBox=dv({cls:'myday-notes'});
-    notesBox.appendChild(dv({cls:'myday-notes-label'},'\ud83d\udccb What you\u2019re delivering'));
-    notesBox.appendChild(document.createTextNode(delivery.notes));
-    card.appendChild(notesBox);
-  }
-  // Open entry form — view all details / add notes
-  const openFormBtn=h('button',{cls:'myday-openform',onclick:function(){
-    openDelForm(delivery,null,document.getElementById('content'));
-  }});
-  openFormBtn.appendChild(document.createTextNode('\ud83d\udcdd Open entry form (view / edit notes)'));
-  card.appendChild(openFormBtn);
-
-  // NOT PAID banner (prominent)
-  if(!delivery.isPaid){
-    card.appendChild(dv({cls:'myday-notpaid'},'\u26a0 NOT PAID \u2014 do not deliver without checking with office'));
-  }
-
-  // Signed-off banner
-  if(delivery.signedOffAt){
-    const when=new Date(delivery.signedOffAt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-    card.appendChild(dv({cls:'myday-signed-banner'},
-      '\u2713 Signed by '+(delivery.signedOffByName||'(no name)')+' at '+when
-    ));
-  }
-
-  // Action buttons: Take Photo + Get Sign-off (or both if already signed, photo still available)
-  const actions=dv({cls:'myday-actions'});
-  actions.appendChild(btn('\ud83d\udcf7 Take Photo','btn-o',function(){
-    capturePhoto(delivery,function(){refreshMyDayKeepingCard(pageC,delivery.id);});
-  }));
-  if(!delivery.signedOffAt){
-    actions.appendChild(btn('\u270d\ufe0f Get Sign-off','btn-p',function(){
-      openSignatureModal(delivery,function(){refreshMyDayKeepingCard(pageC,delivery.id);});
-    }));
-  } else {
-    // If already signed, replace second button with View signature
-    actions.appendChild(btn('\ud83d\udd0d View Signature','btn-o',function(){
-      if(delivery.signatureUrl)openLightbox(delivery.signatureUrl);
-    }));
-  }
-  card.appendChild(actions);
-
-  // Mark as Delivered button (hidden if already completed)
-  if(!completed&&delivery.status!=='Cancelled'){
-    card.appendChild(btn('\u2713 Mark as Delivered','btn-p',async function(){
-      if(!confirm('Mark this delivery as Completed?'))return;
-      try{
-        await DB.patch(delivery.id,{status:'Completed'});
-        pageC.innerHTML='';await pgDel(pageC);
-      }catch(err){alert('Update failed: '+err.message);}
-    },{cls:'btn btn-p myday-complete'}));
-  } else if(completed){
-    card.appendChild(btn('\u21ba Reopen','btn-o btn-sm',async function(){
-      if(!confirm('Reopen this delivery (set status back to Scheduled)?'))return;
-      try{
-        await DB.patch(delivery.id,{status:'Scheduled'});
-        pageC.innerHTML='';await pgDel(pageC);
-      }catch(err){alert('Update failed: '+err.message);}
-    }));
-  }
-
-  // Inline activity log toggle (reuses refreshDelLog)
-  const logSection=dv({cls:'del-log',st:{display:'none',marginTop:'12px',padding:'12px',borderRadius:'8px',background:'#fafaf8',border:'1px solid #f3f4f6'}});
-  let logLoaded=false;
-  const logToggle=h('button',{cls:'myday-activity-link'},'View activity log \u25be');
-  logToggle.onclick=async function(){
-    const opening=logSection.style.display==='none';
-    logSection.style.display=opening?'block':'none';
-    logToggle.textContent=opening?'Hide activity log \u25b4':'View activity log \u25be';
-    if(opening&&!logLoaded){
-      await refreshDelLog(logSection,delivery);
-      logLoaded=true;
-    }
-  };
-  card.appendChild(logToggle);
-  card.appendChild(logSection);
-
-  return card;
-}
-
 function pgProd(c){
   c.appendChild(dv({cls:'row jb mb4'},dv({},h('h1',{cls:'page-title'},'Production Status'),dv({cls:'page-sub'},'Daily targets by department')),isManager()&&btn('Update Targets','btn-o',function(){showProdForm(c);})));
   renderProdCards(c);
@@ -2185,49 +1611,25 @@ function showProdForm(c){
 
 // ── DELIVERIES ────────────────────────────────────────────────────────
 async function pgDel(c){
-  // Subtitle and whether the calendar nav (date arrows) is relevant for this view
-  const subTitles={month:'Schedule and manage deliveries',week:'Schedule and manage deliveries',list:'Schedule and manage deliveries',myday:"Today's deliveries — sign-off and photo evidence",history:'Past deliveries with photos, signatures and activity logs'};
-  const hasCalNav=(calView==='month'||calView==='week');
-
   // Header
   c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},subTitles[calView]||subTitles.month)),
+    dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},'Schedule and manage deliveries')),
     dv({cls:'row gap2'},
       isManager()&&btn('+ New Delivery','btn-p',function(){openDelForm(null,iso(calDate),c);}),
-      hasCalNav&&btn('◀','btn-o btn-sm',function(){
-        if(calView==='week'){ calDate=addD(calDate,-7); }
-        else { calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1); }
-        c.innerHTML='';pgDel(c);
-      }),
-      hasCalNav&&btn('Today','btn-o btn-sm',function(){ calDate=new Date(); c.innerHTML=''; pgDel(c); }),
-      hasCalNav&&dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'180px',textAlign:'center'}},
-        calView==='week' ? weekRangeLabel(calDate) : calDate.toLocaleDateString('en-AU',{month:'long',year:'numeric'})
-      ),
-      hasCalNav&&btn('▶','btn-o btn-sm',function(){
-        if(calView==='week'){ calDate=addD(calDate,7); }
-        else { calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1); }
-        c.innerHTML='';pgDel(c);
-      })
+      btn('◀','btn-o btn-sm',function(){calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);c.innerHTML='';pgDel(c);}),
+      dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'140px',textAlign:'center'}},calDate.toLocaleDateString('en-AU',{month:'long',year:'numeric'})),
+      btn('▶','btn-o btn-sm',function(){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);c.innerHTML='';pgDel(c);})
     )
   ));
-  // View toggle (5 buttons: Month / Week / List / My Day / History)
-  // Work-type filter pills (DEL / SCR / SW)
-  c.appendChild(buildWorkFilterPills(c));
-
+  // View toggle
   const tvRow=dv({cls:'row gap2 mb3'});
-  function vbtn(label,id){ return btn(label,'btn-'+(calView===id?'p':'o')+' btn-sm',function(){calView=id;c.innerHTML='';pgDel(c);}); }
-  tvRow.appendChild(vbtn('Month','month'));
-  tvRow.appendChild(vbtn('Week','week'));
-  tvRow.appendChild(vbtn('List','list'));
-  tvRow.appendChild(vbtn('My Day','myday'));
-  tvRow.appendChild(vbtn('History','history'));
+  const monthBtn=btn('Month','btn-'+(calView==='month'?'p':'o')+' btn-sm',function(){calView='month';c.innerHTML='';pgDel(c);});
+  const weekBtn=btn('Week','btn-'+(calView==='week'?'p':'o')+' btn-sm',function(){calView='week';c.innerHTML='';pgDel(c);});
+  const listBtn=btn('List','btn-'+(calView==='list'?'p':'o')+' btn-sm',function(){calView='list';c.innerHTML='';pgDel(c);});
+  tvRow.appendChild(monthBtn);tvRow.appendChild(weekBtn);tvRow.appendChild(listBtn);
   c.appendChild(tvRow);
 
-  // Dispatch by view
-  if(calView==='myday'){ await renderMyDayInto(c); return; }
-  if(calView==='history'){ await renderHistoryInto(c); return; }
-
-  // Calendar/List views: load deliveries for the visible date range
+  // Load deliveries
   const y=calDate.getFullYear(),m=calDate.getMonth();
   let fromDate,toDate;
   if(calView==='week'){
@@ -2237,7 +1639,6 @@ async function pgDel(c){
   }
   const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
   deliveries=await DB.list(iso(fromDate),iso(toDate));
-  deliveries=filterByWorkType(deliveries);
   loading.remove();
 
   if(calView==='list'){
@@ -2397,12 +1798,7 @@ function makePill(d){
   const pillBg=d.status==='Cancelled'?'#6b7280':overdue&&d.isPaid?'#b45309':bg;
   const pill=dv({cls:'cal-pill',st:{background:pillBg,marginBottom:'2px',cursor:'pointer'}});
   if(!d.isPaid){pill.appendChild(dv({cls:'not-paid-tag'},'⚠ NOT PAID — DO NOT DELIVER'));}
-  // Work-type tag (DEL/SCR/SW)
-  const wtt=document.createElement('span');wtt.className='wt-tag wt-'+(d.workType||'DEL');wtt.textContent=(d.workType||'DEL');
-  const orderRow=dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.85',display:'flex',alignItems:'center',gap:'4px'}});
-  orderRow.appendChild(wtt);
-  orderRow.appendChild(document.createTextNode(d.deliveryOrder||''));
-  pill.appendChild(orderRow);
+  pill.appendChild(dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.8'}},d.deliveryOrder));
   if(d.customer)pill.appendChild(dv({st:{fontSize:'11px',lineHeight:'1.3'}},d.customer));
   if(d.scheduledTime)pill.appendChild(dv({st:{fontSize:'10px',opacity:'0.8'}},d.scheduledTime));
   pill.onclick=function(e){e.stopPropagation();openDelForm(d,null,document.getElementById('content'));};
@@ -2454,9 +1850,7 @@ function renderDelRow(card,d,pageC){
   row.appendChild(handle);
   // Info
   const info=dv({st:{flex:'1',cursor:'pointer'},onclick:function(){openDelForm(d,null,pageC);}});
-  const wtBadge=sp({cls:'wt-tag wt-'+(d.workType||'DEL')},(d.workType||'DEL'));
-  info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap',alignItems:'center'}},
-    wtBadge,
+  info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap'}},
     d.jobNumber&&sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+d.jobNumber),
     bdg(d.type,d.type==='Incoming'?'blue':'green'),
     bdg(d.deliveryOrder,'gray'),
@@ -2467,24 +1861,6 @@ function renderDelRow(card,d,pageC){
   if(d.address)info.appendChild(dv({cls:'txs muted'},d.address));
   info.appendChild(dv({cls:'txs muted'},fmtD(d.scheduledDate)+(d.scheduledTime?' · '+d.scheduledTime:'')+' · '+d.vehicle+(d.crew&&d.crew!=='Driver only'?' · '+d.crew:'')));
   row.appendChild(info);
-
-  // Activity log section (collapsed by default, content lazy-loaded)
-  const logSection=dv({cls:'del-log',st:{display:'none'}});
-  const toggleBtn=h('button',{cls:'del-activity-toggle',title:'Show activity log and notes'},
-    'Activity ',sp({cls:'arrow'},'▾'));
-  let logLoaded=false;
-  toggleBtn.onclick=async function(e){
-    e.stopPropagation();
-    const opening=logSection.style.display==='none';
-    logSection.style.display=opening?'block':'none';
-    toggleBtn.classList.toggle('open',opening);
-    if(opening&&!logLoaded){
-      await refreshDelLog(logSection,d);
-      logLoaded=true;
-    }
-  };
-  row.appendChild(toggleBtn);
-
   if(isManager()){
     row.appendChild(btn('×','btn-d btn-sm',async function(e){
       e.stopPropagation();
@@ -2493,237 +1869,14 @@ function renderDelRow(card,d,pageC){
     }));
   }
   card.appendChild(row);
-  card.appendChild(logSection);
   return row;
-}
-
-// Build/refresh the contents of a single delivery's activity-log section
-async function refreshDelLog(container,delivery){
-  container.innerHTML='';
-
-  // Header row with title + action buttons (Take Photo, Get Sign-off)
-  const header=dv({cls:'row',st:{alignItems:'center',marginBottom:'8px'}});
-  header.appendChild(dv({cls:'del-log-title',st:{margin:'0'}},'Activity'));
-  const actions=dv({cls:'del-log-actions'});
-  actions.appendChild(btn('\ud83d\udcf7 Take Photo','btn-o btn-sm',function(){
-    capturePhoto(delivery,async function(){await refreshDelLog(container,delivery);});
-  }));
-  if(!delivery.signedOffAt){
-    actions.appendChild(btn('\u270d\ufe0f Get Sign-off','btn-p btn-sm',function(){
-      openSignatureModal(delivery,async function(){
-        const fresh=await CDB.getDeliveryById(delivery.id);
-        if(fresh)Object.assign(delivery,fresh);
-        await refreshDelLog(container,delivery);
-      });
-    }));
-  }
-  header.appendChild(actions);
-  container.appendChild(header);
-
-  // Sign-off summary card
-  if(delivery.signedOffAt){
-    const sigCard=dv({cls:'del-signoff-card'});
-    const info=dv({cls:'del-signoff-info'});
-    info.appendChild(dv({cls:'del-signoff-title'},'\u2713 Signed off by '+(delivery.signedOffByName||'(no name)')));
-    info.appendChild(dv({cls:'del-signoff-when'},new Date(delivery.signedOffAt).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})));
-    sigCard.appendChild(info);
-    if(delivery.signatureUrl){
-      const img=h('img',{src:delivery.signatureUrl,cls:'del-signature-thumb',title:'Click to view full size'});
-      img.onclick=function(){openLightbox(delivery.signatureUrl);};
-      sigCard.appendChild(img);
-    }
-    container.appendChild(sigCard);
-  }
-
-  // Photos grid
-  let photos=[];
-  try{ photos=await CDB.getDeliveryPhotos(delivery.id); }catch(e){console.error(e);}
-  if(photos.length){
-    container.appendChild(dv({cls:'del-log-title'},'Photos ('+photos.length+')'));
-    const grid=dv({cls:'del-photos-grid'});
-    photos.forEach(function(p){
-      const thumb=dv({cls:'del-photo-thumb'});
-      const img=h('img',{src:p.photo_url,title:'Click to view full size'});
-      img.onclick=function(){openLightbox(p.photo_url);};
-      thumb.appendChild(img);
-      if(isManager()){
-        const del=h('button',{cls:'del-photo-delete',title:'Delete photo'},'\u00d7');
-        del.onclick=async function(e){
-          e.stopPropagation();
-          if(!confirm('Delete this photo? This cannot be undone.'))return;
-          try{await CDB.deleteDeliveryPhoto(p.id);await refreshDelLog(container,delivery);}
-          catch(err){alert('Delete failed: '+err.message);}
-        };
-        thumb.appendChild(del);
-      }
-      grid.appendChild(thumb);
-    });
-    container.appendChild(grid);
-  }
-
-  // Activity timeline
-  container.appendChild(dv({cls:'del-log-title'},'Timeline'));
-  const listC=dv();
-  container.appendChild(listC);
-  const loading=dv({cls:'del-log-empty'},'Loading log...');
-  listC.appendChild(loading);
-  let entries=[];
-  try{ entries=await CDB.getDeliveryLog(delivery.id); }catch(e){ console.error(e); }
-  listC.innerHTML='';
-  if(!entries.length){
-    listC.appendChild(dv({cls:'del-log-empty'},'No activity yet for this delivery.'));
-  } else {
-    entries.forEach(function(entry){listC.appendChild(renderLogEntry(entry,delivery,container));});
-  }
-
-  // Add-note row
-  const noteRow=dv({cls:'del-log-addnote'});
-  const ta=h('textarea',{rows:'1',placeholder:'Add a note... (e.g. "Customer rescheduled to 3pm")'});
-  const saveBtn=btn('Add note','btn-p btn-sm',async function(){
-    const v=ta.value.trim();
-    if(!v)return;
-    saveBtn.disabled=true;saveBtn.textContent='Saving...';
-    try{
-      await CDB.addDeliveryNote(delivery.id,v);
-      ta.value='';
-      await refreshDelLog(container,delivery);
-    }catch(err){
-      alert('Could not add note: '+err.message);
-    }
-    saveBtn.disabled=false;saveBtn.textContent='Add note';
-  });
-  noteRow.appendChild(ta);noteRow.appendChild(saveBtn);
-  container.appendChild(noteRow);
-}
-
-// --- Photo capture: opens the native camera (mobile) or file picker (desktop) -
-function capturePhoto(delivery,refresh){
-  const inp=h('input',{type:'file',accept:'image/*',capture:'environment',st:{display:'none'}});
-  inp.onchange=async function(e){
-    const file=e.target.files&&e.target.files[0];
-    inp.remove();
-    if(!file)return;
-    try{
-      const url=await CDB.uploadDeliveryPhoto(file,delivery.id);
-      const rec=await CDB.addDeliveryPhotoRecord(delivery.id,url,null);
-      await CDB.addDeliveryLogEntry(delivery.id,'photo_added','Photo attached',{photo_id:rec.id,photo_url:url});
-      if(refresh)await refresh();
-    }catch(err){
-      alert('Photo upload failed: '+err.message);
-    }
-  };
-  document.body.appendChild(inp);
-  inp.click();
-}
-
-// --- Signature canvas modal --------------------------------------------------
-function openSignatureModal(delivery,onSaved){
-  const overlay=dv({cls:'modal-overlay'});
-  const modal=dv({cls:'modal',st:{width:'500px',maxWidth:'95vw'}});
-  modal.appendChild(dv({cls:'modal-title'},'Customer Sign-off'));
-  modal.appendChild(dv({cls:'txs muted mb3'},'Have the customer sign below to confirm they received this delivery.'));
-
-  const nameLabel=h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Customer name *');
-  const nameIn=h('input',{type:'text',placeholder:'Name of person receiving delivery',st:{width:'100%',padding:'8px 10px',border:'1px solid var(--border)',borderRadius:'6px',fontSize:'14px',fontFamily:'inherit',marginBottom:'12px'}});
-  modal.appendChild(nameLabel);
-  modal.appendChild(nameIn);
-
-  modal.appendChild(h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Signature *'));
-  const canvas=h('canvas',{cls:'sig-canvas',width:'460',height:'200'});
-  modal.appendChild(canvas);
-  modal.appendChild(dv({cls:'txs muted',st:{marginTop:'4px'}},'Sign with your finger on a phone/tablet, or click and drag with a mouse.'));
-
-  const ctx=canvas.getContext('2d');
-  ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f172a';
-  let drawing=false,hasInk=false;
-  function pos(e){
-    const r=canvas.getBoundingClientRect();
-    return{x:(e.clientX-r.left)*(canvas.width/r.width),y:(e.clientY-r.top)*(canvas.height/r.height)};
-  }
-  canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId);drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();});
-  canvas.addEventListener('pointermove',function(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasInk=true;e.preventDefault();});
-  canvas.addEventListener('pointerup',function(e){if(!drawing)return;drawing=false;try{canvas.releasePointerCapture(e.pointerId);}catch(_){}});
-  canvas.addEventListener('pointercancel',function(){drawing=false;});
-
-  const clearBtn=btn('Clear','btn-o btn-sm',function(){ctx.clearRect(0,0,canvas.width,canvas.height);hasInk=false;});
-  const cancelBtn=btn('Cancel','btn-o',function(){overlay.remove();});
-  const saveBtn=btn('Save sign-off','btn-p',async function(){
-    const name=nameIn.value.trim();
-    if(!name){alert('Please enter the customer name.');nameIn.focus();return;}
-    if(!hasInk){alert('Please draw the signature on the pad.');return;}
-    saveBtn.disabled=true;saveBtn.textContent='Saving...';
-    canvas.toBlob(async function(blob){
-      try{
-        const url=await CDB.uploadDeliverySignature(blob,delivery.id);
-        await CDB.setDeliverySignoff(delivery.id,name,url);
-        await CDB.addDeliveryLogEntry(delivery.id,'signed_off',name,{signature_url:url});
-        overlay.remove();
-        if(onSaved)await onSaved();
-      }catch(err){
-        alert('Sign-off failed: '+err.message);
-        saveBtn.disabled=false;saveBtn.textContent='Save sign-off';
-      }
-    },'image/png');
-  });
-
-  modal.appendChild(dv({cls:'row gap2 mt3'},clearBtn,dv({st:{flex:'1'}}),cancelBtn,saveBtn));
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-  setTimeout(function(){nameIn.focus();},50);
-}
-
-// --- Lightbox for viewing photos / signature full-size ----------------------
-function openLightbox(url){
-  const overlay=dv({cls:'lightbox'});
-  overlay.onclick=function(){overlay.remove();};
-  const img=h('img',{src:url});
-  overlay.appendChild(img);
-  document.body.appendChild(overlay);
-}
-
-function renderLogEntry(entry,delivery,container){
-  const iconText={created:'+',status_changed:'⟳',note:'✎',photo_added:'📷',signed_off:'✓',driver_assigned:'🚚'}[entry.action]||'•';
-  const iconCls={created:'created',status_changed:'status',note:'note',photo_added:'photo',signed_off:'signoff',driver_assigned:'status'}[entry.action]||'';
-  const row=dv({cls:'del-log-entry'});
-  row.appendChild(dv({cls:'del-log-icon '+iconCls},iconText));
-  const body=dv({cls:'del-log-body'});
-  const label={created:'Delivery created',status_changed:'Status: '+(entry.detail||''),note:entry.detail||'(empty note)',photo_added:'Photo added'+(entry.detail?': '+entry.detail:''),signed_off:'Signed off'+(entry.detail?' by '+entry.detail:''),driver_assigned:'Driver assigned'+(entry.detail?': '+entry.detail:'')}[entry.action]||(entry.detail||entry.action);
-  body.appendChild(dv({cls:'del-log-detail'},label));
-  const when=new Date(entry.created_at);
-  const ago=relativeTime(when);
-  const byWho=entry.user_name?(' by '+entry.user_name):'';
-  body.appendChild(dv({cls:'del-log-meta'},ago+byWho+' · '+when.toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})));
-  row.appendChild(body);
-  // Only show delete on manually-added notes, and only to managers (or note author)
-  if(entry.action==='note'&&(isManager()||(currentUser&&entry.user_id===currentUser.id))){
-    const delBtn=h('button',{cls:'del-log-delete',title:'Delete this note'},'×');
-    delBtn.onclick=async function(){
-      if(!confirm('Delete this note?'))return;
-      try{ await CDB.deleteDeliveryLog(entry.id); await refreshDelLog(container,delivery); }
-      catch(err){ alert('Could not delete: '+err.message); }
-    };
-    row.appendChild(delBtn);
-  }
-  return row;
-}
-
-function relativeTime(date){
-  const diffSec=Math.floor((Date.now()-date.getTime())/1000);
-  if(diffSec<60)return 'just now';
-  const m=Math.floor(diffSec/60);if(m<60)return m+' min'+(m===1?'':'s')+' ago';
-  const h=Math.floor(m/60);if(h<24)return h+' hour'+(h===1?'':'s')+' ago';
-  const d=Math.floor(h/24);if(d<14)return d+' day'+(d===1?'':'s')+' ago';
-  const w=Math.floor(d/7);if(w<8)return w+' week'+(w===1?'':'s')+' ago';
-  const mo=Math.floor(d/30);if(mo<12)return mo+' month'+(mo===1?'':'s')+' ago';
-  return Math.floor(d/365)+' year+ ago';
 }
 
 function renderDelKey(c){
   const key=dv({cls:'row gap3 mt3',st:{flexWrap:'wrap',padding:'10px 14px',background:'#fff',borderRadius:'10px',border:'1px solid var(--border)'}});
   const items=[
-    {col:'#15803d',label:'DEL — Delivery',bold:true},
-    {col:'#1d4ed8',label:'SCR — Screens',bold:true},
-    {col:'#c2410c',label:'SW — Site work',bold:true},
+    {col:'#166534',label:'Outgoing Delivery'},
+    {col:'#1d4ed8',label:'Incoming Delivery'},
     {col:'#dc2626',label:'NOT PAID — Do Not Deliver',bold:true},
     {col:'#f59e0b',label:'Overdue / Undelivered'},
     {col:'#6b7280',label:'Cancelled'},
@@ -2759,7 +1912,7 @@ function openDelForm(d,dateStr,c){
       searchBtn.textContent='Searching...';searchBtn.disabled=true;
       xeroMsg.textContent='';xeroMsg.style.color='var(--muted)';
       try{
-        const res=await fetch(XERO_FN+'/xero-lookup?job='+encodeURIComponent(jn));
+        const res=await fetch(XERO_FN+'/xero-lookup?job='+encodeURIComponent(jn),{headers:{'apikey':ANON,'Authorization':'Bearer '+authToken()}});
         const data=await res.json();
         if(data.error==='not_connected'){
           xeroMsg.textContent='⚠ Xero not connected — go to Admin → Connect Xero';
@@ -2808,13 +1961,6 @@ function openDelForm(d,dateStr,c){
   const descIn=inp(d?d.description:'','Description');
   const dateIn=h('input',{type:'date',value:d?d.scheduledDate:dateStr||iso(calDate)});
   const timeIn=h('input',{type:'time',value:d?d.scheduledTime||'':''});
-  // Work type (DEL/SCR/SW) — built manually so labels are user-friendly while values are codes
-  const workSel=h('select',{});
-  [['DEL','📦 Delivery'],['SCR','🪟 Screens'],['SW','🔧 Site work']].forEach(function(p){
-    const opt=h('option',{value:p[0]},p[1]);
-    if(p[0]===(d?(d.workType||'DEL'):'DEL'))opt.selected=true;
-    workSel.appendChild(opt);
-  });
   const typeSel=sel(d?d.type:'Outgoing','Outgoing','Incoming');
   const statusSel=sel(d?d.status:'Scheduled','Scheduled','In Progress','Completed','Cancelled');
   const vehSel=sel(d?d.vehicle:'Truck',...VEHICLES);
@@ -2828,8 +1974,7 @@ function openDelForm(d,dateStr,c){
   modal.appendChild(g2(frow('Job #',jobIn),frow('Customer',custIn)));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Address'),addrIn));
   modal.appendChild(g2(frow('Date',dateIn),frow('Time (optional)',timeIn)));
-  modal.appendChild(g2(frow('Work Type',workSel),frow('Type (Outgoing/Incoming)',typeSel)));
-  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Status'),statusSel));
+  modal.appendChild(g2(frow('Type',typeSel),frow('Status',statusSel)));
   modal.appendChild(g2(frow('Vehicle',vehSel),frow('Crew',crewSel)));
   modal.appendChild(g2(frow('Delivery Order',orderSel),frow('Sequence',seqSel)));
   modal.appendChild(g2(frow('Bay Number',bayIn),frow('Description',descIn)));
@@ -2847,19 +1992,9 @@ function openDelForm(d,dateStr,c){
   btns.appendChild(btn('Cancel','btn-o',function(){overlay.remove();}));
   btns.appendChild(btn(isNew?'Create':'Save','btn-p',async function(){
     if(!dateIn.value)return alert('Date required');
-    const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,workType:workSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
-    try{
-      let res;
-      if(isNew){res=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(data))});}
-      else{res=await fetch(SB+'/rest/v1/deliveries?id=eq.'+d.id,{method:'PATCH',headers:SH(),body:JSON.stringify(d2r(data))});}
-      if(!res.ok){
-        const errText=await res.text();
-        let msg=errText;try{const ej=JSON.parse(errText);msg=ej.message||ej.hint||errText;}catch(_){}
-        if(/work_type/i.test(msg)){alert('Save failed: the work_type column is missing from your database.\n\nThe SQL migration (_migration-work-type.sql) has not been run yet.\n\n1. Open Supabase Dashboard → SQL Editor\n2. Paste the contents of _migration-work-type.sql\n3. Click Run\n4. Try saving again.');return;}
-        alert('Save failed ('+res.status+'):\n\n'+msg);return;
-      }
-      overlay.remove();c.innerHTML='';pgDel(c);
-    }catch(err){alert('Save failed: '+(err&&err.message||err));}
+    const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
+    if(isNew){await DB.create(data);}else{await DB.update(d.id,data);}
+    overlay.remove();c.innerHTML='';pgDel(c);
   }));
   modal.appendChild(btns);
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
@@ -3164,6 +2299,7 @@ async function renderLog(c){
 
   // Member selector
   const memSel=document.createElement('select');
+  memSel.id='log-mem-sel';
   memSel.style.cssText='padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:200px';
   memSel.appendChild(h('option',{value:''},'— Select employee —'));
   members.forEach(function(m){memSel.appendChild(h('option',{value:''+m.id},m.name));});
@@ -3308,7 +2444,7 @@ async function renderMemberRecord(c,member,signoffs,swps,sMap){
 function printMemberRecord(member,swps,lk,allSOs){
   const ini=member.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
   const date=new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
-  let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Training Record — '+member.name+'</title>';
+  let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Training Record — '+esc(member.name)+'</title>';
   html+='<style>body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:32px;max-width:900px;margin:0 auto}';
   html+='.header{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #4a9a0f}';
   html+='.avatar{width:52px;height:52px;border-radius:50%;background:#4a9a0f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}';
@@ -3318,7 +2454,7 @@ function printMemberRecord(member,swps,lk,allSOs){
   html+='td{padding:8px 12px;border:1px solid #e5e7eb;font-size:11.5px}';
   html+='.current{color:#15803d;font-weight:700}.overdue{color:#dc2626;font-weight:700}.due-soon{color:#d97706;font-weight:700}.self-only{color:#1d4ed8;font-weight:700}';
   html+='@media print{body{padding:16px}.no-print{display:none}}</style></head><body>';
-  html+='<div class="header"><div class="avatar">'+ini+'</div><div><div class="logo">Window Makers</div><h2>'+member.name+' — Training Record</h2><div class="sub">'+( member.role||'Factory Employee')+' · Generated '+date+'</div></div></div>';
+  html+='<div class="header"><div class="avatar">'+esc(ini)+'</div><div><div class="logo">Window Makers</div><h2>'+esc(member.name)+' — Training Record</h2><div class="sub">'+esc(member.role||'Factory Employee')+' · Generated '+date+'</div></div></div>';
   html+='<table><thead><tr><th>SWP / Equipment</th><th>Status</th><th>Self-Assessed</th><th>Assessor</th><th>Assessed Date</th><th>Expires</th></tr></thead><tbody>';
   swps.forEach(function(swp){
     const so=lk[swp.id];
@@ -3327,10 +2463,10 @@ function printMemberRecord(member,swps,lk,allSOs){
     const stLabel=statusLabel(st);
     const stClass=st==='current'?'current':st==='overdue'?'overdue':st==='due-soon'?'due-soon':st==='self-only'?'self-only':'';
     html+='<tr>';
-    html+='<td><strong>'+swp.title+'</strong></td>';
-    html+='<td class="'+stClass+'">'+stLabel+'</td>';
-    html+='<td>'+(so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+' ('+so.self_signed_initials+')':'—')+'</td>';
-    html+='<td>'+(so.assessor_name||'—')+'</td>';
+    html+='<td><strong>'+esc(swp.title)+'</strong></td>';
+    html+='<td class="'+stClass+'">'+esc(stLabel)+'</td>';
+    html+='<td>'+(so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU')+' ('+esc(so.self_signed_initials)+')':'—')+'</td>';
+    html+='<td>'+esc(so.assessor_name||'—')+'</td>';
     html+='<td>'+(so.assessor_signed_at?new Date(so.assessor_signed_at).toLocaleDateString('en-AU'):'—')+'</td>';
     html+='<td>'+(so.expires_at?new Date(so.expires_at).toLocaleDateString('en-AU'):'—')+'</td>';
     html+='</tr>';
@@ -3423,7 +2559,7 @@ async function renderAdminTeam(c){
     const nameTd=document.createElement('td');nameTd.style.cssText='padding:10px 12px;font-weight:600';
     const ini=m.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
     const rc={admin:'#7c3aed',manager:'#15803d',supervisor:'#0369a1',team_member:'#374151'};
-    nameTd.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:'+(rc[m.role_level]||'#374151')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+ini+'</div>'+m.name+'</div>';
+    nameTd.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:'+(rc[m.role_level]||'#374151')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+esc(ini)+'</div>'+esc(m.name)+'</div>';
     row.appendChild(nameTd);
     // Dept
     const deptTd=document.createElement('td');deptTd.textContent=m.department||'';deptTd.style.cssText='padding:10px 12px;color:var(--muted);font-size:12px';row.appendChild(deptTd);
@@ -3451,14 +2587,22 @@ async function renderAdminTeam(c){
     // Save
     const saveTd=document.createElement('td');saveTd.style.padding='8px 12px';
     saveTd.appendChild(btn('Archive','btn-o btn-sm',async function(){if(!confirm('Archive '+m.name+'? They will be hidden from the portal but all their training records and sign-off history will be preserved.'))return;await CDB.deactivateMember(m.id);c.innerHTML='';renderAdminTeam(c);}));
-    saveTd.appendChild(btn('Save','btn-p btn-sm',async function(){
+    const saveB=btn('Save','btn-p btn-sm',async function(){
       const updates={role_level:roleSel.value,is_assessor:assChk.checked,exclude_from_compliance:exclChk.checked};
-      if(pwdIn.value.trim())updates.password_hash=pwdIn.value.trim();
-      await fetch(SB+'/rest/v1/team_members?id=eq.'+m.id,{method:'PATCH',headers:SH(),body:JSON.stringify(updates)});
+      const ur=await fetch(SB+'/rest/v1/team_members?id=eq.'+m.id,{method:'PATCH',headers:SH(),body:JSON.stringify(updates)});
+      if(!ur.ok){alert('Save failed ('+ur.status+'). Are you still signed in?');return;}
+      if(pwdIn.value.trim()){
+        // Passwords are managed server-side via the staff-admin function
+        const action=m.auth_user_id?'set-password':'create-login';
+        const pr=await fetch(XERO_FN+'/staff-admin/'+action,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'application/json'},body:JSON.stringify({member_id:m.id,password:pwdIn.value.trim()})});
+        const pd=await pr.json().catch(function(){return{};});
+        if(!pr.ok){alert('Settings saved, but the password was NOT set: '+(pd.error||pr.status));return;}
+      }
       pwdIn.value='';
-      const saveBtn=saveTd.querySelector('button');saveBtn.textContent='Saved!';saveBtn.style.background='#22c55e';
-      setTimeout(function(){saveBtn.textContent='Save';saveBtn.style.background='';},2000);
-    }));
+      saveB.textContent='Saved!';saveB.style.background='#22c55e';
+      setTimeout(function(){saveB.textContent='Save';saveB.style.background='';},2000);
+    });
+    saveTd.appendChild(saveB);
     row.appendChild(saveTd);
     tbody.appendChild(row);
   });
@@ -3490,17 +2634,21 @@ function showAddMemberForm(adminC){
     btn('Create Member','btn-p',async function(){
       if(!nameIn.value.trim())return alert('Name is required');
       if(!pwdIn.value.trim())return alert('Initial password is required');
+      if(pwdIn.value.trim().length<8)return alert('Password must be at least 8 characters');
       try{
-        await CDB.createMember({
+        const created=await CDB.createMember({
           name:nameIn.value.trim(),
           role:roleIn.value.trim()||'Factory Employee',
           role_level:roleSel.value,
           department:deptSel.value,
-          password_hash:pwdIn.value.trim(),
           is_assessor:assChk.checked,
           is_active:true,
           exclude_from_compliance:false
         });
+        // Create their real login via the staff-admin function
+        const pr=await fetch(XERO_FN+'/staff-admin/create-login',{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'application/json'},body:JSON.stringify({member_id:created.id,password:pwdIn.value.trim()})});
+        const pd=await pr.json().catch(function(){return{};});
+        if(!pr.ok)alert('Member created, but their login could not be set up: '+(pd.error||pr.status)+'\nUse the "New Password" box in the team list to try again.');
         overlay.remove();
         adminC.innerHTML='';
         renderAdminTeam(adminC);
@@ -3671,14 +2819,24 @@ async function renderSWPAssignments(c){
 // ── INIT ──────────────────────────────────────────────────────────────
 
 
-// ── INIT ─────────────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────────
+// Honour QR-code deep links like #delivery / #safety (falls back to dashboard)
 (function(){
-  var loginLogo=document.getElementById('login-logo');
-  var sidebarImg=document.querySelector('.sb-logo img');
-  if(loginLogo&&sidebarImg)loginLogo.src=sidebarImg.src;
+  const hp=location.hash.replace('#','');
+  if(hp&&PAGES.some(function(p){return p.id===hp;}))page=hp;
+})();
+// Restore login across refresh, then boot
+(async function(){
+  if(session){
+    const ok=await refreshSession();
+    if(ok){try{currentUser=JSON.parse(localStorage.getItem('wm_user')||'null');}catch(e){currentUser=null;}}
+    if(!currentUser)clearSession();
+  }
+  renderNav();
+  renderTop();
+  renderPage();
   loadLoginDropdown();
-  renderNav();renderTop();renderPage();
 })();
 </script>
-
-</body></html>
+</body>
+</html>
