@@ -479,6 +479,8 @@ function buildWorkFilterPills(c){
   return row;
 }
 let page='dashboard',deliveries=[],calDate=new Date(),calView='week',selDay=iso(new Date());
+let histFilters = { from:null, to:null, search:'', status:'all' };
+let lastPaymentSync=0, paymentSyncRunning=false;
 let msgs=[{id:1,title:'Site safety induction update',content:'All new starters must complete the updated induction before accessing the factory floor.',type:'Safety Alert',priority:'Urgent',author:'HR Team',pinned:true,createdAt:new Date(Date.now()-7200000).toISOString()},{id:2,title:'Q2 production targets announced',content:'Management has set Q2 targets. Review the production schedule.',type:'Announcement',priority:'High',author:'Management',pinned:false,createdAt:new Date(Date.now()-86400000).toISOString()},{id:3,title:'Forklift maintenance Wednesday',content:'Forklift 2 out of service 9am-1pm Wednesday.',type:'Maintenance',priority:'Medium',author:'Maintenance',pinned:false,createdAt:new Date(Date.now()-172800000).toISOString()}];
 let safety=[{id:1,refNo:'SA-001',title:'Unguarded machinery - Fab Bay 3',category:'Machine Safety',dept:'Fabrication',priority:'Critical',content:'Guard rail missing from press brake. Immediate attention required.',pinned:true,createdAt:new Date(Date.now()-172800000).toISOString()},{id:2,refNo:'SA-002',title:'Chemical storage non-compliant',category:'Hazardous Materials',dept:'Glass',priority:'High',content:'Chemical containers lack proper hazard labels.',pinned:true,createdAt:new Date(Date.now()-345600000).toISOString()},{id:3,refNo:'SA-003',title:'Slippery floor near dock',category:'Manual Handling',dept:'Dispatch',priority:'Medium',content:'Water pooling near dock door 2.',pinned:false,createdAt:new Date(Date.now()-432000000).toISOString()}];
 let prod=[{id:1,name:'Operations',completed:42,target:50,status:'On Track'},{id:2,name:'Fabrication',completed:38,target:40,status:'Ahead'},{id:3,name:'Glass',completed:12,target:30,status:'Behind'},{id:4,name:'Aluminium',completed:25,target:25,status:'On Track'},{id:5,name:'Dispatch',completed:18,target:20,status:'On Track'},{id:6,name:'Installation',completed:0,target:10,status:'Stopped'}];
@@ -2211,6 +2213,56 @@ function renderMyDayCard(delivery,pageC){
 
   return card;
 }
+// ── Auto-refresh paid/unpaid status from Xero ─────────────────────────
+// Re-checks UNPAID, non-cancelled deliveries scheduled from ~2 weeks ago
+// onward against Xero. Flips is_paid=true for any now paid/reconciled.
+async function refreshPaymentsFromXero(opts){
+  opts=opts||{};
+  if(paymentSyncRunning)return {checked:0,flipped:0,skipped:true};
+  paymentSyncRunning=true;
+  lastPaymentSync=Date.now();
+  try{
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-14);
+    const future=addD(new Date(),365);
+    let pool=[];
+    try{ pool=await DB.list(iso(cutoff),iso(future)); }
+    catch(e){ paymentSyncRunning=false; return {checked:0,flipped:0,error:e.message}; }
+    const targets=pool.filter(function(d){
+      return !d.isPaid && d.status!=='Cancelled' && (d.jobNumber||'').trim();
+    });
+    let checked=0,flipped=0;
+    for(const d of targets){
+      checked++;
+      try{
+        const res=await fetch(XERO_FN+'/xero-lookup?job='+encodeURIComponent(String(d.jobNumber).trim()),
+          {headers:{'apikey':ANON,'Authorization':'Bearer '+authToken()}});
+        const data=await res.json();
+        if(data && !data.error && data.isPaid){
+          await DB.patch(d.id,{is_paid:true,paid_by:'Xero (auto)'});
+          flipped++;
+        }
+      }catch(e){ /* skip individual lookup errors */ }
+    }
+    return {checked:checked,flipped:flipped};
+  } finally { paymentSyncRunning=false; }
+}
+
+// Manual "Refresh payments" button for the Deliveries header
+function makeRefreshPayBtn(c){
+  const b=btn('\u21bb Refresh payments','btn-o btn-sm',async function(){
+    if(paymentSyncRunning){return;}
+    b.textContent='Checking Xero\u2026'; b.disabled=true;
+    const r=await refreshPaymentsFromXero({manual:true});
+    b.disabled=false; b.textContent='\u21bb Refresh payments';
+    if(r.error){ alert('Could not check Xero: '+r.error+'\n\nMake sure Xero is connected (Admin \u2192 Connect Xero).'); return; }
+    if(r.flipped>0){ c.innerHTML=''; await pgDel(c); }
+    alert(r.flipped>0
+      ? ('\u2713 '+r.flipped+' delivery'+(r.flipped>1?'ies':'')+' now marked PAID (green).')
+      : ('No new payments found. Checked '+r.checked+' unpaid job'+(r.checked===1?'':'s')+' against Xero.'));
+  });
+  return b;
+}
+
 async function pgDel(c){
   // Subtitle and whether the calendar nav (date arrows) is relevant for this view
   const subTitles={month:'Schedule and manage deliveries',week:'Schedule and manage deliveries',list:'Schedule and manage deliveries',myday:"Today's deliveries — sign-off and photo evidence",history:'Past deliveries with photos, signatures and activity logs'};
@@ -2221,6 +2273,7 @@ async function pgDel(c){
     dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},subTitles[calView]||subTitles.month)),
     dv({cls:'row gap2'},
       isManager()&&btn('+ New Delivery','btn-p',function(){openDelForm(null,iso(calDate),c);}),
+      makeRefreshPayBtn(c),
       hasCalNav&&btn('◀','btn-o btn-sm',function(){
         if(calView==='week'){ calDate=addD(calDate,-7); }
         else { calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1); }
@@ -2250,6 +2303,14 @@ async function pgDel(c){
   tvRow.appendChild(vbtn('History','history'));
   c.appendChild(tvRow);
 
+  // Auto-refresh payments from Xero in the background (throttled to once / 10 min).
+  // Covers every delivery view; re-renders the current view if anything flips to PAID.
+  if(Date.now()-lastPaymentSync > 10*60*1000){
+    refreshPaymentsFromXero({auto:true}).then(function(r){
+      if(r && r.flipped>0 && page==='delivery'){ c.innerHTML=''; pgDel(c); }
+    });
+  }
+
   // Dispatch by view
   if(calView==='myday'){ await renderMyDayInto(c); return; }
   if(calView==='history'){ await renderHistoryInto(c); return; }
@@ -2274,6 +2335,7 @@ async function pgDel(c){
   } else {
     renderDelMonth(c,deliveries,y,m);
   }
+
 }
 
 function renderDelMonth(c,dels,y,m){
