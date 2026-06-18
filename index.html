@@ -1803,56 +1803,89 @@ function showLeanForm(wrap,members,item,prefilledBy){
 }
 // ── PRODUCTION STATUS ─────────────────────────────────────────────────
 function pgProd(c){
-  c.appendChild(dv({cls:'row jb mb4'},dv({},h('h1',{cls:'page-title'},'Production Status'),dv({cls:'page-sub'},'Daily targets by department')),isManager()&&btn('Update Targets','btn-o',function(){showProdForm(c);})));
-  renderProdCards(c);
-}
-function renderProdCards(c){
-  let w=c.querySelector('#pc');if(!w){w=dv({id:'pc'});c.appendChild(w);}w.innerHTML='';
-  const statRow=dv({cls:'g4 mb4'});
-  const total=prod.reduce(function(a,b){return a+b.target;},0);
-  const done=prod.reduce(function(a,b){return a+b.completed;},0);
-  const pct=total>0?Math.round(done/total*100):0;
-  const ahead=prod.filter(function(d){return d.status==='Ahead';}).length;
-  const behind=prod.filter(function(d){return d.status==='Behind'||d.status==='Stopped';}).length;
-  [{v:pct+'%',l:'Overall Progress',col:pct>=80?'#22c55e':pct>=60?'#f59e0b':'#ef4444'},{v:done+'/'+total,l:'Units Completed',col:'#1d4ed8'},{v:ahead,l:'Depts Ahead',col:'#22c55e'},{v:behind,l:'Depts Behind',col:'#ef4444'}].forEach(function(x){
-    statRow.appendChild(dv({cls:'stat-card'},dv({cls:'stat-val',st:{color:x.col}},''+x.v),dv({cls:'stat-lbl'},x.l)));
-  });
-  w.appendChild(statRow);
-  const grid=dv({cls:'g2'});
-  prod.forEach(function(dept){
-    const pct2=dept.target>0?Math.round(dept.completed/dept.target*100):0;
-    const col=dept.status==='Ahead'||pct2>=100?'#22c55e':dept.status==='Behind'||dept.status==='Stopped'?'#ef4444':pct2>=70?'#f59e0b':'#3b82f6';
-    const card=dv({cls:'card'});
-    card.appendChild(dv({cls:'row jb mb2'},dv({cls:'fw6',st:{fontSize:'14px'}},dept.name),bdg(dept.status,dept.status==='Ahead'?'green':dept.status==='Behind'?'red':dept.status==='Stopped'?'red':dept.status==='On Track'?'blue':'gray')));
-    card.appendChild(dv({cls:'row jb mb2'},sp({cls:'txs muted'},'Progress'),sp({st:{fontWeight:'700',color:col}},dept.completed+' / '+dept.target+' units')));
-    card.appendChild(dv({cls:'pb-row mb1'},dv({cls:'pb-fill',st:{width:Math.min(pct2,100)+'%',background:col}})));
-    card.appendChild(dv({cls:'txs muted',st:{textAlign:'right'}},pct2+'%'));
-    grid.appendChild(card);
-  });
-  w.appendChild(grid);
-}
-function showProdForm(c){
-  const overlay=dv({cls:'modal-overlay'});
-  const modal=dv({cls:'modal'});
-  modal.appendChild(dv({cls:'modal-title'},'Update Production Targets'));
-  const rows=[];
-  prod.forEach(function(dept){
-    const g=dv({cls:'g3 mb2',st:{alignItems:'center'}});
-    g.appendChild(dv({st:{fontWeight:'600',fontSize:'13px'}},dept.name));
-    const compIn=inp(''+dept.completed,'Completed','number');
-    const targIn=inp(''+dept.target,'Target','number');
-    compIn.style.cssText='padding:6px 8px;font-size:12px';targIn.style.cssText='padding:6px 8px;font-size:12px';
-    g.appendChild(frow('Done',compIn));g.appendChild(frow('Target',targIn));
-    modal.appendChild(g);rows.push({dept:dept,compIn:compIn,targIn:targIn});
-  });
-  modal.appendChild(dv({cls:'row gap2 mt3',st:{justifyContent:'flex-end'}},
-    btn('Cancel','btn-o',function(){overlay.remove();}),
-    btn('Save','btn-p',function(){
-      rows.forEach(function(r){r.dept.completed=parseInt(r.compIn.value)||0;r.dept.target=parseInt(r.targIn.value)||0;r.dept.status=r.dept.completed>=r.dept.target?'Ahead':r.dept.completed/r.dept.target>=0.8?'On Track':'Behind';});
-      overlay.remove();c.innerHTML='';pgProd(c);
-    })
+  c.appendChild(dv({cls:'row jb mb4'},
+    dv({},h('h1',{cls:'page-title'},'Production Schedule'),dv({cls:'page-sub'},'Live from ESP')),
+    dv({cls:'row gap2',st:{alignItems:'center'}},
+      sp({cls:'txs muted',id:'prod-synced'},''),
+      btn('↻ Refresh','btn-o btn-sm',function(){c.innerHTML='';pgProd(c);})
+    )
   ));
-  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
+  const host=dv({id:'prod-host'});c.appendChild(host);
+  host.appendChild(dv({cls:'empty'},'Loading production schedule…'));
+  loadProd(host);
+}
+
+const PROD_STAGES={1:{name:'Pending quote',col:'#6b7280',badge:'gray'},2:{name:'Pre-production',col:'#3b82f6',badge:'blue'},3:{name:'Production',col:'#22c55e',badge:'green'},4:{name:'Post production',col:'#f59e0b',badge:'amber'}};
+let prodFilter='floor';
+
+async function loadProd(host){
+  let jobs=[];
+  try{
+    const r=await fetch(SB+'/rest/v1/production_jobs?select=*&order=due_date.asc.nullslast',{headers:SH()});
+    jobs=await r.json(); if(!Array.isArray(jobs))jobs=[];
+  }catch(e){ host.innerHTML=''; host.appendChild(dv({cls:'empty'},'Could not load production data: '+(e&&e.message||e))); return; }
+  host.innerHTML='';
+  let latest=null; jobs.forEach(function(j){ if(j.synced_at&&(!latest||j.synced_at>latest))latest=j.synced_at; });
+  const syncEl=document.getElementById('prod-synced');
+  if(syncEl){ syncEl.textContent = latest ? ('Synced '+new Date(latest).toLocaleString('en-AU',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})) : 'No data yet — run the ESP sync'; }
+  renderProd(host,jobs);
+}
+
+function renderProd(host,jobs){
+  host.innerHTML='';
+  const today=tod();
+  function daysTo(s){ if(!s)return null; return Math.round((new Date(s+'T00:00:00')-today)/86400000); }
+  const by=function(st){return jobs.filter(function(j){return j.stage===st;}).length;};
+  const floor=jobs.filter(function(j){return j.stage>=2&&j.stage<=4;});
+  let over=0,week=0;
+  floor.forEach(function(j){ const d=daysTo(j.due_date); if(d===null)return; if(d<0)over++; else if(d<=7)week++; });
+
+  const sr=dv({cls:'g4 mb4'});
+  [{v:by(2),l:'Pre-production',col:PROD_STAGES[2].col,f:2},
+   {v:by(3),l:'Production',col:PROD_STAGES[3].col,f:3},
+   {v:by(4),l:'Post production',col:PROD_STAGES[4].col,f:4},
+   {v:over,l:'Overdue',col:'#ef4444',f:'over'}].forEach(function(x){
+    const sc=dv({cls:'stat-card',st:{cursor:'pointer'}});
+    sc.appendChild(dv({cls:'stat-val',st:{color:x.col}},''+x.v));
+    sc.appendChild(dv({cls:'stat-lbl'},x.l));
+    sc.onclick=function(){prodFilter=x.f;renderProd(host,jobs);};
+    sr.appendChild(sc);
+  });
+  host.appendChild(sr);
+
+  const pills=dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}});
+  [['floor','All on floor'],[2,'Pre-production'],[3,'Production'],[4,'Post production'],[1,'Pending quotes'],['over','Overdue'],['week','Due this week']].forEach(function(p){
+    pills.appendChild(btn(p[1],'btn-'+(prodFilter===p[0]?'p':'o')+' btn-sm',function(){prodFilter=p[0];renderProd(host,jobs);}));
+  });
+  host.appendChild(pills);
+
+  let rows;
+  if(prodFilter==='floor')rows=floor;
+  else if(prodFilter==='over')rows=floor.filter(function(j){var d=daysTo(j.due_date);return d!==null&&d<0;});
+  else if(prodFilter==='week')rows=floor.filter(function(j){var d=daysTo(j.due_date);return d!==null&&d>=0&&d<=7;});
+  else rows=jobs.filter(function(j){return j.stage===prodFilter;});
+
+  const card=dv({cls:'card'});
+  card.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'Jobs'),dv({cls:'card-sub'},rows.length+' shown')));
+  if(!rows.length){ card.appendChild(dv({cls:'empty'},'No jobs in this view.')); host.appendChild(card); return; }
+  rows.forEach(function(j){
+    const d=daysTo(j.due_date);
+    const st=PROD_STAGES[j.stage]||{name:'?',badge:'gray'};
+    const rel = d===null?'':(d<0?(-d)+'d overdue':d===0?'TODAY':'in '+d+'d');
+    const relCol = d===null?'var(--muted)':(d<0?'#ef4444':d<=7?'#d97706':'var(--muted)');
+    const row=dv({cls:'row jb',st:{padding:'10px 4px',borderBottom:'1px solid #f3f4f6',alignItems:'center',gap:'10px'}});
+    row.appendChild(dv({cls:'row gap2',st:{alignItems:'center',flex:'1',minWidth:'0'}},
+      bdg(st.name,st.badge),
+      sp({st:{fontFamily:'monospace',fontWeight:'700',fontSize:'13px',flexShrink:'0'}},'#'+(j.code||'—')),
+      sp({cls:'trunc',st:{fontWeight:'600',fontSize:'13px'}}, j.customer||j.title||'—')
+    ));
+    row.appendChild(dv({st:{textAlign:'right',flexShrink:'0'}},
+      dv({cls:'txs',st:{fontWeight:'700'}}, j.due_date?fmtD(j.due_date):'no date'),
+      dv({st:{fontSize:'11px',fontWeight:'700',color:relCol}}, rel)
+    ));
+    card.appendChild(row);
+  });
+  host.appendChild(card);
 }
 
 // ── DELIVERIES ────────────────────────────────────────────────────────
