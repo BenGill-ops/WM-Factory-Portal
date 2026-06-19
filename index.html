@@ -263,6 +263,13 @@ body.nav-open #nav-backdrop{display:block}
 .prod-card.over{border-left-color:#ef4444;background:#fef2f2}
 @media (max-width:900px){.prod-board{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:560px){.prod-board{grid-template-columns:1fr}}
+/* production banner + drag */
+.prod-banner{background:linear-gradient(90deg,var(--green-dark),var(--green-light));border-radius:12px;padding:16px 20px;margin-bottom:16px}
+.prod-bar{height:14px;background:rgba(255,255,255,0.28);border-radius:8px;overflow:hidden}
+.prod-bar-fill{height:100%;background:#fff;border-radius:8px;transition:width 0.6s}
+.prod-grip{color:#cbd5e1;cursor:grab;font-size:13px;flex-shrink:0}
+.prod-card{cursor:default}
+.prod-card.dragging{opacity:0.45;border-style:dashed}
 </style>
 </head>
 <body>
@@ -1825,23 +1832,29 @@ function pgProd(c){
 }
 
 const PROD_COLS=[
-  {key:'window_qty',name:'Window',col:'#2563eb'},
-  {key:'door_qty',name:'Door',col:'#16a34a'},
-  {key:'screen_qty',name:'Screen',col:'#7c3aed'},
-  {key:'commercial_qty',name:'Commercial',col:'#d97706'}
+  {key:'window_qty',ord:'window_order',name:'Window',col:'#2563eb'},
+  {key:'door_qty',ord:'door_order',name:'Door',col:'#16a34a'},
+  {key:'commercial_qty',ord:'commercial_order',name:'Commercial',col:'#d97706'},
+  {key:'screen_qty',ord:'screen_order',name:'Screen',col:'#7c3aed'}
 ];
 
 async function loadProd(host){
   let jobs=[];
   try{
-    const r=await fetch(SB+'/rest/v1/production_jobs?select=*&stage=eq.3&order=due_date.asc.nullslast',{headers:SH()});
+    const r=await fetch(SB+'/rest/v1/production_jobs?select=*&stage=eq.3',{headers:SH()});
     jobs=await r.json(); if(!Array.isArray(jobs))jobs=[];
   }catch(e){ host.innerHTML=''; host.appendChild(dv({cls:'empty'},'Could not load production data: '+(e&&e.message||e))); return; }
   host.innerHTML='';
   let latest=null; jobs.forEach(function(j){ if(j.synced_at&&(!latest||j.synced_at>latest))latest=j.synced_at; });
   const syncEl=document.getElementById('prod-synced');
   if(syncEl){ syncEl.textContent = latest ? ('Synced '+new Date(latest).toLocaleString('en-AU',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})) : 'No data yet — run the ESP sync'; }
+  window._prodJobs=jobs;
   renderProd(host,jobs);
+}
+
+function prodPct(list){
+  let done=0,total=0; list.forEach(function(j){ done+=(+j.completed_min||0); total+=(+j.prod_std_min||0); });
+  return total>0 ? Math.round(100*done/total) : null;
 }
 
 function renderProd(host,jobs){
@@ -1849,20 +1862,25 @@ function renderProd(host,jobs){
   const today=tod();
   function daysTo(s){ if(!s)return null; return Math.round((new Date(s+'T00:00:00')-today)/86400000); }
 
-  let done=0,total=0;
-  jobs.forEach(function(j){ done+=(+j.completed_min||0); total+=(+j.prod_std_min||0); });
-  const pct = total>0 ? Math.round(100*done/total) : null;
+  const pct=prodPct(jobs);
+  const banner=dv({cls:'prod-banner'});
+  banner.appendChild(dv({cls:'row jb',st:{alignItems:'center',marginBottom:'8px'}},
+    sp({st:{fontSize:'15px',fontWeight:'800',color:'#fff'}},'Production complete'),
+    sp({st:{fontSize:'30px',fontWeight:'800',color:'#fff'}}, pct===null?'—':pct+'%')
+  ));
+  const bar=dv({cls:'prod-bar'}); bar.appendChild(dv({cls:'prod-bar-fill',st:{width:(pct===null?0:pct)+'%'}}));
+  banner.appendChild(bar);
+  host.appendChild(banner);
 
   const strip=dv({cls:'g4 mb4'});
-  const pctCard=dv({cls:'stat-card'});
-  pctCard.appendChild(dv({cls:'stat-val',st:{color:pct===null?'#9ca3af':pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444'}}, pct===null?'—':pct+'%'));
-  pctCard.appendChild(dv({cls:'stat-lbl'},'Production complete'));
-  strip.appendChild(pctCard);
   PROD_COLS.forEach(function(col){
-    let q=0; jobs.forEach(function(j){ q+=(+j[col.key]||0); });
-    const sc=dv({cls:'stat-card'});
+    const list=jobs.filter(function(j){ return (+j[col.key]||0)>0; });
+    let q=0; list.forEach(function(j){ q+=(+j[col.key]||0); });
+    const secPct=prodPct(list);
+    const sc=dv({cls:'stat-card',st:{borderTop:'4px solid '+col.col}});
     sc.appendChild(dv({cls:'stat-val',st:{color:col.col}},''+q));
     sc.appendChild(dv({cls:'stat-lbl'},col.name+'s to make'));
+    sc.appendChild(dv({cls:'txs',st:{fontWeight:'700',marginTop:'3px',color:'#6b7280'}}, secPct===null?'—':secPct+'% complete'));
     strip.appendChild(sc);
   });
   host.appendChild(strip);
@@ -1871,7 +1889,15 @@ function renderProd(host,jobs){
 
   const board=dv({cls:'prod-board'});
   PROD_COLS.forEach(function(col){
-    const list=jobs.filter(function(j){ return (+j[col.key]||0)>0; });
+    let list=jobs.filter(function(j){ return (+j[col.key]||0)>0; });
+    list.sort(function(a,b){
+      const oa=a[col.ord], ob=b[col.ord];
+      const na=(oa===null||oa===undefined), nb=(ob===null||ob===undefined);
+      if(!na&&!nb&&oa!==ob) return oa-ob;
+      if(na!==nb) return na?1:-1;
+      const da=a.due_date||'9999', db=b.due_date||'9999';
+      return da<db?-1:da>db?1:0;
+    });
     const totalQ=list.reduce(function(a,j){return a+(+j[col.key]||0);},0);
     const colEl=dv({cls:'prod-col'});
     colEl.appendChild(dv({cls:'prod-col-hd',st:{borderBottomColor:col.col}},
@@ -1879,28 +1905,77 @@ function renderProd(host,jobs){
       sp({st:{fontWeight:'800',fontSize:'15px',color:col.col}},''+totalQ)
     ));
     const body=dv({cls:'prod-col-body'});
-    if(!list.length){ body.appendChild(dv({cls:'empty',st:{padding:'18px',fontSize:'12px'}},'None')); }
-    else list.forEach(function(j){
-      const d=daysTo(j.due_date);
-      const rel = d===null?'':(d<0?(-d)+'d over':d===0?'today':'in '+d+'d');
-      const relCol = d===null?'#9ca3af':(d<0?'#ef4444':d<=7?'#d97706':'#9ca3af');
-      const qty=+j[col.key]||0;
-      const card=dv({cls:'prod-card'+(d!==null&&d<0?' over':'')});
-      card.appendChild(dv({cls:'row jb',st:{alignItems:'center',gap:'6px'}},
-        sp({st:{fontFamily:'monospace',fontWeight:'800',fontSize:'13px'}},'#'+(j.code||'—')),
-        sp({st:{fontWeight:'800',fontSize:'13px',color:col.col,flexShrink:'0'}}, qty+'×')
-      ));
-      card.appendChild(dv({cls:'trunc',st:{fontWeight:'600',fontSize:'12.5px',marginTop:'2px'}}, j.customer||j.title||'—'));
-      card.appendChild(dv({cls:'row jb',st:{marginTop:'3px',alignItems:'center'}},
-        sp({cls:'txs muted'}, j.due_date?fmtD(j.due_date):'no date'),
-        sp({st:{fontSize:'11px',fontWeight:'700',color:relCol}}, rel)
-      ));
-      body.appendChild(card);
-    });
+    body.setAttribute('data-col',col.ord);
+    list.forEach(function(j){ body.appendChild(makeProdCard(j,col,daysTo)); });
+    enableProdDrag(body,col);
     colEl.appendChild(body);
     board.appendChild(colEl);
   });
   host.appendChild(board);
+}
+
+function makeProdCard(j,col,daysTo){
+  const d=daysTo(j.due_date);
+  const rel = d===null?'':(d<0?(-d)+'d over':d===0?'today':'in '+d+'d');
+  const relCol = d===null?'#9ca3af':(d<0?'#ef4444':d<=7?'#d97706':'#9ca3af');
+  const qty=+j[col.key]||0;
+  const num = (j.job_number&&(''+j.job_number).trim()) ? j.job_number : (j.code||'—');
+  const card=dv({cls:'prod-card'+(d!==null&&d<0?' over':'')});
+  card.setAttribute('data-oid',j.esp_oid);
+  card.draggable=true;
+  card.appendChild(dv({cls:'row jb',st:{alignItems:'center',gap:'6px'}},
+    dv({cls:'row gap2',st:{alignItems:'center',minWidth:'0'}},
+      sp({cls:'prod-grip'},'⠿'),
+      sp({st:{fontFamily:'monospace',fontWeight:'800',fontSize:'13px'}},'#'+num)
+    ),
+    sp({st:{fontWeight:'800',fontSize:'13px',color:col.col,flexShrink:'0'}}, qty+'×')
+  ));
+  card.appendChild(dv({cls:'trunc',st:{fontWeight:'600',fontSize:'12.5px',marginTop:'2px'}}, j.customer||j.title||'—'));
+  card.appendChild(dv({cls:'row jb',st:{marginTop:'3px',alignItems:'center'}},
+    sp({cls:'txs muted'}, j.due_date?fmtD(j.due_date):'no date'),
+    sp({st:{fontSize:'11px',fontWeight:'700',color:relCol}}, rel)
+  ));
+  return card;
+}
+
+let _prodDrag=null;
+function enableProdDrag(body,col){
+  body.addEventListener('dragstart',function(e){
+    const card=e.target.closest('.prod-card'); if(!card)return;
+    _prodDrag=card; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move';
+  });
+  body.addEventListener('dragend',function(e){
+    const card=e.target.closest('.prod-card'); if(card)card.classList.remove('dragging');
+    _prodDrag=null; persistProdOrder(body,col);
+  });
+  body.addEventListener('dragover',function(e){
+    e.preventDefault();
+    if(!_prodDrag||_prodDrag.parentNode!==body)return;
+    const after=prodAfterElement(body,e.clientY);
+    if(after==null)body.appendChild(_prodDrag);
+    else body.insertBefore(_prodDrag,after);
+  });
+}
+function prodAfterElement(body,y){
+  const els=[].slice.call(body.querySelectorAll('.prod-card:not(.dragging)'));
+  let closest=null,closestOff=-Infinity;
+  els.forEach(function(el){
+    const box=el.getBoundingClientRect();
+    const off=y-box.top-box.height/2;
+    if(off<0&&off>closestOff){closestOff=off;closest=el;}
+  });
+  return closest;
+}
+async function persistProdOrder(body,col){
+  const cards=[].slice.call(body.querySelectorAll('.prod-card'));
+  const reqs=cards.map(function(card,idx){
+    const oid=parseInt(card.getAttribute('data-oid'));
+    const j=(window._prodJobs||[]).find(function(x){return x.esp_oid===oid;});
+    if(j)j[col.ord]=idx;
+    const patch={}; patch[col.ord]=idx;
+    return fetch(SB+'/rest/v1/production_jobs?esp_oid=eq.'+oid,{method:'PATCH',headers:SH(),body:JSON.stringify(patch)});
+  });
+  try{ await Promise.all(reqs); }catch(e){ console.error('order save failed',e); }
 }
 
 // ── DELIVERIES ────────────────────────────────────────────────────────
