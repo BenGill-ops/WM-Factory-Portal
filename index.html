@@ -254,6 +254,15 @@ body.nav-open #nav-backdrop{display:block}
   .modal{padding:16px 18px;width:100%}
   .sig-canvas{height:180px}
 }
+.prod-board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.prod-col{background:#fff;border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.prod-col-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:3px solid var(--border)}
+.prod-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.prod-col-body{padding:8px;display:flex;flex-direction:column;gap:7px;max-height:62vh;overflow-y:auto}
+.prod-card{border:1px solid var(--border);border-left:4px solid #cbd5e1;border-radius:8px;padding:8px 10px;background:#fff}
+.prod-card.over{border-left-color:#ef4444;background:#fef2f2}
+@media (max-width:900px){.prod-board{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.prod-board{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1803,25 +1812,29 @@ function showLeanForm(wrap,members,item,prefilledBy){
 }
 // ── PRODUCTION STATUS ─────────────────────────────────────────────────
 function pgProd(c){
-  c.appendChild(dv({cls:'row jb mb4'},
-    dv({},h('h1',{cls:'page-title'},'Production Schedule'),dv({cls:'page-sub'},'Live from ESP')),
+  c.appendChild(dv({cls:'row jb mb3'},
+    dv({},h('h1',{cls:'page-title'},'Production'),dv({cls:'page-sub'},'This week’s production — live from ESP')),
     dv({cls:'row gap2',st:{alignItems:'center'}},
       sp({cls:'txs muted',id:'prod-synced'},''),
       btn('↻ Refresh','btn-o btn-sm',function(){c.innerHTML='';pgProd(c);})
     )
   ));
   const host=dv({id:'prod-host'});c.appendChild(host);
-  host.appendChild(dv({cls:'empty'},'Loading production schedule…'));
+  host.appendChild(dv({cls:'empty'},'Loading production…'));
   loadProd(host);
 }
 
-const PROD_STAGES={1:{name:'Pending quote',col:'#6b7280',badge:'gray'},2:{name:'Pre-production',col:'#3b82f6',badge:'blue'},3:{name:'Production',col:'#22c55e',badge:'green'},4:{name:'Post production',col:'#f59e0b',badge:'amber'}};
-let prodFilter='floor';
+const PROD_COLS=[
+  {key:'window_qty',name:'Window',col:'#2563eb'},
+  {key:'door_qty',name:'Door',col:'#16a34a'},
+  {key:'screen_qty',name:'Screen',col:'#7c3aed'},
+  {key:'commercial_qty',name:'Commercial',col:'#d97706'}
+];
 
 async function loadProd(host){
   let jobs=[];
   try{
-    const r=await fetch(SB+'/rest/v1/production_jobs?select=*&order=due_date.asc.nullslast',{headers:SH()});
+    const r=await fetch(SB+'/rest/v1/production_jobs?select=*&stage=eq.3&order=due_date.asc.nullslast',{headers:SH()});
     jobs=await r.json(); if(!Array.isArray(jobs))jobs=[];
   }catch(e){ host.innerHTML=''; host.appendChild(dv({cls:'empty'},'Could not load production data: '+(e&&e.message||e))); return; }
   host.innerHTML='';
@@ -1835,57 +1848,59 @@ function renderProd(host,jobs){
   host.innerHTML='';
   const today=tod();
   function daysTo(s){ if(!s)return null; return Math.round((new Date(s+'T00:00:00')-today)/86400000); }
-  const by=function(st){return jobs.filter(function(j){return j.stage===st;}).length;};
-  const floor=jobs.filter(function(j){return j.stage>=2&&j.stage<=4;});
-  let over=0,week=0;
-  floor.forEach(function(j){ const d=daysTo(j.due_date); if(d===null)return; if(d<0)over++; else if(d<=7)week++; });
 
-  const sr=dv({cls:'g4 mb4'});
-  [{v:by(2),l:'Pre-production',col:PROD_STAGES[2].col,f:2},
-   {v:by(3),l:'Production',col:PROD_STAGES[3].col,f:3},
-   {v:by(4),l:'Post production',col:PROD_STAGES[4].col,f:4},
-   {v:over,l:'Overdue',col:'#ef4444',f:'over'}].forEach(function(x){
-    const sc=dv({cls:'stat-card',st:{cursor:'pointer'}});
-    sc.appendChild(dv({cls:'stat-val',st:{color:x.col}},''+x.v));
-    sc.appendChild(dv({cls:'stat-lbl'},x.l));
-    sc.onclick=function(){prodFilter=x.f;renderProd(host,jobs);};
-    sr.appendChild(sc);
+  let done=0,total=0;
+  jobs.forEach(function(j){ done+=(+j.completed_min||0); total+=(+j.prod_std_min||0); });
+  const pct = total>0 ? Math.round(100*done/total) : null;
+
+  const strip=dv({cls:'g4 mb4'});
+  const pctCard=dv({cls:'stat-card'});
+  pctCard.appendChild(dv({cls:'stat-val',st:{color:pct===null?'#9ca3af':pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444'}}, pct===null?'—':pct+'%'));
+  pctCard.appendChild(dv({cls:'stat-lbl'},'Production complete'));
+  strip.appendChild(pctCard);
+  PROD_COLS.forEach(function(col){
+    let q=0; jobs.forEach(function(j){ q+=(+j[col.key]||0); });
+    const sc=dv({cls:'stat-card'});
+    sc.appendChild(dv({cls:'stat-val',st:{color:col.col}},''+q));
+    sc.appendChild(dv({cls:'stat-lbl'},col.name+'s to make'));
+    strip.appendChild(sc);
   });
-  host.appendChild(sr);
+  host.appendChild(strip);
 
-  const pills=dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}});
-  [['floor','All on floor'],[2,'Pre-production'],[3,'Production'],[4,'Post production'],[1,'Pending quotes'],['over','Overdue'],['week','Due this week']].forEach(function(p){
-    pills.appendChild(btn(p[1],'btn-'+(prodFilter===p[0]?'p':'o')+' btn-sm',function(){prodFilter=p[0];renderProd(host,jobs);}));
-  });
-  host.appendChild(pills);
+  if(!jobs.length){ host.appendChild(dv({cls:'empty'},'No jobs currently in Production.')); return; }
 
-  let rows;
-  if(prodFilter==='floor')rows=floor;
-  else if(prodFilter==='over')rows=floor.filter(function(j){var d=daysTo(j.due_date);return d!==null&&d<0;});
-  else if(prodFilter==='week')rows=floor.filter(function(j){var d=daysTo(j.due_date);return d!==null&&d>=0&&d<=7;});
-  else rows=jobs.filter(function(j){return j.stage===prodFilter;});
-
-  const card=dv({cls:'card'});
-  card.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'Jobs'),dv({cls:'card-sub'},rows.length+' shown')));
-  if(!rows.length){ card.appendChild(dv({cls:'empty'},'No jobs in this view.')); host.appendChild(card); return; }
-  rows.forEach(function(j){
-    const d=daysTo(j.due_date);
-    const st=PROD_STAGES[j.stage]||{name:'?',badge:'gray'};
-    const rel = d===null?'':(d<0?(-d)+'d overdue':d===0?'TODAY':'in '+d+'d');
-    const relCol = d===null?'var(--muted)':(d<0?'#ef4444':d<=7?'#d97706':'var(--muted)');
-    const row=dv({cls:'row jb',st:{padding:'10px 4px',borderBottom:'1px solid #f3f4f6',alignItems:'center',gap:'10px'}});
-    row.appendChild(dv({cls:'row gap2',st:{alignItems:'center',flex:'1',minWidth:'0'}},
-      bdg(st.name,st.badge),
-      sp({st:{fontFamily:'monospace',fontWeight:'700',fontSize:'13px',flexShrink:'0'}},'#'+(j.code||'—')),
-      sp({cls:'trunc',st:{fontWeight:'600',fontSize:'13px'}}, j.customer||j.title||'—')
+  const board=dv({cls:'prod-board'});
+  PROD_COLS.forEach(function(col){
+    const list=jobs.filter(function(j){ return (+j[col.key]||0)>0; });
+    const totalQ=list.reduce(function(a,j){return a+(+j[col.key]||0);},0);
+    const colEl=dv({cls:'prod-col'});
+    colEl.appendChild(dv({cls:'prod-col-hd',st:{borderBottomColor:col.col}},
+      dv({cls:'row gap2',st:{alignItems:'center'}}, dv({cls:'prod-dot',st:{background:col.col}}), sp({st:{fontWeight:'800',fontSize:'14px'}},col.name+' Production')),
+      sp({st:{fontWeight:'800',fontSize:'15px',color:col.col}},''+totalQ)
     ));
-    row.appendChild(dv({st:{textAlign:'right',flexShrink:'0'}},
-      dv({cls:'txs',st:{fontWeight:'700'}}, j.due_date?fmtD(j.due_date):'no date'),
-      dv({st:{fontSize:'11px',fontWeight:'700',color:relCol}}, rel)
-    ));
-    card.appendChild(row);
+    const body=dv({cls:'prod-col-body'});
+    if(!list.length){ body.appendChild(dv({cls:'empty',st:{padding:'18px',fontSize:'12px'}},'None')); }
+    else list.forEach(function(j){
+      const d=daysTo(j.due_date);
+      const rel = d===null?'':(d<0?(-d)+'d over':d===0?'today':'in '+d+'d');
+      const relCol = d===null?'#9ca3af':(d<0?'#ef4444':d<=7?'#d97706':'#9ca3af');
+      const qty=+j[col.key]||0;
+      const card=dv({cls:'prod-card'+(d!==null&&d<0?' over':'')});
+      card.appendChild(dv({cls:'row jb',st:{alignItems:'center',gap:'6px'}},
+        sp({st:{fontFamily:'monospace',fontWeight:'800',fontSize:'13px'}},'#'+(j.code||'—')),
+        sp({st:{fontWeight:'800',fontSize:'13px',color:col.col,flexShrink:'0'}}, qty+'×')
+      ));
+      card.appendChild(dv({cls:'trunc',st:{fontWeight:'600',fontSize:'12.5px',marginTop:'2px'}}, j.customer||j.title||'—'));
+      card.appendChild(dv({cls:'row jb',st:{marginTop:'3px',alignItems:'center'}},
+        sp({cls:'txs muted'}, j.due_date?fmtD(j.due_date):'no date'),
+        sp({st:{fontSize:'11px',fontWeight:'700',color:relCol}}, rel)
+      ));
+      body.appendChild(card);
+    });
+    colEl.appendChild(body);
+    board.appendChild(colEl);
   });
-  host.appendChild(card);
+  host.appendChild(board);
 }
 
 // ── DELIVERIES ────────────────────────────────────────────────────────
