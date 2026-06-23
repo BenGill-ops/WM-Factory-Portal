@@ -313,6 +313,7 @@ body.nav-open #nav-backdrop{display:block}
     <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:11px;margin-top:16px">Window Makers Factory Portal</p>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 const SB='https://souwlbqovhhmjrfpxunv.supabase.co';
 const XERO_FN=SB+'/functions/v1';
@@ -502,7 +503,7 @@ let safety=[{id:1,refNo:'SA-001',title:'Unguarded machinery - Fab Bay 3',categor
 let prod=[{id:1,name:'Operations',completed:42,target:50,status:'On Track'},{id:2,name:'Fabrication',completed:38,target:40,status:'Ahead'},{id:3,name:'Glass',completed:12,target:30,status:'Behind'},{id:4,name:'Aluminium',completed:25,target:25,status:'On Track'},{id:5,name:'Dispatch',completed:18,target:20,status:'On Track'},{id:6,name:'Installation',completed:0,target:10,status:'Stopped'}];
 let lean=[{id:1,title:'Reduce offcut waste',dept:'Aluminium',priority:'High',status:'In Progress',submittedBy:'Jake T.',description:'Optimise cut patterns.',createdAt:new Date(Date.now()-259200000).toISOString()},{id:2,title:'5S glass storage',dept:'Glass',priority:'Medium',status:'Submitted',submittedBy:'Sarah M.',description:'Implement 5S.',createdAt:new Date(Date.now()-432000000).toISOString()},{id:3,title:'Digital job cards',dept:'Operations',priority:'Critical',status:'Under Review',submittedBy:'Tom W.',description:'Replace paper job cards.',createdAt:new Date(Date.now()-604800000).toISOString()},{id:4,title:'Improved dispatch packing',dept:'Dispatch',priority:'Medium',status:'Completed',submittedBy:'Lisa K.',description:'Redesign packing station.',createdAt:new Date(Date.now()-1209600000).toISOString()}];
 let sops=[{id:1,title:'Glass cutting safety procedure',category:'Safety',dept:'Glass',version:'2.1',status:'Active',createdAt:new Date(Date.now()-2592000000).toISOString()},{id:2,title:'Forklift operation checklist',category:'Operations',dept:'Dispatch',version:'1.4',status:'Active',createdAt:new Date(Date.now()-5184000000).toISOString()},{id:3,title:'Chemical handling acid wash',category:'Safety',dept:'Fabrication',version:'3.0',status:'Active',createdAt:new Date(Date.now()-7776000000).toISOString()},{id:4,title:'New employee onboarding',category:'HR',dept:'Admin',version:'1.0',status:'Draft',createdAt:new Date(Date.now()-432000000).toISOString()}];
-const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'}];
+const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'goodsin',label:'Goods In',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'},{id:'ncr',label:'NCR Reports',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'}];
 const ORDERS=['Delivery 1','Delivery 2','Delivery 3','Delivery 4'];
 const SEQS=['Deliver 1st','Deliver 2nd','Deliver 3rd','Deliver 4th'];
 const VEHICLES=['Truck','Truck and Trailer','Hilux','Other'];
@@ -594,7 +595,7 @@ function renderTop(){
 function go(p){page=p;selDay=null;document.body.classList.remove('nav-open');renderNav();renderTop();renderPage();}
 function renderPage(){
   const c=document.getElementById('content');c.innerHTML='';
-  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
+  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,goodsin:pgGoodsIn,ncr:pgNCR,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
   if(pages[page])pages[page](c);else pgDash(c);
 }
 async function loadLoginDropdown(){
@@ -663,6 +664,12 @@ function closeLogin(){closeLoginScreen();}
 async function pgDash(c){
   const today=new Date();
   const [upcoming,members,swps,signoffs,safetyAlerts]=await Promise.all([DB.list(iso(today),iso(addD(today,7))),CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs(),CDB.getSafetyAlerts()]);
+  let prodPctDash=null;
+  try{
+    const _pr=await fetch(SB+'/rest/v1/production_jobs?select=completed_min,prod_std_min&stage=eq.3',{headers:SH()});
+    const _pj=await _pr.json();
+    if(Array.isArray(_pj)){ let _d=0,_t=0; _pj.forEach(function(j){_d+=(+j.completed_min||0);_t+=(+j.prod_std_min||0);}); if(_t>0)prodPctDash=Math.round(100*_d/_t); }
+  }catch(e){}
   const todayStr=today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   c.appendChild(dv({cls:'mb4'},h('h1',{cls:'page-title'},'Factory Dashboard'),dv({cls:'page-sub'},todayStr)));
   const lookup={};signoffs.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lookup[k]||new Date(s.created_at)>new Date(lookup[k].created_at))lookup[k]=s;});
@@ -671,8 +678,8 @@ async function pgDash(c){
   members.forEach(function(m){swps.forEach(function(s){const st=compStatus(lookup[m.id+'_'+s.id]);if(st==='current')compCurrent++;if(st==='overdue'){compOverdue++;overdueList.push({m:m.name,s:s.title});}});});
   const compPct=total>0?Math.round(compCurrent/total*100):0;
   const pinned=safetyAlerts.filter(function(s){return s.is_pinned&&!s.is_archived;});
-  const sr=dv({cls:'g4 mb4'});
-  [{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8',dest:'delivery'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444',dest:'safety'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626',dest:'safety'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706',dest:'lean'}].forEach(function(x){
+  const sr=dv({cls:'mb4',st:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'12px'}});
+  [{v:prodPctDash===null?'\u2014':prodPctDash+'%',l:'Production',s:'Factory complete',col:prodPctDash===null?'#9ca3af':prodPctDash>=80?'#22c55e':prodPctDash>=50?'#f59e0b':'#ef4444',dest:'production'},{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8',dest:'delivery'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444',dest:'safety'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626',dest:'safety'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706',dest:'lean'}].forEach(function(x){
     const sc2=dv({cls:'stat-card',st:{cursor:'pointer',transition:'box-shadow 0.15s,transform 0.15s'}});
     sc2.onmouseenter=function(){sc2.style.boxShadow='0 4px 16px rgba(0,0,0,0.10)';sc2.style.transform='translateY(-1px)';};
     sc2.onmouseleave=function(){sc2.style.boxShadow='';sc2.style.transform='';};
@@ -3580,6 +3587,269 @@ function exportCSV(members,swps,lk){
 }
 
 // ── ADMIN PANEL ──────────────────────────────────────────────────────
+// ===== Goods In (receiving) module =====
+const GRDB={
+  async list(){try{const r=await fetch(SB+'/rest/v1/goods_receipts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async create(row){const r=await fetch(SB+'/rest/v1/goods_receipts',{method:'POST',headers:SH(),body:JSON.stringify(row)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
+  async patch(id,fields){const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
+  async del(id){await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async uploadDocket(file){const ext=(file.name?file.name.split('.').pop():'')||'pdf';const path='dockets/'+Date.now()+'-'+Math.floor(Math.random()*1000)+'.'+ext;const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'application/pdf','x-upsert':'true'},body:file});if(!r.ok){const e=await r.text();throw new Error('Docket upload failed: '+e);}return SB+'/storage/v1/object/public/delivery-photos/'+path;},
+  async parse(text){const r=await fetch(XERO_FN+'/parse-docket',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify({text:text})});const d=await r.json();if(!r.ok)throw new Error(d&&d.error?d.error:('Parse failed ('+r.status+')'));return d;}
+};
+let pdfWorkerSet=false;
+async function extractDocketText(file){
+  if(typeof pdfjsLib==='undefined')throw new Error('PDF reader not loaded — check your connection and reload.');
+  if(!pdfWorkerSet){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';pdfWorkerSet=true;}
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let out='';
+  for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const tc=await pg.getTextContent();out+='\n----- PAGE '+i+' -----\n'+tc.items.map(function(it){return it.str;}).join(' ');}
+  return out;
+}
+function grColour(d){const a=[d.colourExternal,d.colourInternal].filter(Boolean);if(!a.length)return '';return a[0]===a[1]?a[0]+' (ext & int)':a.join(' / ');}
+function grStatusPill(s){const map={'Pending':{bg:'#f3f4f6',fg:'#6b7280',bd:'#e5e7eb'},'Receiving':{bg:'#fff4e0',fg:'#a06400',bd:'#f3d29a'},'Received':{bg:'#eafaf0',fg:'#15803d',bd:'#bbf7d0'},'Discrepancy':{bg:'#fdeceb',fg:'#dc2626',bd:'#f6c6c2'}};const m=map[s]||map['Pending'];return sp({st:{display:'inline-block',padding:'2px 9px',borderRadius:'11px',fontSize:'11px',fontWeight:'700',background:m.bg,color:m.fg,border:'1px solid '+m.bd}},s);}
+function grComputeStatus(items){let any=false,allRec=true,disc=false;(items||[]).forEach(function(it){if(it.received)any=true;else allRec=false;const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);if(it.received&&!isNaN(del)&&!isNaN(rec)&&rec<del)disc=true;if(it.ncr_id)disc=true;});if(disc)return 'Discrepancy';if(allRec&&items&&items.length)return 'Received';if(any)return 'Receiving';return 'Pending';}
+function raiseNcrFromReceiptLine(rcpt,it,reason){
+  let qa='';const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
+  if(reason==='Short supplied'&&!isNaN(del)&&!isNaN(rec))qa=String(Math.max(0,del-rec));
+  window.__ncrPrefill={supplier:rcpt.supplier||'',delivery_no:rcpt.delivery_no||'',customer_po:rcpt.customer_po||'',item_no:it.item_no||'',item_desc:it.item_desc||'',qty_affected:qa,reason:reason||'Damaged',receipt_id:rcpt.id,special_instruction:it.note||''};
+  go('ncr');
+}
+async function linkNcrToReceipt(receiptId,itemNo,itemDesc,ncrId){
+  try{
+    const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+receiptId,{headers:SH()});const arr=await r.json();const g=Array.isArray(arr)?arr[0]:null;if(!g)return;
+    let touched=false;const items=(g.items||[]).map(function(it){if(!it.ncr_id&&(it.item_no||'')===(itemNo||'')&&(it.item_desc||'')===(itemDesc||'')&&!touched){it.ncr_id=ncrId;touched=true;}return it;});
+    await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+receiptId,{method:'PATCH',headers:SH(),body:JSON.stringify({items:items,status:'Discrepancy'})});
+  }catch(e){}
+}
+window.linkNcrToReceipt=linkNcrToReceipt;
+
+async function pgGoodsIn(c){
+  c.appendChild(dv({cls:'row jb mb3'},
+    dv({},h('h1',{cls:'page-title'},'Goods In'),dv({cls:'page-sub'},'Receive supplier deliveries, check items off, and raise NCRs')),
+    false
+  ));
+  const tabBar=dv({cls:'tab-bar'});let activeTab='list';let detailId=null;const tc=dv({id:'gitc'});
+  c.appendChild(tabBar);c.appendChild(tc);
+  function renderTabs(){tabBar.innerHTML='';[{id:'receive',label:'Receive a delivery'},{id:'list',label:'Incoming deliveries'}].forEach(function(t){tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;detailId=null;renderTabs();renderTab();}},t.label));});}
+  async function renderTab(){tc.innerHTML='';if(activeTab==='receive')renderReceive(tc);else if(detailId)await renderDetail(tc,detailId);else await renderList(tc);}
+  renderTabs();await renderTab();
+
+  function renderReceive(box){
+    if(!currentUser){box.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before receiving deliveries.')));return;}
+    const status=dv({cls:'page-sub',st:{marginTop:'10px'}});
+    const drop=dv({cls:'card',st:{border:'2px dashed var(--border)',textAlign:'center',padding:'32px 20px',cursor:'pointer'}},
+      dv({cls:'fw6',st:{marginBottom:'4px'}},'Drop the supplier delivery docket (PDF)'),
+      dv({cls:'txs muted'},'or tap to choose a file — items are read automatically')
+    );
+    const fileIn=h('input',{type:'file',accept:'application/pdf',st:{display:'none'}});
+    drop.appendChild(fileIn);
+    drop.onclick=function(){fileIn.click();};
+    drop.ondragover=function(e){e.preventDefault();drop.style.background='#f0fdf4';};
+    drop.ondragleave=function(){drop.style.background='';};
+    drop.ondrop=function(e){e.preventDefault();drop.style.background='';if(e.dataTransfer.files[0])handle(e.dataTransfer.files[0]);};
+    fileIn.onchange=function(e){if(e.target.files[0])handle(e.target.files[0]);};
+    async function handle(file){
+      if(!(file.name||'').toLowerCase().endsWith('.pdf')){status.style.color='#ef4444';status.textContent='Please drop a PDF docket.';return;}
+      try{
+        status.style.color='';status.textContent='Reading docket...';
+        const text=await extractDocketText(file);
+        status.textContent='Reading items (this can take a few seconds)...';
+        const parsed=await GRDB.parse(text);
+        const dels=(parsed&&parsed.deliveries)||[];
+        if(!dels.length){status.style.color='#ef4444';status.textContent='No deliveries found in that PDF.';return;}
+        status.textContent='Storing docket...';
+        const url=await GRDB.uploadDocket(file);
+        let made=0;
+        for(const d of dels){
+          const items=(d.items||[]).map(function(it){return {line:it.line||'',item_no:it.itemNo||'',item_desc:it.itemDesc||'',qty_delivered:it.qtyDelivered||'',qty_received:'',received:false,short:false,note:it.specialInstruction||'',ncr_id:null};});
+          const row={supplier:d.supplier||'',delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
+          await GRDB.create(row);made++;
+        }
+        status.style.color='#15803d';status.textContent=made+' delivery'+(made===1?'':' loads')+' logged. Open one from “Incoming deliveries” to check items off.';
+        activeTab='list';renderTabs();renderTab();
+      }catch(err){status.style.color='#ef4444';status.textContent='Error: '+err.message;}
+    }
+    box.appendChild(drop);box.appendChild(status);
+  }
+
+  async function renderList(box){
+    const lo=dv({cls:'empty'},'Loading...');box.appendChild(lo);
+    const list=await GRDB.list();lo.remove();
+    if(!list.length){box.appendChild(dv({cls:'empty'},'No deliveries received yet. Use “Receive a delivery” to drop a docket.'));return;}
+    list.forEach(function(g){
+      const items=g.items||[];const recd=items.filter(function(i){return i.received;}).length;
+      const card=dv({cls:'card mb3',st:{cursor:'pointer'}});
+      card.onclick=function(){detailId=g.id;renderTab();};
+      card.appendChild(dv({cls:'row jb'},
+        dv({},h('div',{cls:'fw6'},(g.supplier||'Supplier')+(g.delivery_no?(' — Del '+g.delivery_no):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.customer_po?(' · PO '+g.customer_po):'')+' · '+recd+'/'+items.length+' checked')),
+        grStatusPill(g.status||'Pending')
+      ));
+      box.appendChild(card);
+    });
+  }
+
+  async function renderDetail(box,id){
+    const list=await GRDB.list();const g=list.find(function(x){return String(x.id)===String(id);});
+    if(!g){box.appendChild(dv({cls:'empty'},'Not found.'));return;}
+    let items=(g.items||[]).map(function(x){return Object.assign({},x);});
+    box.appendChild(dv({cls:'row gap3 mb3',st:{alignItems:'center',flexWrap:'wrap'}},
+      btn('← Back','btn-o',function(){detailId=null;renderTab();}),
+      dv({},h('h2',{cls:'page-title',st:{fontSize:'18px'}},(g.supplier||'Supplier')+(g.delivery_no?(' — Del '+g.delivery_no):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.customer_po?(' · PO '+g.customer_po):'')+(g.colour?(' · '+g.colour):''))),
+      grStatusPill(g.status||'Pending')
+    ));
+    if(g.docket_url)box.appendChild(dv({cls:'mb3'},h('a',{href:g.docket_url,target:'_blank',rel:'noopener',cls:'login-btn',st:{textDecoration:'none'}},'View docket PDF')));
+    const listBox=dv({});box.appendChild(listBox);
+    const saveStatus=dv({cls:'txs muted',st:{marginTop:'8px'}});
+    async function persist(){
+      const stt=grComputeStatus(items);const fields={items:items,status:stt};
+      if(stt==='Received'&&!g.received_at){fields.received_at=new Date().toISOString();fields.received_by_name=currentUser?currentUser.name:'';}
+      try{await GRDB.patch(g.id,fields);g.status=stt;saveStatus.style.color='#15803d';saveStatus.textContent='Saved.';}catch(e){saveStatus.style.color='#ef4444';saveStatus.textContent='Save failed: '+e.message;}
+    }
+    function renderItems(){
+      listBox.innerHTML='';
+      items.forEach(function(it){
+        const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
+        const isShort=it.received&&!isNaN(del)&&!isNaN(rec)&&rec<del;
+        const row=dv({cls:'card',st:{padding:'12px',marginBottom:'8px',borderLeft:'4px solid '+(it.ncr_id?'#dc2626':(it.received?(isShort?'#f59e0b':'#22c55e'):'#e5e7eb'))}});
+        row.appendChild(dv({cls:'row jb',st:{flexWrap:'wrap',gap:'8px'}},
+          dv({},h('div',{cls:'fw6 txs'},((it.item_no||'')+' '+(it.item_desc||'')).trim()||'Item'),dv({cls:'txs muted'},'Delivered: '+(it.qty_delivered||'-')+(it.note?(' · '+it.note):''))),
+          (it.ncr_id?sp({st:{fontSize:'11px',fontWeight:'700',color:'#dc2626'}},'NCR raised'):(isShort?sp({st:{fontSize:'11px',fontWeight:'700',color:'#a06400'}},'SHORT'):false))
+        ));
+        const recInp=inp(it.qty_received||'','Qty received','number');recInp.style.maxWidth='130px';
+        recInp.onchange=function(){it.qty_received=recInp.value;if(recInp.value!=='')it.received=true;renderItems();persist();};
+        const cb=h('input',{type:'checkbox'});cb.checked=!!it.received;cb.style.width='18px';cb.style.height='18px';
+        cb.onchange=function(){it.received=cb.checked;if(it.received&&(it.qty_received===''||it.qty_received==null)){it.qty_received=it.qty_delivered||'';}renderItems();persist();};
+        row.appendChild(dv({cls:'row gap3',st:{marginTop:'8px',flexWrap:'wrap',alignItems:'center'}},
+          dv({cls:'row gap1',st:{alignItems:'center'}},cb,sp({cls:'txs'},'Received')),
+          frow('Qty received',recInp),
+          btn('Raise NCR','btn-o btn-sm',function(){const defReason=isShort?'Short supplied':'Damaged';raiseNcrFromReceiptLine(g,it,defReason);})
+        ));
+        listBox.appendChild(row);
+      });
+    }
+    renderItems();
+    box.appendChild(dv({cls:'row gap2',st:{marginTop:'10px',flexWrap:'wrap'}},
+      btn('Mark all received','btn-o',function(){items.forEach(function(it){it.received=true;if(it.qty_received===''||it.qty_received==null)it.qty_received=it.qty_delivered||'';});renderItems();persist();}),
+      (isManager()?btn('Delete delivery','btn-o btn-sm',async function(){if(confirm('Delete this received delivery?')){try{await GRDB.del(g.id);detailId=null;renderTab();}catch(e){alert('Delete failed: '+e.message);}}}):false)
+    ));
+    box.appendChild(saveStatus);
+  }
+}
+
+// ===== NCR (Non-Compliance Report) module =====
+const NCRDB={
+  async list(){try{const r=await fetch(SB+'/rest/v1/ncr_reports?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async create(row){const r=await fetch(SB+'/rest/v1/ncr_reports',{method:'POST',headers:SH(),body:JSON.stringify(row)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
+  async patch(id,fields){const r=await fetch(SB+'/rest/v1/ncr_reports?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
+  async del(id){await fetch(SB+'/rest/v1/ncr_reports?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async uploadPhoto(file,ref){const ext=(file.name?file.name.split('.').pop():'')||'jpg';const path='ncr/'+ref+'-'+Date.now()+'-'+Math.floor(Math.random()*1000)+'.'+ext;const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}return SB+'/storage/v1/object/public/delivery-photos/'+path;},
+  async notify(row){try{const r=await fetch(XERO_FN+'/ncr-notify',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify(row)});return r.ok;}catch(e){return false;}}
+};
+function ncrSuggestNo(list){const yr=new Date().getFullYear();const pre='NCR-'+yr+'-';let max=0;(list||[]).forEach(function(n){if((n.ncr_no||'').indexOf(pre)===0){const v=parseInt(n.ncr_no.slice(pre.length),10);if(v>max)max=v;}});return pre+String(max+1).padStart(3,'0');}
+function ncrPill(status){const map={'Open':{bg:'#fff4e0',fg:'#a06400',bd:'#f3d29a'},'Logged with supplier':{bg:'#e6f0fb',fg:'#1d4ed8',bd:'#bcd4f5'},'Resolved':{bg:'#eafaf0',fg:'#15803d',bd:'#bbf7d0'}};const m=map[status]||map['Open'];return sp({st:{display:'inline-block',padding:'2px 9px',borderRadius:'11px',fontSize:'11px',fontWeight:'700',background:m.bg,color:m.fg,border:'1px solid '+m.bd}},status);}
+function ncrFmtDT(iso){try{return new Date(iso).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+
+async function pgNCR(c){
+  c.appendChild(dv({cls:'row jb mb3'},
+    dv({},h('h1',{cls:'page-title'},'Non-Compliance Reports'),dv({cls:'page-sub'},'Log damaged or non-compliant supplier deliveries')),
+    false
+  ));
+  const tabBar=dv({cls:'tab-bar'});let activeTab='new';const tc=dv({id:'ncrtc'});
+  c.appendChild(tabBar);c.appendChild(tc);
+  function renderTabs(){tabBar.innerHTML='';[{id:'new',label:'Log an NCR'},{id:'list',label:'Logged NCRs'}].forEach(function(t){tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;renderTabs();renderTab();}},t.label));});}
+  async function renderTab(){tc.innerHTML='';if(activeTab==='new')renderForm(tc);else await renderList(tc);}
+  renderTabs();await renderTab();
+
+  function renderForm(box){
+    if(!currentUser){box.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before logging an NCR, so we know who reported it.')));return;}
+    const pf=window.__ncrPrefill||{};window.__ncrPrefill=null;
+    const receiptId=pf.receipt_id||null;
+    const photos=[];
+    const reason=sel(pf.reason||'Damaged','Damaged','Short supplied','Wrong item','Other');
+    const supplier=inp(pf.supplier||'','e.g. Architectural Window Systems (AWS)');
+    const deliveryNo=inp(pf.delivery_no||'','Delivery / docket number');
+    const po=inp(pf.customer_po||'','Customer PO / order no (optional)');
+    const itemNo=inp(pf.item_no||'','Item number');
+    const itemDesc=inp(pf.item_desc||'','Item description');
+    const qty=inp(pf.qty_affected||'','Qty affected','number');
+    const fault=h('textarea',{rows:'4',placeholder:'Describe the damage or defect...',st:{width:'100%',padding:'8px 10px',border:'1px solid var(--border)',borderRadius:'6px',fontFamily:'inherit',fontSize:'14px',boxSizing:'border-box'}});
+    if(pf.special_instruction)fault.value=pf.special_instruction;
+    const photoIn=h('input',{type:'file',accept:'image/*',multiple:'true'});
+    const preview=dv({cls:'row gap2',st:{flexWrap:'wrap',marginTop:'8px'}});
+    function renderPrev(){preview.innerHTML='';photos.forEach(function(p,i){const wrap=dv({st:{position:'relative',width:'76px',height:'76px',borderRadius:'6px',overflow:'hidden',border:'1px solid var(--border)'}});wrap.appendChild(h('img',{src:p.url,st:{width:'100%',height:'100%',objectFit:'cover'}}));wrap.appendChild(h('button',{cls:'btn',st:{position:'absolute',top:'2px',right:'2px',padding:'0',width:'20px',height:'20px',borderRadius:'50%',background:'rgba(0,0,0,0.6)',color:'#fff',fontSize:'12px',lineHeight:'1'},onclick:function(){photos.splice(i,1);renderPrev();}},'×'));preview.appendChild(wrap);});}
+    photoIn.onchange=function(e){Array.from(e.target.files).forEach(function(f){if(!(f.type||'').startsWith('image/'))return;const rd=new FileReader();rd.onload=function(ev){photos.push({file:f,url:ev.target.result});renderPrev();};rd.readAsDataURL(f);});photoIn.value='';};
+    const status=dv({cls:'page-sub',st:{marginTop:'10px'}});
+    const grid=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'10px'}},
+      frow('Reason',reason),
+      frow('Supplier',supplier),
+      frow('Delivery / docket no',deliveryNo),
+      frow('Customer PO / order no',po),
+      frow('Item number',itemNo),
+      frow('Item description',itemDesc),
+      frow('Qty affected',qty)
+    );
+    const photoWrap=dv({});photoWrap.appendChild(photoIn);photoWrap.appendChild(preview);
+    const card=dv({cls:'card'},
+      grid,
+      frow('Nature of damage / fault',fault),
+      frow('Photos of the damage',photoWrap),
+      dv({cls:'row gap2',st:{marginTop:'12px',flexWrap:'wrap'}},
+        btn('Submit NCR & notify office','btn-p',async function(ev){
+          const b=ev.currentTarget;
+          if(!fault.value.trim()){status.style.color='#ef4444';status.textContent='Please describe the damage / fault.';return;}
+          if(!qty.value.trim()){status.style.color='#ef4444';status.textContent='Enter the quantity affected.';return;}
+          b.disabled=true;
+          try{
+            const list=await NCRDB.list();const no=ncrSuggestNo(list);
+            status.style.color='';status.textContent='Uploading photos...';
+            const urls=[];for(const p of photos){try{urls.push({url:await NCRDB.uploadPhoto(p.file,no),caption:p.file.name});}catch(e){}}
+            status.textContent='Saving NCR...';
+            const row={ncr_no:no,reason:reason.value,receipt_id:receiptId,supplier:supplier.value.trim(),delivery_no:deliveryNo.value.trim(),customer_po:po.value.trim(),item_no:itemNo.value.trim(),item_desc:itemDesc.value.trim(),qty_affected:qty.value.trim(),damage_description:fault.value.trim(),photos:urls,status:'Open',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
+            const saved=await NCRDB.create(row);
+            if(receiptId&&window.linkNcrToReceipt){try{await window.linkNcrToReceipt(receiptId,itemNo.value.trim(),itemDesc.value.trim(),saved.id);}catch(e){}}
+            const emailed=await NCRDB.notify(saved);
+            status.style.color='#15803d';status.textContent='NCR '+no+' submitted.'+(emailed?' Office notified by email.':' (Saved — email not set up yet.)');
+            supplier.value='';deliveryNo.value='';po.value='';itemNo.value='';itemDesc.value='';qty.value='';fault.value='';photos.length=0;renderPrev();
+          }catch(err){status.style.color='#ef4444';status.textContent='Error: '+err.message;}
+          b.disabled=false;
+        }),
+        btn('View logged NCRs','btn-o',function(){activeTab='list';renderTabs();renderTab();})
+      ),
+      status
+    );
+    box.appendChild(card);
+  }
+
+  async function renderList(box){
+    const lo=dv({cls:'empty'},'Loading...');box.appendChild(lo);
+    const list=await NCRDB.list();lo.remove();
+    if(!list.length){box.appendChild(dv({cls:'empty'},'No NCRs logged yet. Use the “Log an NCR” tab to start one.'));return;}
+    list.forEach(function(n){
+      const card=dv({cls:'card mb3'});
+      card.appendChild(dv({cls:'row jb'},
+        dv({},h('div',{cls:'fw6'},(n.ncr_no||'NCR')+(n.supplier?(' — '+n.supplier):'')),dv({cls:'txs muted'},(n.delivery_no?('Delivery '+n.delivery_no):'')+(n.customer_po?(' · PO '+n.customer_po):''))),
+        ncrPill(n.status||'Open')
+      ));
+      card.appendChild(dv({st:{marginTop:'6px'}},h('div',{cls:'fw6 txs'},((n.item_no||'')+' '+(n.item_desc||'')).trim()),dv({cls:'txs muted'},(n.reason?(n.reason+' · '):'')+'Qty affected: '+(n.qty_affected||'-'))));
+      if(n.damage_description)card.appendChild(dv({st:{fontSize:'13px',margin:'6px 0'}},n.damage_description));
+      if(n.photos&&n.photos.length){const pr=dv({cls:'row gap2',st:{flexWrap:'wrap',margin:'6px 0'}});n.photos.forEach(function(p){pr.appendChild(h('a',{href:p.url,target:'_blank',rel:'noopener'},h('img',{src:p.url,st:{width:'64px',height:'64px',objectFit:'cover',borderRadius:'6px',border:'1px solid var(--border)'}})));});card.appendChild(pr);}
+      card.appendChild(dv({cls:'txs muted'},'Logged by '+(n.created_by_name||'?')+(n.created_at?(' · '+ncrFmtDT(n.created_at)):'')));
+      const ctrl=dv({cls:'row gap2',st:{marginTop:'8px',flexWrap:'wrap',alignItems:'flex-end'}});
+      if(isManager()){
+        const stSel=sel(n.status||'Open','Open','Logged with supplier','Resolved');
+        stSel.onchange=async function(){try{const f={status:stSel.value};if(stSel.value==='Resolved')f.resolved_at=new Date().toISOString();if(stSel.value==='Logged with supplier')f.logged_with_supplier=true;await NCRDB.patch(n.id,f);activeTab='list';renderTab();}catch(e){alert('Update failed: '+e.message);}};
+        ctrl.appendChild(frow('Status',stSel));
+        const refIn=inp(n.supplier_ref||'','RA / credit no');refIn.onchange=async function(){try{await NCRDB.patch(n.id,{supplier_ref:refIn.value});}catch(e){alert('Save failed: '+e.message);}};
+        ctrl.appendChild(frow('Supplier ref',refIn));
+      }
+      if(isManager()){ctrl.appendChild(btn('Delete','btn-o btn-sm',async function(){if(confirm('Delete this NCR? This cannot be undone.')){try{await NCRDB.del(n.id);activeTab='list';renderTab();}catch(e){alert('Delete failed: '+e.message);}}}));}
+      if(ctrl.childNodes.length)card.appendChild(ctrl);
+      box.appendChild(card);
+    });
+  }
+}
+
 async function pgAdmin(c){
   if(!isAdmin()){c.appendChild(dv({cls:'empty'},'Access denied.'));return;}
   c.appendChild(dv({cls:'row jb mb4'},
