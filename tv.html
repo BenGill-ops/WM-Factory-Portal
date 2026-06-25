@@ -45,7 +45,8 @@ header.bar{display:flex;align-items:center;gap:1.2vw;background:var(--dark);padd
 .panel .body{flex:1;min-height:0;overflow:hidden}
 
 /* ---- safety alerts (mirrors portal Safety tab) ---- */
-.safety-list{display:flex;flex-direction:column;gap:.7vh;height:100%;overflow:hidden}
+#safety .body{display:flex;flex-direction:column;gap:.7vh}
+.safety-list{display:flex;flex-direction:column;gap:.7vh;flex:1;min-height:0;overflow:hidden}
 .alert{background:#fafafa;border:1px solid var(--border);border-left:.35vw solid var(--muted);border-radius:9px;padding:.8vh 1vw}
 .alert.pinned{background:#f7fee7;border-color:#d9f99d}
 .alert .ahead{display:flex;align-items:center;gap:.5vw;margin-bottom:.25vh}
@@ -104,6 +105,22 @@ header.bar{display:flex;align-items:center;gap:1.2vw;background:var(--dark);padd
 
 .skel{color:var(--muted);font-size:1.33vw;padding:1vh .2vw}
 .errline{color:var(--danger);font-size:1.19vw;font-weight:600;margin-top:.5vh}
+
+.swp{background:#fafafa;border:1px solid var(--border);border-radius:9px;padding:.6vh 1vw;flex-shrink:0}
+.swp-top{display:flex;align-items:baseline}
+.swp .lbl{font-size:1.05vw;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.swp .val{margin-left:auto;font-size:1.7vw;font-weight:800;font-variant-numeric:tabular-nums}
+.swp-bar{height:.8vh;min-height:7px;background:#e5e7eb;border-radius:999px;margin-top:.4vh;overflow:hidden}
+.swp-fill{height:100%;border-radius:999px;transition:width .6s}
+.alarm-overlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center}
+.alarm-overlay.on{display:flex;animation:alarmFlash 1s steps(1) infinite}
+@keyframes alarmFlash{0%{background:rgba(220,38,38,0.94)}50%{background:rgba(28,28,28,0.94)}100%{background:rgba(220,38,38,0.94)}}
+.alarm-box{text-align:center;color:#fff}
+.alarm-icon{font-size:10vw;line-height:1;animation:alarmShake .5s infinite}
+.alarm-msg{font-size:5vw;font-weight:800;margin-top:1.5vh;max-width:88vw;line-height:1.12}
+.alarm-sub{font-size:2.4vw;font-weight:600;margin-top:1vh;color:rgba(255,255,255,0.85)}
+.alarm-hint{font-size:1.3vw;font-weight:600;margin-top:2.5vh;color:rgba(255,255,255,0.6)}
+@keyframes alarmShake{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
 </style>
 </head>
 <body>
@@ -124,7 +141,7 @@ header.bar{display:flex;align-items:center;gap:1.2vw;background:var(--dark);padd
   <div class="grid">
     <section class="panel" id="safety">
       <h2><span class="accent"></span>Safety Alerts<span class="pill" id="safetyCount">—</span></h2>
-      <div class="body"><div class="safety-list" id="safetyList"><div class="skel">Loading safety…</div></div></div>
+      <div class="body"><div class="swp" id="swpBox"></div><div class="safety-list" id="safetyList"><div class="skel">Loading safety…</div></div></div>
     </section>
 
     <section class="panel" id="deliveries">
@@ -143,6 +160,8 @@ header.bar{display:flex;align-items:center;gap:1.2vw;background:var(--dark);padd
     <div class="track"><div class="move" id="msgTrack">Welcome to the Window Makers factory board.</div></div>
   </div>
 </div>
+
+<div id="alarm" class="alarm-overlay"><div class="alarm-box"><div class="alarm-icon">🔔</div><div class="alarm-msg" id="alarmMsg">Finish up your fabrication and start clean up!</div><div class="alarm-hint">Tap the screen or press Esc to dismiss</div></div></div>
 
 <script>
 /* =====================================================================
@@ -357,9 +376,78 @@ function renderProduction(rows){
   }).join("");
 }
 
+/* ===================== SWP COMPLIANCE (mirrors Safety > SWP Compliance) ===================== */
+function compStatus(so){
+  if(!so||!so.self_signed_at) return 'unsigned';
+  if(!so.assessor_signed_at) return 'self-only';
+  const days=(new Date(so.expires_at)-new Date())/86400000;
+  if(days<0) return 'overdue'; if(days<60) return 'due-soon'; return 'current';
+}
+async function loadCompliance(){
+  const [membersRaw,swps,signoffs]=await Promise.all([
+    sbGet("team_members?is_active=eq.true&select=id,exclude_from_compliance"),
+    sbGet("safe_work_practices?is_active=eq.true&select=id"),
+    sbGet("signoffs?select=team_member_id,swp_id,self_signed_at,assessor_signed_at,expires_at,created_at")
+  ]);
+  const members=(membersRaw||[]).filter(m=>m.exclude_from_compliance!==true);
+  const lk={}; (signoffs||[]).forEach(s=>{const key=s.team_member_id+'_'+s.swp_id; if(!lk[key]||new Date(s.created_at)>new Date(lk[key].created_at)) lk[key]=s;});
+  let cur=0; members.forEach(m=>(swps||[]).forEach(s=>{ if(compStatus(lk[m.id+'_'+s.id])==='current') cur++; }));
+  const total=members.length*((swps||[]).length);
+  renderCompliance(total>0?Math.round(cur/total*100):0);
+}
+function renderCompliance(pct){
+  const box=document.getElementById("swpBox"); if(!box) return;
+  if(pct==null){ box.style.display="none"; return; }
+  const col = pct>=90?"#22c55e":pct>=70?"#f59e0b":"#ef4444";
+  box.style.display="";
+  box.innerHTML='<div class="swp-top"><span class="lbl">SWP Compliance</span><span class="val" style="color:'+col+'">'+pct+'%</span></div>'
+    +'<div class="swp-bar"><div class="swp-fill" style="width:'+pct+'%;background:'+col+'"></div></div>';
+}
+
+/* ===================== MEETING ALARM ===================== */
+// On-screen alarm on the TV: Mon-Thu 3:10pm, Fri 12:40pm (uses the TV's local time).
+const ALARM_TIMES = { 1:"15:10", 2:"15:10", 3:"15:10", 4:"15:10", 5:"12:40" };
+const ALARM_LABEL = "Finish up your fabrication and start clean up!";
+const ALARM_DURATION_MS = 10000;
+let _alarmKey=null, _alarmTimer=null, _alarmBeepTimer=null, _audioCtx=null;
+function _beep(){
+  try{
+    _audioCtx = _audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state==="suspended") _audioCtx.resume();
+    const o=_audioCtx.createOscillator(), g=_audioCtx.createGain();
+    o.type="square"; o.frequency.value=880; g.gain.value=0.18;
+    o.connect(g); g.connect(_audioCtx.destination);
+    o.start(); o.stop(_audioCtx.currentTime+0.35);
+  }catch(e){}
+}
+function triggerAlarm(label){
+  const ov=document.getElementById("alarm");
+  document.getElementById("alarmMsg").textContent = label || ALARM_LABEL;
+  ov.classList.add("on");
+  _beep(); let n=0;
+  clearInterval(_alarmBeepTimer);
+  _alarmBeepTimer=setInterval(()=>{ _beep(); if(++n>Math.floor(ALARM_DURATION_MS/1000)) clearInterval(_alarmBeepTimer); }, 1000);
+  clearTimeout(_alarmTimer);
+  _alarmTimer=setTimeout(()=>{ ov.classList.remove("on"); clearInterval(_alarmBeepTimer); }, ALARM_DURATION_MS);
+}
+function checkAlarm(){
+  const d=new Date(); const t=ALARM_TIMES[d.getDay()]; if(!t) return;
+  const hhmm=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  const key=d.toDateString()+" "+t;
+  if(hhmm===t && _alarmKey!==key){ _alarmKey=key; triggerAlarm(); }
+}
+function stopAlarm(){ const ov=document.getElementById("alarm"); if(ov) ov.classList.remove("on"); clearInterval(_alarmBeepTimer); clearTimeout(_alarmTimer); }
+setInterval(checkAlarm, 1000);
+document.getElementById("alarm").addEventListener("click", stopAlarm);   // tap anywhere during the alarm to stop it
+document.addEventListener("click", ()=>{ if(_audioCtx&&_audioCtx.state==="suspended") _audioCtx.resume(); });
+document.addEventListener("keydown", (e)=>{
+  if(e.key==="Escape"){ stopAlarm(); return; }                            // Esc stops the alarm
+  if(e.key==="t"||e.key==="T") triggerAlarm("TEST ALARM");
+});
+
 /* ===================== refresh loop ===================== */
 async function refresh(){
-  const results = await Promise.allSettled([loadSafety(), loadDeliveries(), loadProduction()]);
+  const results = await Promise.allSettled([loadSafety(), loadCompliance(), loadDeliveries(), loadProduction()]);
   const ok = results.some(r=>r.status==="fulfilled");
   const fail = results.find(r=>r.status==="rejected");
   if(ok){ lastGood=Date.now(); hadError=false; }
