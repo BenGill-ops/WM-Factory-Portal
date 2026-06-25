@@ -3662,7 +3662,7 @@ async function pgGoodsIn(c){
         const url=await GRDB.uploadDocket(file);
         let made=0;
         for(const d of dels){
-          const items=(d.items||[]).map(function(it){return {line:it.line||'',item_no:it.itemNo||'',item_desc:it.itemDesc||'',qty_delivered:it.qtyDelivered||'',qty_received:'',received:false,short:false,note:it.specialInstruction||'',ncr_id:null};});
+          const items=(d.items||[]).map(function(it){return {line:it.line||'',item_no:it.itemNo||'',item_desc:it.itemDesc||'',qty_delivered:it.qtyDelivered||'',package_no:it.packageNo||'',qty_received:'',received:false,short:false,note:it.specialInstruction||'',ncr_id:null};});
           const row={supplier:d.supplier||'',delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
           await GRDB.create(row);made++;
         }
@@ -3770,7 +3770,7 @@ async function pgGoodsIn(c){
           const it=chosen[k].it;let qa='';const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
           if(chosen[k].reason==='Short supplied'&&!isNaN(del)&&!isNaN(rec))qa=String(Math.max(0,del-rec));
           const no=pre+String(max+1+k).padStart(3,'0');
-          const row={ncr_no:no,reason:chosen[k].reason,receipt_id:g.id,supplier:g.supplier||'',delivery_no:g.delivery_no||'',customer_po:g.customer_po||'',item_no:it.item_no||'',item_desc:it.item_desc||'',qty_affected:qa,damage_description:chosen[k].note||it.note||(chosen[k].reason+' identified on receipt'),photos:[],status:'Open',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
+          const row={ncr_no:no,reason:chosen[k].reason,receipt_id:g.id,supplier:g.supplier||'',delivery_no:g.delivery_no||'',customer_po:g.customer_po||'',order_no:g.order_no||'',departure_date:g.departure_date||'',facility:g.facility||'',colour:g.colour||'',line_no:it.line||'',item_no:it.item_no||'',item_desc:it.item_desc||'',package_no:it.package_no||'',qty_delivered:it.qty_delivered||'',special_instruction:it.note||'',qty_affected:qa,damage_description:chosen[k].note||it.note||(chosen[k].reason+' identified on receipt'),photos:[],status:'Open',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
           const saved=await NCRDB.create(row);created.push(saved);it.ncr_id=saved.id;
         }
         let emailed=false;
