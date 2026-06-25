@@ -445,6 +445,25 @@ document.addEventListener("keydown", (e)=>{
   if(e.key==="t"||e.key==="T") triggerAlarm("TEST ALARM");
 });
 
+/* ===================== AUTO-FIT (scale any overflowing tile to fit the TV) ===================== */
+// Each tile body is a fixed-height, overflow-hidden box. If its content is taller than
+// the room available (too many rows, or text too big for this screen), shrink just that
+// tile's content so nothing clips -- on any TV size or resolution.
+function fitSelf(el){
+  if(!el) return;
+  el.style.transform=""; el.style.width="";              // reset so we measure naturally
+  const avail=el.clientHeight, need=el.scrollHeight;
+  if(need>avail+1 && avail>0){
+    const s=Math.max(0.45, avail/need);
+    el.style.transformOrigin="top left";
+    el.style.width=(100/s)+"%";                           // widen so it still spans across
+    el.style.transform="scale("+s+")";                    // then scale down to fit the height
+  }
+}
+function autofit(){
+  ["delivList","prodGrid","safetyList"].forEach(id=>fitSelf(document.getElementById(id)));
+}
+
 /* ===================== refresh loop ===================== */
 async function refresh(){
   const results = await Promise.allSettled([loadSafety(), loadCompliance(), loadDeliveries(), loadProduction()]);
@@ -457,9 +476,13 @@ async function refresh(){
     document.getElementById("prodGrid").innerHTML = '<div class="skel">Could not reach the database.</div>';
   }
   setStatus();
+  requestAnimationFrame(autofit);
 }
 refresh();
 setInterval(refresh, REFRESH_MS);
+window.addEventListener("resize", ()=>requestAnimationFrame(autofit));
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(autofit); }
+setTimeout(autofit, 1200);
 </script>
 </body>
 </html>
