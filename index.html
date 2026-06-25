@@ -3677,16 +3677,28 @@ async function pgGoodsIn(c){
     const lo=dv({cls:'empty'},'Loading...');box.appendChild(lo);
     const list=await GRDB.list();lo.remove();
     if(!list.length){box.appendChild(dv({cls:'empty'},'No deliveries received yet. Use “Receive a delivery” to drop a docket.'));return;}
-    list.forEach(function(g){
+    const search=inp('','Search by Customer PO, delivery no or supplier');search.style.marginBottom='12px';search.style.maxWidth='440px';
+    const results=dv({});
+    function makeCard(g){
       const items=g.items||[];const recd=items.filter(function(i){return i.received;}).length;
-      const card=dv({cls:'card mb3',st:{cursor:'pointer'}});
-      card.onclick=function(){detailId=g.id;renderTab();};
-      card.appendChild(dv({cls:'row jb'},
-        dv({},h('div',{cls:'fw6'},(g.supplier||'Supplier')+(g.delivery_no?(' — Del '+g.delivery_no):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.customer_po?(' · PO '+g.customer_po):'')+' · '+recd+'/'+items.length+' checked')),
+      const cd=dv({cls:'card mb3',st:{cursor:'pointer'}});
+      cd.onclick=function(){detailId=g.id;renderTab();};
+      cd.appendChild(dv({cls:'row jb'},
+        dv({},h('div',{cls:'fw6'},(g.supplier||'Supplier')+(g.customer_po?(' — PO '+g.customer_po):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.delivery_no?(' · Del '+g.delivery_no):'')+' · '+recd+'/'+items.length+' checked')),
         grStatusPill(g.status||'Pending')
       ));
-      box.appendChild(card);
-    });
+      return cd;
+    }
+    function draw(){
+      results.innerHTML='';
+      const q=(search.value||'').trim().toLowerCase();
+      const filtered=q?list.filter(function(g){return ((g.customer_po||'')+' '+(g.delivery_no||'')+' '+(g.supplier||'')+' '+(g.order_no||'')).toLowerCase().indexOf(q)>=0;}):list;
+      if(!filtered.length){results.appendChild(dv({cls:'empty'},'No deliveries match that search.'));return;}
+      filtered.forEach(function(g){results.appendChild(makeCard(g));});
+    }
+    search.oninput=draw;
+    box.appendChild(search);box.appendChild(results);
+    draw();
   }
 
   async function renderDetail(box,id){
@@ -3695,7 +3707,7 @@ async function pgGoodsIn(c){
     let items=(g.items||[]).map(function(x){return Object.assign({},x);});
     box.appendChild(dv({cls:'row gap3 mb3',st:{alignItems:'center',flexWrap:'wrap'}},
       btn('← Back','btn-o',function(){detailId=null;renderTab();}),
-      dv({},h('h2',{cls:'page-title',st:{fontSize:'18px'}},(g.supplier||'Supplier')+(g.delivery_no?(' — Del '+g.delivery_no):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.customer_po?(' · PO '+g.customer_po):'')+(g.colour?(' · '+g.colour):''))),
+      dv({},h('h2',{cls:'page-title',st:{fontSize:'18px'}},(g.supplier||'Supplier')+(g.customer_po?(' — PO '+g.customer_po):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.delivery_no?(' · Del '+g.delivery_no):'')+(g.colour?(' · '+g.colour):''))),
       grStatusPill(g.status||'Pending')
     ));
     if(g.docket_url)box.appendChild(dv({cls:'mb3'},h('a',{href:g.docket_url,target:'_blank',rel:'noopener',cls:'login-btn',st:{textDecoration:'none'}},'View docket PDF')));
@@ -3706,11 +3718,13 @@ async function pgGoodsIn(c){
       if(stt==='Received'&&!g.received_at){fields.received_at=new Date().toISOString();fields.received_by_name=currentUser?currentUser.name:'';}
       try{await GRDB.patch(g.id,fields);g.status=stt;saveStatus.style.color='#15803d';saveStatus.textContent='Saved.';}catch(e){saveStatus.style.color='#ef4444';saveStatus.textContent='Save failed: '+e.message;}
     }
+    const ncrState=items.map(function(){return {flag:false,reason:'',note:''};});
     function renderItems(){
       listBox.innerHTML='';
-      items.forEach(function(it){
+      items.forEach(function(it,idx){
         const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
         const isShort=it.received&&!isNaN(del)&&!isNaN(rec)&&rec<del;
+        const st=ncrState[idx];
         const row=dv({cls:'card',st:{padding:'12px',marginBottom:'8px',borderLeft:'4px solid '+(it.ncr_id?'#dc2626':(it.received?(isShort?'#f59e0b':'#22c55e'):'#e5e7eb'))}});
         row.appendChild(dv({cls:'row jb',st:{flexWrap:'wrap',gap:'8px'}},
           dv({},h('div',{cls:'fw6 txs'},((it.item_no||'')+' '+(it.item_desc||'')).trim()||'Item'),dv({cls:'txs muted'},'Delivered: '+(it.qty_delivered||'-')+(it.note?(' · '+it.note):''))),
@@ -3722,17 +3736,58 @@ async function pgGoodsIn(c){
         cb.onchange=function(){it.received=cb.checked;if(it.received&&(it.qty_received===''||it.qty_received==null)){it.qty_received=it.qty_delivered||'';}renderItems();persist();};
         row.appendChild(dv({cls:'row gap3',st:{marginTop:'8px',flexWrap:'wrap',alignItems:'center'}},
           dv({cls:'row gap1',st:{alignItems:'center'}},cb,sp({cls:'txs'},'Received')),
-          frow('Qty received',recInp),
-          btn('Raise NCR','btn-o btn-sm',function(){const defReason=isShort?'Short supplied':'Damaged';raiseNcrFromReceiptLine(g,it,defReason);})
+          frow('Qty received',recInp)
         ));
+        const ncrBox=dv({st:{marginTop:'6px'}});
+        function drawNcrBox(){
+          ncrBox.innerHTML='';
+          if(!st.flag)return;
+          if(!st.reason)st.reason=isShort?'Short supplied':'Damaged';
+          const rsel=sel(st.reason,'Damaged','Short supplied','Wrong item','Other');rsel.onchange=function(){st.reason=rsel.value;};
+          const note=inp(st.note||'','Fault note (optional)');note.oninput=function(){st.note=note.value;};
+          ncrBox.appendChild(dv({cls:'row gap2',st:{flexWrap:'wrap',alignItems:'flex-end'}},frow('NCR reason',rsel),frow('Note',note)));
+        }
+        if(!it.ncr_id){
+          const fcb=h('input',{type:'checkbox'});fcb.checked=!!st.flag;fcb.style.width='16px';fcb.style.height='16px';
+          fcb.onchange=function(){st.flag=fcb.checked;drawNcrBox();updateBatchBtn();};
+          row.appendChild(dv({cls:'row gap1',st:{marginTop:'8px',alignItems:'center'}},fcb,sp({cls:'txs'},'Raise NCR for this line')));
+          row.appendChild(ncrBox);drawNcrBox();
+        }
         listBox.appendChild(row);
       });
     }
-    renderItems();
+    const batchStatus=dv({cls:'txs',st:{marginTop:'8px'}});
+    const batchBtn=btn('Raise NCRs & notify office','btn-p',async function(){
+      const chosen=[];ncrState.forEach(function(s,idx){if(s.flag&&!items[idx].ncr_id)chosen.push({it:items[idx],reason:s.reason||'Damaged',note:s.note||''});});
+      if(!chosen.length)return;
+      if(!currentUser){batchStatus.style.color='#ef4444';batchStatus.textContent='Please sign in first.';return;}
+      batchBtn.disabled=true;batchStatus.style.color='';batchStatus.textContent='Raising '+chosen.length+' NCR(s)...';
+      try{
+        const ex=await fetch(SB+'/rest/v1/ncr_reports?select=ncr_no&order=created_at.desc',{headers:SH()}).then(function(r){return r.json();}).catch(function(){return [];});
+        const yr=new Date().getFullYear();const pre='NCR-'+yr+'-';let max=0;(Array.isArray(ex)?ex:[]).forEach(function(n){if((n.ncr_no||'').indexOf(pre)===0){const v=parseInt(n.ncr_no.slice(pre.length),10);if(v>max)max=v;}});
+        const created=[];
+        for(let k=0;k<chosen.length;k++){
+          const it=chosen[k].it;let qa='';const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
+          if(chosen[k].reason==='Short supplied'&&!isNaN(del)&&!isNaN(rec))qa=String(Math.max(0,del-rec));
+          const no=pre+String(max+1+k).padStart(3,'0');
+          const row={ncr_no:no,reason:chosen[k].reason,receipt_id:g.id,supplier:g.supplier||'',delivery_no:g.delivery_no||'',customer_po:g.customer_po||'',item_no:it.item_no||'',item_desc:it.item_desc||'',qty_affected:qa,damage_description:chosen[k].note||it.note||(chosen[k].reason+' identified on receipt'),photos:[],status:'Open',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
+          const saved=await NCRDB.create(row);created.push(saved);it.ncr_id=saved.id;
+        }
+        let emailed=false;
+        try{const er=await fetch(XERO_FN+'/ncr-notify',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify({ncrs:created})});emailed=er.ok;}catch(e){}
+        await GRDB.patch(g.id,{items:items,status:'Discrepancy'});
+        batchStatus.style.color='#15803d';batchStatus.textContent=created.length+' NCR'+(created.length===1?'':'s')+' raised.'+(emailed?' Office notified in one email.':' (Saved — email not set up yet.)');
+        detailId=g.id;renderTab();
+      }catch(err){batchStatus.style.color='#ef4444';batchStatus.textContent='Error: '+err.message;batchBtn.disabled=false;}
+    });
+    function updateBatchBtn(){const n=ncrState.filter(function(s,idx){return s.flag&&!items[idx].ncr_id;}).length;batchBtn.textContent='Raise '+n+' NCR'+(n===1?'':'s')+' & send one email';batchBtn.disabled=(n===0);batchBtn.style.opacity=n===0?'0.5':'';}
+    renderItems();updateBatchBtn();
     box.appendChild(dv({cls:'row gap2',st:{marginTop:'10px',flexWrap:'wrap'}},
+      batchBtn,
       btn('Mark all received','btn-o',function(){items.forEach(function(it){it.received=true;if(it.qty_received===''||it.qty_received==null)it.qty_received=it.qty_delivered||'';});renderItems();persist();}),
       (isManager()?btn('Delete delivery','btn-o btn-sm',async function(){if(confirm('Delete this received delivery?')){try{await GRDB.del(g.id);detailId=null;renderTab();}catch(e){alert('Delete failed: '+e.message);}}}):false)
     ));
+    box.appendChild(batchStatus);
     box.appendChild(saveStatus);
   }
 }
