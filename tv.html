@@ -408,7 +408,7 @@ function renderCompliance(pct){
 // On-screen alarm on the TV: Mon-Thu 3:10pm, Fri 12:40pm (uses the TV's local time).
 const ALARM_TIMES = { 1:"15:10", 2:"15:10", 3:"15:10", 4:"15:10", 5:"12:40" };
 const ALARM_LABEL = "Finish up your fabrication and start clean up!";
-const ALARM_DURATION_MS = 10000;
+const ALARM_DURATION_MS = 20000;
 let _alarmKey=null, _alarmTimer=null, _alarmBeepTimer=null, _audioCtx=null;
 function _beep(){
   try{
