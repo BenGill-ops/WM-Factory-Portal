@@ -3691,9 +3691,23 @@ async function pgGoodsIn(c){
       ));
       return cd;
     }
-    function parseDep(s){if(!s)return null;const m=String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(!m)return null;let y=parseInt(m[3],10);if(y<100)y+=2000;const d=new Date(y,parseInt(m[2],10)-1,parseInt(m[1],10));return isNaN(d.getTime())?null:d;}
-    function dayKey(g){const d=parseDep(g.departure_date);if(d)return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});return (g.departure_date||'').toString().trim()||'No delivery date';}
-    function isDueToday(g){const d=parseDep(g.departure_date);if(!d)return false;const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();}
+    // Deliveries arrive Tue & Thu. Map the upload day to its delivery day:
+    // Mon/Tue -> that week's Tuesday; Wed/Thu -> that week's Thursday; Fri/Sat/Sun -> next Tuesday.
+    function deliveryDateFor(g){
+      if(!g.created_at)return null;
+      const d=new Date(g.created_at);if(isNaN(d.getTime()))return null;
+      d.setHours(0,0,0,0);
+      const dow=d.getDay();
+      const monday=new Date(d);monday.setDate(d.getDate()-((dow+6)%7));
+      const tuesday=new Date(monday);tuesday.setDate(monday.getDate()+1);
+      const thursday=new Date(monday);thursday.setDate(monday.getDate()+3);
+      if(dow===1||dow===2)return tuesday;
+      if(dow===3||dow===4)return thursday;
+      const nextTue=new Date(tuesday);nextTue.setDate(tuesday.getDate()+7);
+      return nextTue;
+    }
+    function dayKey(g){const d=deliveryDateFor(g);if(d)return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});return 'No date';}
+    function isDueToday(g){const d=deliveryDateFor(g);if(!d)return false;const n=new Date();n.setHours(0,0,0,0);return d.getTime()===n.getTime();}
     const openDates={};
     function draw(){
       results.innerHTML='';
@@ -3705,7 +3719,7 @@ async function pgGoodsIn(c){
         return;
       }
       const groups=[];const gidx={};
-      list.forEach(function(g){const k=dayKey(g);if(!(k in gidx)){gidx[k]=groups.length;const pd=parseDep(g.departure_date);groups.push({key:k,today:isDueToday(g),sort:pd?pd.getTime():-1,items:[]});}groups[gidx[k]].items.push(g);});
+      list.forEach(function(g){const k=dayKey(g);if(!(k in gidx)){gidx[k]=groups.length;const pd=deliveryDateFor(g);groups.push({key:k,today:isDueToday(g),sort:pd?pd.getTime():-1,items:[]});}groups[gidx[k]].items.push(g);});
       groups.sort(function(a,b){return b.sort-a.sort;});
       const anyToday=groups.some(function(x){return x.today;});
       groups.forEach(function(grp,gi){
