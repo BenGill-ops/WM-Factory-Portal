@@ -3691,8 +3691,9 @@ async function pgGoodsIn(c){
       ));
       return cd;
     }
-    function dayKey(g){const d=g.created_at?new Date(g.created_at):null;if(d&&!isNaN(d.getTime()))return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});return g.departure_date||'Undated';}
-    function isToday(g){const d=g.created_at?new Date(g.created_at):null;if(!d||isNaN(d.getTime()))return false;const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();}
+    function parseDep(s){if(!s)return null;const m=String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(!m)return null;let y=parseInt(m[3],10);if(y<100)y+=2000;const d=new Date(y,parseInt(m[2],10)-1,parseInt(m[1],10));return isNaN(d.getTime())?null:d;}
+    function dayKey(g){const d=parseDep(g.departure_date);if(d)return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});return (g.departure_date||'').toString().trim()||'No delivery date';}
+    function isDueToday(g){const d=parseDep(g.departure_date);if(!d)return false;const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();}
     const openDates={};
     function draw(){
       results.innerHTML='';
@@ -3704,12 +3705,14 @@ async function pgGoodsIn(c){
         return;
       }
       const groups=[];const gidx={};
-      list.forEach(function(g){const k=dayKey(g);if(!(k in gidx)){gidx[k]=groups.length;groups.push({key:k,today:isToday(g),items:[]});}groups[gidx[k]].items.push(g);});
+      list.forEach(function(g){const k=dayKey(g);if(!(k in gidx)){gidx[k]=groups.length;const pd=parseDep(g.departure_date);groups.push({key:k,today:isDueToday(g),sort:pd?pd.getTime():-1,items:[]});}groups[gidx[k]].items.push(g);});
+      groups.sort(function(a,b){return b.sort-a.sort;});
+      const anyToday=groups.some(function(x){return x.today;});
       groups.forEach(function(grp,gi){
-        if(openDates[grp.key]===undefined)openDates[grp.key]=(gi===0);
+        if(openDates[grp.key]===undefined)openDates[grp.key]=(anyToday?grp.today:gi===0);
         const open=openDates[grp.key];
         const head=dv({cls:'card',st:{cursor:'pointer',marginBottom:'8px',display:'flex',justifyContent:'space-between',alignItems:'center',background:grp.today?'#f0fdf4':''}},
-          dv({},sp({cls:'fw6'},(grp.today?'Today · ':'')+grp.key),sp({cls:'txs muted',st:{marginLeft:'8px'}},grp.items.length+' deliver'+(grp.items.length===1?'y':'ies'))),
+          dv({},sp({cls:'fw6'},(grp.today?'Due today · ':'')+grp.key),sp({cls:'txs muted',st:{marginLeft:'8px'}},grp.items.length+' deliver'+(grp.items.length===1?'y':'ies'))),
           sp({cls:'txs muted'},open?'▾':'▸')
         );
         head.onclick=function(){openDates[grp.key]=!openDates[grp.key];draw();};
