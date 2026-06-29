@@ -3594,7 +3594,7 @@ const GRDB={
   async patch(id,fields){const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
   async del(id){await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
   async uploadDocket(file){const ext=(file.name?file.name.split('.').pop():'')||'pdf';const path='dockets/'+Date.now()+'-'+Math.floor(Math.random()*1000)+'.'+ext;const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'application/pdf','x-upsert':'true'},body:file});if(!r.ok){const e=await r.text();throw new Error('Docket upload failed: '+e);}return SB+'/storage/v1/object/public/delivery-photos/'+path;},
-  async parse(text){const r=await fetch(XERO_FN+'/parse-docket',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify({text:text})});const d=await r.json();if(!r.ok)throw new Error(d&&d.error?d.error:('Parse failed ('+r.status+')'));return d;}
+  async parse(text,supplier){const r=await fetch(XERO_FN+'/parse-docket',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify({text:text,supplier:supplier||''})});const d=await r.json();if(!r.ok)throw new Error(d&&d.error?d.error:('Parse failed ('+r.status+')'));return d;}
 };
 let pdfWorkerSet=false;
 async function extractDocketText(file){
@@ -3631,17 +3631,20 @@ async function pgGoodsIn(c){
     dv({},h('h1',{cls:'page-title'},'Goods In'),dv({cls:'page-sub'},'Receive supplier deliveries, check items off, and raise NCRs')),
     false
   ));
+  const supBar=dv({cls:'tab-bar',st:{fontWeight:'700'}});let supplier='AWS';
   const tabBar=dv({cls:'tab-bar'});let activeTab='list';let detailId=null;const tc=dv({id:'gitc'});
-  c.appendChild(tabBar);c.appendChild(tc);
+  c.appendChild(supBar);c.appendChild(tabBar);c.appendChild(tc);
+  function giSupOf(g){if(g.supplier_group)return g.supplier_group;const s=(g.supplier||'').toLowerCase();if(s.indexOf('alspec')>=0)return 'Alspec';if(s.indexOf('viridian')>=0)return 'Viridian';return 'AWS';}
+  function renderSupTabs(){supBar.innerHTML='';['AWS','Alspec','Viridian'].forEach(function(s){supBar.appendChild(h('button',{cls:'tab-btn'+(supplier===s?' active':''),onclick:function(){supplier=s;detailId=null;renderSupTabs();renderTabs();renderTab();}},s));});}
   function renderTabs(){tabBar.innerHTML='';[{id:'receive',label:'Receive a delivery'},{id:'list',label:'Incoming deliveries'}].forEach(function(t){tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;detailId=null;renderTabs();renderTab();}},t.label));});}
   async function renderTab(){tc.innerHTML='';if(activeTab==='receive')renderReceive(tc);else if(detailId)await renderDetail(tc,detailId);else await renderList(tc);}
-  renderTabs();await renderTab();
+  renderSupTabs();renderTabs();await renderTab();
 
   function renderReceive(box){
     if(!currentUser){box.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before receiving deliveries.')));return;}
     const status=dv({cls:'page-sub',st:{marginTop:'10px'}});
     const drop=dv({cls:'card',st:{border:'2px dashed var(--border)',textAlign:'center',padding:'32px 20px',cursor:'pointer'}},
-      dv({cls:'fw6',st:{marginBottom:'4px'}},'Drop the supplier delivery docket (PDF)'),
+      dv({cls:'fw6',st:{marginBottom:'4px'}},'Drop the '+supplier+' delivery docket (PDF)'),
       dv({cls:'txs muted'},'or tap to choose a file — items are read automatically')
     );
     const fileIn=h('input',{type:'file',accept:'application/pdf',st:{display:'none'}});
@@ -3657,7 +3660,7 @@ async function pgGoodsIn(c){
         status.style.color='';status.textContent='Reading docket...';
         const text=await extractDocketText(file);
         status.textContent='Reading items (this can take a few seconds)...';
-        const parsed=await GRDB.parse(text);
+        const parsed=await GRDB.parse(text,supplier);
         const dels=(parsed&&parsed.deliveries)||[];
         if(!dels.length){status.style.color='#ef4444';status.textContent='No deliveries found in that PDF.';return;}
         status.textContent='Storing docket...';
@@ -3665,7 +3668,7 @@ async function pgGoodsIn(c){
         let made=0;
         for(const d of dels){
           const items=(d.items||[]).map(function(it){return {line:it.line||'',item_no:it.itemNo||'',item_desc:it.itemDesc||'',qty_delivered:it.qtyDelivered||'',package_no:it.packageNo||'',qty_received:'',received:false,short:false,note:it.specialInstruction||'',ncr_id:null};});
-          const row={supplier:d.supplier||'',delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
+          const row={supplier:d.supplier||'',supplier_group:supplier,delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
           await GRDB.create(row);made++;
         }
         status.style.color='#15803d';status.textContent=made+' delivery'+(made===1?'':' loads')+' logged. Open one from “Incoming deliveries” to check items off.';
@@ -3677,8 +3680,8 @@ async function pgGoodsIn(c){
 
   async function renderList(box){
     const lo=dv({cls:'empty'},'Loading...');box.appendChild(lo);
-    const list=await GRDB.list();lo.remove();
-    if(!list.length){box.appendChild(dv({cls:'empty'},'No deliveries received yet. Use “Receive a delivery” to drop a docket.'));return;}
+    const all=await GRDB.list();const list=all.filter(function(g){return giSupOf(g)===supplier;});lo.remove();
+    if(!list.length){box.appendChild(dv({cls:'empty'},'No '+supplier+' deliveries yet. Use the “Receive a delivery” tab to drop a docket.'));return;}
     const search=inp('','Search by Customer PO, delivery no or supplier');search.style.marginBottom='12px';search.style.maxWidth='440px';
     const results=dv({});
     function makeCard(g){
@@ -3943,6 +3946,7 @@ async function pgNCR(c){
       if(n.damage_description)card.appendChild(dv({st:{fontSize:'13px',margin:'6px 0'}},n.damage_description));
       if(n.photos&&n.photos.length){const pr=dv({cls:'row gap2',st:{flexWrap:'wrap',margin:'6px 0'}});n.photos.forEach(function(p){pr.appendChild(h('a',{href:p.url,target:'_blank',rel:'noopener'},h('img',{src:p.url,st:{width:'64px',height:'64px',objectFit:'cover',borderRadius:'6px',border:'1px solid var(--border)'}})));});card.appendChild(pr);}
       card.appendChild(dv({cls:'txs muted'},'Logged by '+(n.created_by_name||'?')+(n.created_at?(' · '+ncrFmtDT(n.created_at)):'')));
+      if(n.acknowledged_at)card.appendChild(dv({st:{fontSize:'11px',fontWeight:'700',color:'#15803d',marginTop:'2px'}},'✓ Office received · '+ncrFmtDT(n.acknowledged_at)));
       const ctrl=dv({cls:'row gap2',st:{marginTop:'8px',flexWrap:'wrap',alignItems:'flex-end'}});
       if(isManager()){
         const stSel=sel(n.status||'Open','Open','Logged with supplier','Resolved');
