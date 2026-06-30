@@ -3746,6 +3746,8 @@ async function pgGoodsIn(c){
     const list=await GRDB.list();const g=list.find(function(x){return String(x.id)===String(id);});
     if(!g){box.appendChild(dv({cls:'empty'},'Not found.'));return;}
     let items=(g.items||[]).map(function(x){return Object.assign({},x);});
+    const ackMap={};
+    try{const ar=await fetch(SB+'/rest/v1/ncr_reports?receipt_id=eq.'+g.id+'&select=id,acknowledged_at',{headers:SH()}).then(function(r){return r.json();});if(Array.isArray(ar))ar.forEach(function(n){if(n.acknowledged_at)ackMap[String(n.id)]=n.acknowledged_at;});}catch(e){}
     box.appendChild(dv({cls:'row gap3 mb3',st:{alignItems:'center',flexWrap:'wrap'}},
       btn('← Back','btn-o',function(){detailId=null;renderTab();}),
       dv({},h('h2',{cls:'page-title',st:{fontSize:'18px'}},(g.supplier||'Supplier')+(g.customer_po?(' — PO '+g.customer_po):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.delivery_no?(' · Del '+g.delivery_no):'')+(g.colour?(' · '+g.colour):''))),
@@ -3766,12 +3768,17 @@ async function pgGoodsIn(c){
         const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
         const isShort=it.received&&!isNaN(del)&&!isNaN(rec)&&rec<del;
         const st=ncrState[idx];
-        const hasNcr=grLineNcrs(it).length>0;
-        const row=dv({cls:'card',st:{padding:'12px',marginBottom:'8px',borderLeft:'4px solid '+(hasNcr?'#dc2626':(it.received?(isShort?'#f59e0b':'#22c55e'):'#e5e7eb'))}});
-        const ncrText=grLineNcrText(it);
+        const lineNcrs=grLineNcrs(it);
+        const ackd=lineNcrs.filter(function(x){return ackMap[String(x.id)];}).length;
+        const allAck=lineNcrs.length>0&&ackd===lineNcrs.length;
+        const hasNcr=lineNcrs.length>0;
+        const ncrColor=allAck?'#15803d':'#dc2626';
+        const row=dv({cls:'card',st:{padding:'12px',marginBottom:'8px',borderLeft:'4px solid '+(hasNcr?ncrColor:(it.received?(isShort?'#f59e0b':'#22c55e'):'#e5e7eb'))}});
+        let ncrText=grLineNcrText(it);
+        if(hasNcr)ncrText+=allAck?' · ✓ office received':(ackd>0?(' · ✓ '+ackd+'/'+lineNcrs.length+' received'):'');
         row.appendChild(dv({cls:'row jb',st:{flexWrap:'wrap',gap:'8px'}},
           dv({},h('div',{cls:'fw6 txs'},((it.item_no||'')+' '+(it.item_desc||'')).trim()||'Item'),dv({cls:'txs muted'},'Delivered: '+(it.qty_delivered||'-')+(it.note?(' · '+it.note):''))),
-          (ncrText?sp({st:{fontSize:'11px',fontWeight:'700',color:'#dc2626',textAlign:'right'}},ncrText):(isShort?sp({st:{fontSize:'11px',fontWeight:'700',color:'#a06400'}},'SHORT'):false))
+          (ncrText?sp({st:{fontSize:'11px',fontWeight:'700',color:ncrColor,textAlign:'right'}},ncrText):(isShort?sp({st:{fontSize:'11px',fontWeight:'700',color:'#a06400'}},'SHORT'):false))
         ));
         const recInp=inp(it.qty_received||'','Qty received','number');recInp.style.maxWidth='130px';
         recInp.onchange=function(){it.qty_received=recInp.value;if(recInp.value!=='')it.received=true;renderItems();persist();};
