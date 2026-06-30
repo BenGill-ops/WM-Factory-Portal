@@ -3664,14 +3664,14 @@ async function pgGoodsIn(c){
         const dels=(parsed&&parsed.deliveries)||[];
         if(!dels.length){status.style.color='#ef4444';status.textContent='No deliveries found in that PDF.';return;}
         status.textContent='Storing docket...';
-        const url=await GRDB.uploadDocket(file);
+        let url='';try{url=await GRDB.uploadDocket(file);}catch(upErr){url='';}
         let made=0;
         for(const d of dels){
           const items=(d.items||[]).map(function(it){return {line:it.line||'',item_no:it.itemNo||'',item_desc:it.itemDesc||'',qty_delivered:it.qtyDelivered||'',package_no:it.packageNo||'',qty_received:'',received:false,short:false,note:it.specialInstruction||'',ncr_id:null};});
           const row={supplier:d.supplier||'',supplier_group:supplier,delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
           await GRDB.create(row);made++;
         }
-        status.style.color='#15803d';status.textContent=made+' delivery'+(made===1?'':' loads')+' logged. Open one from “Incoming deliveries” to check items off.';
+        status.style.color='#15803d';status.textContent=made+' delivery'+(made===1?'':' loads')+' logged.'+(url?'':' (Docket too large to store a copy — item details still captured.)')+' Open one from “Incoming deliveries” to check items off.';
         activeTab='list';renderTabs();renderTab();
       }catch(err){status.style.color='#ef4444';status.textContent='Error: '+err.message;}
     }
