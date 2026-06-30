@@ -3694,6 +3694,11 @@ async function pgGoodsIn(c){
       ));
       return cd;
     }
+    async function delGroup(grp){
+      if(!confirm('Delete all '+grp.items.length+' '+supplier+' delivery'+(grp.items.length===1?'':'ies')+' from '+grp.key+'?\n\nThis cannot be undone.'))return;
+      for(var i=0;i<grp.items.length;i++){try{await GRDB.del(grp.items[i].id);}catch(e){}}
+      detailId=null;await renderTab();
+    }
     // Deliveries arrive Tue & Thu. Map the upload day to its delivery day:
     // Mon/Tue -> that week's Tuesday; Wed/Thu -> that week's Thursday; Fri/Sat/Sun -> next Tuesday.
     function deliveryDateFor(g){
@@ -3728,9 +3733,12 @@ async function pgGoodsIn(c){
       groups.forEach(function(grp,gi){
         if(openDates[grp.key]===undefined)openDates[grp.key]=(anyToday?grp.today:gi===0);
         const open=openDates[grp.key];
+        const right=dv({cls:'row gap2',st:{alignItems:'center'}});
+        if(isManager()){right.appendChild(btn('Delete all ('+grp.items.length+')','btn-o btn-sm',function(ev){if(ev&&ev.stopPropagation)ev.stopPropagation();delGroup(grp);}));}
+        right.appendChild(sp({cls:'txs muted'},open?'▾':'▸'));
         const head=dv({cls:'card',st:{cursor:'pointer',marginBottom:'8px',display:'flex',justifyContent:'space-between',alignItems:'center',background:grp.today?'#f0fdf4':''}},
           dv({},sp({cls:'fw6'},(grp.today?'Due today · ':'')+grp.key),sp({cls:'txs muted',st:{marginLeft:'8px'}},grp.items.length+' deliver'+(grp.items.length===1?'y':'ies'))),
-          sp({cls:'txs muted'},open?'▾':'▸')
+          right
         );
         head.onclick=function(){openDates[grp.key]=!openDates[grp.key];draw();};
         results.appendChild(head);
