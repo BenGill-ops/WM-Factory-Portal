@@ -3607,6 +3607,9 @@ async function extractDocketText(file){
   return out;
 }
 function grColour(d){const a=[d.colourExternal,d.colourInternal].filter(Boolean);if(!a.length)return '';return a[0]===a[1]?a[0]+' (ext & int)':a.join(' / ');}
+// Deliveries arrive Tue & Thu. Map a date to its delivery day: Mon/Tue->Tue, Wed/Thu->Thu, Fri/Sat/Sun->next Tue.
+function giDeliveryDateFromDate(d){if(!d||isNaN(d.getTime()))return null;d=new Date(d);d.setHours(0,0,0,0);const dow=d.getDay();const monday=new Date(d);monday.setDate(d.getDate()-((dow+6)%7));const tuesday=new Date(monday);tuesday.setDate(monday.getDate()+1);const thursday=new Date(monday);thursday.setDate(monday.getDate()+3);if(dow===1||dow===2)return tuesday;if(dow===3||dow===4)return thursday;const nextTue=new Date(tuesday);nextTue.setDate(tuesday.getDate()+7);return nextTue;}
+function giIsoLocal(d){if(!d||isNaN(d.getTime()))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function grStatusPill(s){const map={'Pending':{bg:'#f3f4f6',fg:'#6b7280',bd:'#e5e7eb'},'Receiving':{bg:'#fff4e0',fg:'#a06400',bd:'#f3d29a'},'Received':{bg:'#eafaf0',fg:'#15803d',bd:'#bbf7d0'},'Discrepancy':{bg:'#fdeceb',fg:'#dc2626',bd:'#f6c6c2'}};const m=map[s]||map['Pending'];return sp({st:{display:'inline-block',padding:'2px 9px',borderRadius:'11px',fontSize:'11px',fontWeight:'700',background:m.bg,color:m.fg,border:'1px solid '+m.bd}},s);}
 function grComputeStatus(items){let any=false,allRec=true,disc=false;(items||[]).forEach(function(it){if(it.received)any=true;else allRec=false;const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);if(it.received&&!isNaN(del)&&!isNaN(rec)&&rec<del)disc=true;if(it.ncr_id||(it.ncrs&&it.ncrs.length))disc=true;});if(disc)return 'Discrepancy';if(allRec&&items&&items.length)return 'Received';if(any)return 'Receiving';return 'Pending';}
 function grLineNcrs(it){let arr=Array.isArray(it.ncrs)?it.ncrs:[];if(!arr.length&&it.ncr_id)arr=[{id:it.ncr_id,no:'',reason:it.ncr_reason||'',qty:it.ncr_qty||'',at:it.ncr_at||''}];return arr;}
@@ -3643,6 +3646,8 @@ async function pgGoodsIn(c){
   function renderReceive(box){
     if(!currentUser){box.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before receiving deliveries.')));return;}
     const status=dv({cls:'page-sub',st:{marginTop:'10px'}});
+    const dateIn=h('input',{type:'date'});
+    const dateCard=dv({cls:'card',st:{marginBottom:'10px'}},dv({cls:'row gap2',st:{alignItems:'flex-end',flexWrap:'wrap'}},frow('Delivery date (optional)',dateIn)),dv({cls:'txs muted',st:{marginTop:'4px'}},'Leave blank for today’s Tue/Thu run. Set a past date when back-dating old packing sheets.'));
     const drop=dv({cls:'card',st:{border:'2px dashed var(--border)',textAlign:'center',padding:'32px 20px',cursor:'pointer'}},
       dv({cls:'fw6',st:{marginBottom:'4px'}},'Drop the '+supplier+' delivery docket (PDF)'),
       dv({cls:'txs muted'},'or tap to choose a file — items are read automatically')
@@ -3665,17 +3670,18 @@ async function pgGoodsIn(c){
         if(!dels.length){status.style.color='#ef4444';status.textContent='No deliveries found in that PDF.';return;}
         status.textContent='Storing docket...';
         let url='';try{url=await GRDB.uploadDocket(file);}catch(upErr){url='';}
+        const expDate=dateIn.value||giIsoLocal(giDeliveryDateFromDate(new Date()));
         let made=0;
         for(const d of dels){
           const items=(d.items||[]).map(function(it){return {line:it.line||'',item_no:it.itemNo||'',item_desc:it.itemDesc||'',qty_delivered:it.qtyDelivered||'',package_no:it.packageNo||'',qty_received:'',received:false,short:false,note:it.specialInstruction||'',ncr_id:null};});
-          const row={supplier:d.supplier||'',supplier_group:supplier,delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
+          const row={supplier:d.supplier||'',supplier_group:supplier,delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',expected_date:expDate,facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
           await GRDB.create(row);made++;
         }
         status.style.color='#15803d';status.textContent=made+' delivery'+(made===1?'':' loads')+' logged.'+(url?'':' (Docket too large to store a copy — item details still captured.)')+' Open one from “Incoming deliveries” to check items off.';
         activeTab='list';renderTabs();renderTab();
       }catch(err){status.style.color='#ef4444';status.textContent='Error: '+err.message;}
     }
-    box.appendChild(drop);box.appendChild(status);
+    box.appendChild(dateCard);box.appendChild(drop);box.appendChild(status);
   }
 
   async function renderList(box){
@@ -3699,23 +3705,10 @@ async function pgGoodsIn(c){
       for(var i=0;i<grp.items.length;i++){try{await GRDB.del(grp.items[i].id);}catch(e){}}
       detailId=null;await renderTab();
     }
-    // Deliveries arrive Tue & Thu. Map the upload day to its delivery day:
-    // Mon/Tue -> that week's Tuesday; Wed/Thu -> that week's Thursday; Fri/Sat/Sun -> next Tuesday.
-    function deliveryDateFor(g){
-      if(!g.created_at)return null;
-      const d=new Date(g.created_at);if(isNaN(d.getTime()))return null;
-      d.setHours(0,0,0,0);
-      const dow=d.getDay();
-      const monday=new Date(d);monday.setDate(d.getDate()-((dow+6)%7));
-      const tuesday=new Date(monday);tuesday.setDate(monday.getDate()+1);
-      const thursday=new Date(monday);thursday.setDate(monday.getDate()+3);
-      if(dow===1||dow===2)return tuesday;
-      if(dow===3||dow===4)return thursday;
-      const nextTue=new Date(tuesday);nextTue.setDate(tuesday.getDate()+7);
-      return nextTue;
-    }
-    function dayKey(g){const d=deliveryDateFor(g);if(d)return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});return 'No date';}
-    function isDueToday(g){const d=deliveryDateFor(g);if(!d)return false;const n=new Date();n.setHours(0,0,0,0);return d.getTime()===n.getTime();}
+    // Expected delivery date: editable g.expected_date, else computed from upload day (Tue/Thu).
+    function recDate(g){if(g.expected_date){const p=new Date(g.expected_date+'T00:00:00');if(!isNaN(p.getTime()))return p;}return giDeliveryDateFromDate(g.created_at?new Date(g.created_at):null);}
+    function dayKey(g){const d=recDate(g);if(d)return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});return 'No date';}
+    function isDueToday(g){const d=recDate(g);if(!d)return false;const n=new Date();n.setHours(0,0,0,0);return d.getTime()===n.getTime();}
     const openDates={};
     function draw(){
       results.innerHTML='';
@@ -3727,7 +3720,7 @@ async function pgGoodsIn(c){
         return;
       }
       const groups=[];const gidx={};
-      list.forEach(function(g){const k=dayKey(g);if(!(k in gidx)){gidx[k]=groups.length;const pd=deliveryDateFor(g);groups.push({key:k,today:isDueToday(g),sort:pd?pd.getTime():-1,items:[]});}groups[gidx[k]].items.push(g);});
+      list.forEach(function(g){const k=dayKey(g);if(!(k in gidx)){gidx[k]=groups.length;const pd=recDate(g);groups.push({key:k,today:isDueToday(g),sort:pd?pd.getTime():-1,items:[]});}groups[gidx[k]].items.push(g);});
       groups.sort(function(a,b){return b.sort-a.sort;});
       const anyToday=groups.some(function(x){return x.today;});
       groups.forEach(function(grp,gi){
@@ -3761,6 +3754,11 @@ async function pgGoodsIn(c){
       dv({},h('h2',{cls:'page-title',st:{fontSize:'18px'}},(g.supplier||'Supplier')+(g.customer_po?(' — PO '+g.customer_po):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.delivery_no?(' · Del '+g.delivery_no):'')+(g.colour?(' · '+g.colour):''))),
       grStatusPill(g.status||'Pending')
     ));
+    var expDef=giDeliveryDateFromDate(g.created_at?new Date(g.created_at):new Date());
+    var expInp=h('input',{type:'date',value:(g.expected_date||giIsoLocal(expDef))});
+    var expStatus=sp({cls:'txs muted',st:{marginLeft:'8px'}});
+    expInp.onchange=async function(){try{await GRDB.patch(g.id,{expected_date:expInp.value||null});g.expected_date=expInp.value;expStatus.style.color='#15803d';expStatus.textContent='Saved — will move to that day in the list.';}catch(e){expStatus.style.color='#ef4444';expStatus.textContent=e.message;}};
+    box.appendChild(dv({cls:'card',st:{marginBottom:'10px'}},dv({cls:'row gap2',st:{alignItems:'flex-end',flexWrap:'wrap'}},frow('Expected delivery date',expInp),expStatus),dv({cls:'txs muted',st:{marginTop:'4px'}},'Change this for back-dated dockets so they file under the right day.')));
     if(g.docket_url)box.appendChild(dv({cls:'mb3'},h('a',{href:g.docket_url,target:'_blank',rel:'noopener',cls:'login-btn',st:{textDecoration:'none'}},'View docket PDF')));
     const listBox=dv({});box.appendChild(listBox);
     const saveStatus=dv({cls:'txs muted',st:{marginTop:'8px'}});
