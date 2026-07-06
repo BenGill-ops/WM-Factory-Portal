@@ -343,19 +343,30 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden&&ses
 const SH=(x)=>Object.assign({'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'application/json','Prefer':'return=representation'},x||{});
 function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at,signedOffAt:r.signed_off_at||'',signedOffByName:r.signed_off_by_name||'',signatureUrl:r.signature_url||'',assignedDriverId:r.assigned_driver_id||null,assignedDriverName:r.assigned_driver_name||'',workType:r.work_type||'DEL'};}
 function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null,work_type:d.workType||'DEL'};}
+// Check a write response. Before this existed, a rejected write (expired login,
+// RLS, constraint) silently looked like success — the UI re-rendered as if saved.
+let _wrAlertAt=0;
+async function wr(r){
+  let d=null;try{d=await r.json();}catch(e){}
+  if(!r.ok){
+    const msg=(d&&(d.message||d.details||d.hint))||('HTTP '+r.status);
+    if(Date.now()-_wrAlertAt>4000){_wrAlertAt=Date.now();try{alert('⚠ NOT SAVED — the server rejected this change.\n\n'+msg+'\n\nIf you logged in a while ago your session may have expired — try logging in again, then redo the change.');}catch(e){}}
+    throw new Error('Write failed: '+msg);
+  }
+  return d;
+}
 const DB={
   async list(from,to){try{const r=await fetch(SB+'/rest/v1/deliveries?scheduled_date=gte.'+from+'&scheduled_date=lte.'+to+'&order=scheduled_date,delivery_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d.map(r2d):[];}catch(e){return[];}},
-  async create(d){const r=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(d))});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
-  async update(id,d){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(d2r(d))});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
-  async del(id){await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
-  async patch(id,fields){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
-  async del(id){await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});}
+  async create(d){const r=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(d))});const x=await wr(r);return Array.isArray(x)?x.map(r2d):[r2d(x)];},
+  async update(id,d){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(d2r(d))});const x=await wr(r);return Array.isArray(x)?x.map(r2d):[r2d(x)];},
+  async patch(id,fields){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const x=await wr(r);return Array.isArray(x)?x.map(r2d):[r2d(x)];},
+  async del(id){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);}
 };
 const CDB={
   async getArchivedMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.false&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async reactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:true})});},
+  async reactivateMember(id){const r=await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:true})});await wr(r);},
   async createMember(data){const r=await fetch(SB+'/rest/v1/team_members',{method:'POST',headers:SH({'Prefer':'return=representation'}),body:JSON.stringify(data)});const d=await r.json();if(!r.ok){console.error('createMember error:',r.status,JSON.stringify(d));throw new Error(JSON.stringify(d));}return Array.isArray(d)?d[0]:d;},
-  async deactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:false})});},
+  async deactivateMember(id){const r=await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:false})});await wr(r);},
   async getMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async uploadLeanPhoto(file,itemId,type){
     const ext=file.name.split('.').pop();
@@ -365,9 +376,9 @@ const CDB={
     return SB+'/storage/v1/object/public/lean-photos/'+path;
   },
   async getLeanItems(){try{const r=await fetch(SB+'/rest/v1/lean_items?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async createLeanItem(data){const r=await fetch(SB+'/rest/v1/lean_items',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
-  async updateLeanItem(id,data){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
-  async deleteLeanItem(id){await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async createLeanItem(data){const r=await fetch(SB+'/rest/v1/lean_items',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async updateLeanItem(id,data){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async deleteLeanItem(id){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async getSafetyAlerts(){try{const r=await fetch(SB+'/rest/v1/safety_alerts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async uploadSafetyPhoto(file,refNo){
     const ext=file.name.split('.').pop();
@@ -376,36 +387,37 @@ const CDB={
     if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
     return SB+'/storage/v1/object/public/safety-photos/'+path;
   },
-  async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
-  async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
-  async deleteSafetyAlert(id){await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async deleteSafetyAlert(id){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return m.exclude_from_compliance!==true;});}catch(e){return[];}},
   async getAssessors(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&is_assessor=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPs(){try{const r=await fetch(SB+'/rest/v1/safe_work_practices?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPsForMember(memberId){try{const[allSwps,assignments]=await Promise.all([this.getSWPs(),this.getAssignments(memberId)]);const assignedIds=new Set(assignments.map(function(a){return a.swp_id;}));return allSwps.filter(function(s){return !s.is_optional||assignedIds.has(s.id);});}catch(e){return this.getSWPs();}},
   async getSignoffs(){try{const r=await fetch(SB+'/rest/v1/signoffs?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async createSignoff(data){const r=await fetch(SB+'/rest/v1/signoffs',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
-  async updateSignoff(id,data){const r=await fetch(SB+'/rest/v1/signoffs?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async createSignoff(data){const r=await fetch(SB+'/rest/v1/signoffs',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async updateSignoff(id,data){const r=await fetch(SB+'/rest/v1/signoffs?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
   async getCompetencyItems(swpId){try{const r=await fetch(SB+'/rest/v1/competency_items?swp_id=eq.'+swpId+'&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getCompetencyResponses(signoffId){try{const r=await fetch(SB+'/rest/v1/competency_responses?signoff_id=eq.'+signoffId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async saveCompetencyResponses(signoffId,responses){
     // Delete existing then insert new
-    await fetch(SB+'/rest/v1/competency_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});
+    const rd=await fetch(SB+'/rest/v1/competency_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});
+    await wr(rd);
     if(!responses.length)return;
     const r=await fetch(SB+'/rest/v1/competency_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});
-    return await r.json();
+    return await wr(r);
   },
   async getAssignments(memberId){try{const r=await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getAllAssignments(){try{const r=await fetch(SB+'/rest/v1/swp_assignments',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async assignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments',{method:'POST',headers:SH(),body:JSON.stringify({team_member_id:memberId,swp_id:swpId})});return await r.json();},
-  async unassignSWP(memberId,swpId){await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId+'&swp_id=eq.'+swpId,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async assignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments',{method:'POST',headers:SH(),body:JSON.stringify({team_member_id:memberId,swp_id:swpId})});return await wr(r);},
+  async unassignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId+'&swp_id=eq.'+swpId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async getQuizQuestions(swpId){try{const r=await fetch(SB+'/rest/v1/quiz_questions?swp_id=eq.'+swpId+'&is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getQuizResponses(signoffId){try{const r=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async saveQuizResponses(signoffId,responses){await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await r.json();},
+  async saveQuizResponses(signoffId,responses){const rd=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(rd);if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await wr(r);},
   // --- Delivery activity log ---
   async getDeliveryLog(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_log?delivery_id=eq.'+deliveryId+'&order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async addDeliveryNote(deliveryId,note){const body={delivery_id:deliveryId,action:'note',detail:note,user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async deleteDeliveryLog(logId){await fetch(SB+'/rest/v1/delivery_log?id=eq.'+logId,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async deleteDeliveryLog(logId){const r=await fetch(SB+'/rest/v1/delivery_log?id=eq.'+logId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   // --- Generic delivery log writer (used by photos and sign-off) ---
   async addDeliveryLogEntry(deliveryId,action,detail,metadata){
     const body={delivery_id:deliveryId,action:action,detail:detail||null,metadata:metadata||{},user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};
@@ -437,7 +449,7 @@ const CDB={
     if(!r.ok)throw new Error(JSON.stringify(d));
     return Array.isArray(d)?d[0]:d;
   },
-  async deleteDeliveryPhoto(photoId){await fetch(SB+'/rest/v1/delivery_photos?id=eq.'+photoId,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async deleteDeliveryPhoto(photoId){const r=await fetch(SB+'/rest/v1/delivery_photos?id=eq.'+photoId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   // --- Sign-off (updates the delivery row + writes a log entry) ---
   async setDeliverySignoff(deliveryId,customerName,signatureUrl){
     const now=new Date().toISOString();
@@ -663,7 +675,7 @@ function closeLogin(){closeLoginScreen();}
 // ── DASHBOARD ────────────────────────────────────────────────────────
 async function pgDash(c){
   const today=new Date();
-  const [upcoming,members,swps,signoffs,safetyAlerts]=await Promise.all([DB.list(iso(today),iso(addD(today,7))),CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs(),CDB.getSafetyAlerts()]);
+  const [upcoming,members,swps,signoffs,safetyAlerts,leanLive]=await Promise.all([DB.list(iso(today),iso(addD(today,7))),CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs(),CDB.getSafetyAlerts(),CDB.getLeanItems()]);
   let prodPctDash=null;
   try{
     const _pr=await fetch(SB+'/rest/v1/production_jobs?select=completed_min,prod_std_min&stage=eq.3',{headers:SH()});
@@ -679,7 +691,7 @@ async function pgDash(c){
   const compPct=total>0?Math.round(compCurrent/total*100):0;
   const pinned=safetyAlerts.filter(function(s){return s.is_pinned&&!s.is_archived;});
   const sr=dv({cls:'mb4',st:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'12px'}});
-  [{v:prodPctDash===null?'\u2014':prodPctDash+'%',l:'Production',s:'Factory complete',col:prodPctDash===null?'#9ca3af':prodPctDash>=80?'#22c55e':prodPctDash>=50?'#f59e0b':'#ef4444',dest:'production'},{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8',dest:'delivery'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444',dest:'safety'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626',dest:'safety'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706',dest:'lean'}].forEach(function(x){
+  [{v:prodPctDash===null?'\u2014':prodPctDash+'%',l:'Production',s:'Factory complete',col:prodPctDash===null?'#9ca3af':prodPctDash>=80?'#22c55e':prodPctDash>=50?'#f59e0b':'#ef4444',dest:'production'},{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8',dest:'delivery'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444',dest:'safety'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626',dest:'safety'},{v:leanLive.filter(function(i){return i.status!=='Completed'&&i.status!=='Rejected';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706',dest:'lean'}].forEach(function(x){
     const sc2=dv({cls:'stat-card',st:{cursor:'pointer',transition:'box-shadow 0.15s,transform 0.15s'}});
     sc2.onmouseenter=function(){sc2.style.boxShadow='0 4px 16px rgba(0,0,0,0.10)';sc2.style.transform='translateY(-1px)';};
     sc2.onmouseleave=function(){sc2.style.boxShadow='';sc2.style.transform='';};
@@ -972,7 +984,7 @@ async function openSOMdl(member,swp,so,onSave){
 
 
     // ── QUIZ STEP: ECO Knowledge Quiz (if questions exist) ──────────────────
-    const quizAnswers={};let quizPassed=false;
+    const quizAnswers={};let quizPassed=false;let quizSubmitted=false;
     const quizAlreadyDone=existingQuizResponses.length>0;
     if(quizAlreadyDone){
       const mcQs=quizQuestions.filter(function(q){return q.question_type==='multiple_choice';});
@@ -1047,7 +1059,7 @@ async function openSOMdl(member,swp,so,onSave){
           const mcQs=quizQuestions.filter(function(q){return q.question_type==='multiple_choice';});
           const mcCorrect=mcQs.filter(function(q){return quizAnswers[q.id]&&quizAnswers[q.id].selected===q.correct_option;}).length;
           const score=mcQs.length>0?mcCorrect/mcQs.length:1;
-          quizPassed=score>=0.7;
+          quizPassed=score>=0.7;quizSubmitted=true;
           // Show results
           quizStep.innerHTML='';
           quizStep.style.background=quizPassed?'#f0fdf4':'#fef2f2';
@@ -1059,7 +1071,7 @@ async function openSOMdl(member,swp,so,onSave){
           if(mcQs.length>0){
             quizStep.appendChild(dv({st:{fontWeight:'700',fontSize:'15px',color:quizPassed?'#15803d':'#b91c1c',marginBottom:'6px'}},mcCorrect+'/'+mcQs.length+' correct ('+(Math.round(score*100))+'%)'));
             if(!quizPassed){
-              quizStep.appendChild(dv({cls:'txs muted mb2'},'Score below 70%. Please review the training material and try again. The quiz has been saved — your assessor can see your responses.'));
+              quizStep.appendChild(dv({cls:'txs muted mb2'},'Score below 70%. Review the training material above, then close this window and reopen the sign-off to retake the quiz. (Failed attempts are not saved.)'));
             }
           }
           // Show answers
@@ -1139,7 +1151,8 @@ async function openSOMdl(member,swp,so,onSave){
       if(swp.pdf_url&&!pdfRead)return alert('Please open and read the SWP document first.');
       if(swp.pdf_url&&pdfChk&&!pdfChk.checked)return alert('Please tick to confirm you have read the SWP document.');
       if(quizQuestions.length>0&&!quizAlreadyDone&&Object.keys(quizAnswers).length<quizQuestions.length)return alert('Please complete the ECO quiz before signing.');
-      if(quizQuestions.length>0&&!quizAlreadyDone&&!quizPassed)return alert('Quiz score below 70%. Please review the training material and retry the quiz.');
+      if(quizQuestions.length>0&&!quizAlreadyDone&&!quizSubmitted)return alert('Please press "Submit Quiz" to check your answers before signing.');
+      if(quizQuestions.length>0&&!quizAlreadyDone&&!quizPassed)return alert('Quiz score below 70%. Review the training material, then close and reopen this sign-off to retake the quiz.');
       if(compItems.length>0&&Object.keys(selfRatings).length<compItems.length)return alert('Please rate all competency items before signing.');
       const ini=iniIn.value.trim().toUpperCase();
       if(!ini)return alert('Please enter your initials.');
@@ -1769,7 +1782,7 @@ function showLeanForm(wrap,members,item,prefilledBy){
       const wrap=dv({st:{position:'relative'}});
       const img=h('img',{src:url,st:{width:'70px',height:'70px',objectFit:'cover',borderRadius:'6px',border:'1px solid '+borderCol}});
       const del=dv({st:{position:'absolute',top:'-5px',right:'-5px',width:'16px',height:'16px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'10px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
-      del.textContent='×';del.onclick=function(){photoUrls.splice(ui,1);wrap.remove();if(photoUrls.length<3)addBtn.style.display='';};
+      del.textContent='×';del.onclick=function(){const ix=photoUrls.indexOf(url);if(ix!==-1)photoUrls.splice(ix,1);wrap.remove();if(photoUrls.length<3)addBtn.style.display='';};
       wrap.appendChild(img);wrap.appendChild(del);previewRow.appendChild(wrap);
     });
     section.appendChild(previewRow);
@@ -1786,8 +1799,7 @@ function showLeanForm(wrap,members,item,prefilledBy){
         const wrap2=dv({st:{position:'relative'}});
         const img2=h('img',{src:url,st:{width:'70px',height:'70px',objectFit:'cover',borderRadius:'6px',border:'1px solid '+borderCol}});
         const del2=dv({st:{position:'absolute',top:'-5px',right:'-5px',width:'16px',height:'16px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'10px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
-        const capturedIdx=photoUrls.length-1;
-        del2.textContent='×';del2.onclick=function(){photoUrls.splice(capturedIdx,1);wrap2.remove();if(photoUrls.length<3)addBtn.style.display='';};
+        del2.textContent='×';del2.onclick=function(){const ix=photoUrls.indexOf(url);if(ix!==-1)photoUrls.splice(ix,1);wrap2.remove();if(photoUrls.length<3)addBtn.style.display='';};
         wrap2.appendChild(img2);wrap2.appendChild(del2);previewRow.appendChild(wrap2);
         if(photoUrls.length>=3)addBtn.style.display='none';
       }catch(e){statusEl.textContent='Failed: '+e.message;statusEl.style.color='#dc2626';}
@@ -2482,8 +2494,12 @@ function renderDelMonth(c,dels,y,m){
   c.appendChild(hdrRow);
   const grid=dv({cls:'cal-grid'});
   let dayCount=0;
-  // Leading empty cells
-  for(let i=0;i<startDow&&i<5;i++){grid.appendChild(dv({cls:'cal-cell c-other'}));dayCount++;}
+  // Leading empty cells. Grid has 6 columns (Mon–Sat, Sundays skipped), so a
+  // month starting on Sunday (startDow 6) needs 0 blanks — its Monday the 2nd
+  // sits in column 0. Capping at 5 blanks used to shift the whole month one
+  // cell right, putting every day under the wrong weekday header.
+  const leadBlanks=startDow===6?0:startDow;
+  for(let i=0;i<leadBlanks;i++){grid.appendChild(dv({cls:'cal-cell c-other'}));dayCount++;}
   for(let day=1;day<=daysInMonth;day++){
     const date=new Date(y,m,day);
     const dow=(date.getDay()+6)%7;
@@ -2493,7 +2509,10 @@ function renderDelMonth(c,dels,y,m){
     const isSel=selDay===dateStr;
     const isSat=dow===5;
     const cell=dv({cls:'cal-cell'+(isToday?' c-today':'')+(isSel?' c-sel':'')+(isSat?' c-sat':'')});
-    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;c.innerHTML='';renderDelMonth(c,dels,y,m);window.scrollTo({top:document.getElementById('content').scrollHeight,behavior:'smooth'});};
+    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;
+      // Re-render the whole Deliveries page (like Week view does) — re-rendering
+      // only the grid used to wipe the page header, filters and view switcher.
+      const pg=document.getElementById('content');pg.innerHTML='';pgDel(pg).then(function(){window.scrollTo({top:pg.scrollHeight,behavior:'smooth'});});};
     if(isManager()){
       cell.ondblclick=function(e){e.stopPropagation();openDelForm(null,dateStr,document.getElementById('content'));};
     }
@@ -2519,8 +2538,9 @@ function renderDelMonth(c,dels,y,m){
         const delId=parseInt(e.dataTransfer.getData('delId'));
         if(!delId)return;
         await DB.patch(delId,{scheduled_date:dateStr,delivery_order:order});
-        deliveries=await DB.list(iso(new Date(y,m,1)),iso(new Date(y,m+1,0)));
-        c.innerHTML='';renderDelMonth(c,deliveries,y,m);
+        // Full page re-render: refetches AND re-applies the work-type filter
+        // (the old grid-only re-render brought hidden work types back).
+        const pg=document.getElementById('content');pg.innerHTML='';pgDel(pg);
       };
       cell.appendChild(slot);
     });
@@ -3592,7 +3612,7 @@ const GRDB={
   async list(){try{const r=await fetch(SB+'/rest/v1/goods_receipts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async create(row){const r=await fetch(SB+'/rest/v1/goods_receipts',{method:'POST',headers:SH(),body:JSON.stringify(row)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
   async patch(id,fields){const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async del(id){await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async del(id){const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async uploadDocket(file){const ext=(file.name?file.name.split('.').pop():'')||'pdf';const path='dockets/'+Date.now()+'-'+Math.floor(Math.random()*1000)+'.'+ext;const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'application/pdf','x-upsert':'true'},body:file});if(!r.ok){const e=await r.text();throw new Error('Docket upload failed: '+e);}return SB+'/storage/v1/object/public/delivery-photos/'+path;},
   async parse(text,supplier){const r=await fetch(XERO_FN+'/parse-docket',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify({text:text,supplier:supplier||''})});const d=await r.json();if(!r.ok)throw new Error(d&&d.error?d.error:('Parse failed ('+r.status+')'));return d;}
 };
@@ -3866,7 +3886,7 @@ const NCRDB={
   async list(){try{const r=await fetch(SB+'/rest/v1/ncr_reports?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async create(row){const r=await fetch(SB+'/rest/v1/ncr_reports',{method:'POST',headers:SH(),body:JSON.stringify(row)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
   async patch(id,fields){const r=await fetch(SB+'/rest/v1/ncr_reports?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async del(id){await fetch(SB+'/rest/v1/ncr_reports?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async del(id){const r=await fetch(SB+'/rest/v1/ncr_reports?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async uploadPhoto(file,ref){const ext=(file.name?file.name.split('.').pop():'')||'jpg';const path='ncr/'+ref+'-'+Date.now()+'-'+Math.floor(Math.random()*1000)+'.'+ext;const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}return SB+'/storage/v1/object/public/delivery-photos/'+path;},
   async notify(row){try{const r=await fetch(XERO_FN+'/ncr-notify',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify(row)});return r.ok;}catch(e){return false;}}
 };
@@ -3980,7 +4000,7 @@ async function pgAdmin(c){
   c.appendChild(dv({cls:'row jb mb4'},
     dv({},h('h1',{cls:'page-title'},'Admin Panel'),dv({cls:'page-sub'},'Manage team members, roles, passwords and SWP assignments')),
     btn('🔗 Connect Xero','btn-o',async function(){
-      const res=await fetch(XERO_FN+'/Xero-auth/connect');
+      const res=await fetch(XERO_FN+'/Xero-auth/connect',{headers:SH()});
       const data=await res.json();
       if(data.url)window.location.href=data.url;
       else alert('Could not start Xero connection: '+(data.error||'unknown error'));
