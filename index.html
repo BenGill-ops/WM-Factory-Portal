@@ -7,10 +7,10 @@
 <link href="./Window Makers Factory Portal_files/css2" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',system-ui,sans-serif;background:#f0f0f0;color:#1a1a1a;height:100vh;height:100dvh;overflow:hidden}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f0f0f0;color:#1a1a1a;height:100vh;overflow:hidden}
 input,select,textarea,button{font-family:inherit}
 :root{--green:#4a9a0f;--green-light:#6DC22A;--green-dark:#3a7a0a;--sidebar:#1c1c1c;--sidebar-text:rgba(255,255,255,0.78);--border:#e5e7eb;--card:#ffffff;--text:#1a1a1a;--muted:#6b7280;--danger:#dc2626}
-#app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+#app{display:flex;height:100vh;overflow:hidden}
 #sidebar{width:200px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;overflow-y:auto}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #topbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
@@ -73,112 +73,6 @@ textarea{resize:vertical}
 .del-row{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid #f3f4f6;transition:background 0.1s}
 .del-row:hover{background:#fafaf9}
 .del-row.drag-top{border-top:2px solid var(--green)}
-.del-log{padding:10px 14px 14px 50px;background:#fafaf8;border-bottom:1px solid #f3f4f6;font-size:12px}
-.del-log-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
-.del-log-entry{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f3f4f6}
-.del-log-entry:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
-.del-log-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:#e5e7eb;color:#374151}
-.del-log-icon.note{background:#fef3c7;color:#92400e}
-.del-log-icon.status{background:#dbeafe;color:#1e40af}
-.del-log-icon.photo{background:#dcfce7;color:#15803d}
-.del-log-icon.signoff{background:#f0fdf4;color:#166534}
-.del-log-icon.created{background:#f3e8ff;color:#6b21a8}
-.del-log-body{flex:1;min-width:0}
-.del-log-detail{color:var(--text);line-height:1.4;word-break:break-word}
-.del-log-meta{font-size:10.5px;color:var(--muted);margin-top:2px}
-.del-log-delete{background:none;border:0;color:var(--muted);font-size:14px;cursor:pointer;padding:0 4px;visibility:hidden}
-.del-log-entry:hover .del-log-delete{visibility:visible}
-.del-log-delete:hover{color:var(--danger)}
-.del-log-addnote{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb}
-.del-log-addnote textarea{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;min-height:32px;background:#fff}
-.del-log-empty{color:var(--muted);font-style:italic;padding:4px 0}
-.del-activity-toggle{background:none;border:1px solid var(--border);color:var(--muted);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;display:inline-flex;align-items:center;gap:4px}
-.del-activity-toggle:hover{background:#fafafa;color:var(--text)}
-.del-activity-toggle .arrow{transition:transform 0.15s}
-.del-activity-toggle.open .arrow{transform:rotate(180deg)}
-.del-log-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
-.del-signoff-card{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin:6px 0 10px 0;display:flex;gap:12px;align-items:center}
-.del-signoff-info{flex:1;min-width:0}
-.del-signoff-title{font-weight:700;color:#15803d;font-size:13px}
-.del-signoff-when{font-size:11px;color:var(--muted);margin-top:2px}
-.del-signature-thumb{max-width:140px;max-height:64px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer}
-.del-photos-grid{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px 0}
-.del-photo-thumb{position:relative;width:72px;height:72px;border-radius:6px;overflow:hidden;background:#f3f4f6;border:1px solid var(--border)}
-.del-photo-thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer;display:block}
-.del-photo-delete{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.65);color:#fff;border:0;width:18px;height:18px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;visibility:hidden}
-.del-photo-thumb:hover .del-photo-delete{visibility:visible}
-.sig-canvas{border:2px solid var(--border);border-radius:8px;touch-action:none;cursor:crosshair;background:#fff;display:block;width:100%;max-width:460px;height:200px}
-.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px}
-.lightbox img{max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
-/* === My Day driver page === */
-.myday-list{display:flex;flex-direction:column;gap:14px;max-width:620px;margin:0 auto}
-.myday-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 2px 6px rgba(0,0,0,0.04);transition:all 0.15s}
-.myday-card.completed{opacity:0.55;border-color:var(--green)}
-.myday-card.overdue{border-color:#fca5a5;border-width:2px}
-.myday-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
-.myday-order{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;background:#f3f4f6;padding:4px 10px;border-radius:14px}
-.myday-job{font-size:26px;font-weight:800;color:var(--green-dark);margin-bottom:2px;line-height:1.1;letter-spacing:-0.01em;font-family:'DM Sans',system-ui,sans-serif}
-.myday-customer{font-size:21px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.25}
-.myday-address{font-size:16px;color:#374151;margin-bottom:10px;line-height:1.4;font-weight:500}
-.myday-meta{font-size:12.5px;color:var(--muted);margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.myday-notes{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13.5px;color:#92400e;line-height:1.5;white-space:pre-wrap;word-break:break-word}
-.myday-notes-label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#a16207;margin-bottom:4px;display:block}
-.myday-openform{width:100%;background:#fff;border:1.5px dashed #d1d5db;color:#374151;padding:11px;font-size:13.5px;font-weight:600;border-radius:10px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:all 0.12s}
-.myday-openform:hover{border-color:var(--green);color:var(--green-dark);background:#f8fef4}
-.myday-signed-banner{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px}
-.myday-notpaid{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:700;margin-bottom:12px;text-align:center}
-.myday-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.myday-actions .btn{padding:14px 12px;font-size:14px;justify-content:center;font-weight:600}
-.myday-complete{width:100%;padding:14px;font-size:15px;justify-content:center;font-weight:700;margin-bottom:6px}
-.myday-tabs{display:flex;gap:6px;margin-bottom:14px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px;max-width:620px;margin-left:auto;margin-right:auto}
-.myday-tab{flex:1;background:transparent;border:0;padding:10px 8px;border-radius:8px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.12s}
-.myday-tab:hover{background:#fafaf8;color:var(--text)}
-.myday-tab.on.tab-DEL{background:#15803d;color:#fff}
-.myday-tab.on.tab-SCR{background:#1d4ed8;color:#fff}
-.myday-tab.on.tab-SW{background:#c2410c;color:#fff}
-.myday-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:10px;font-size:11px;font-weight:800;background:rgba(0,0,0,0.08);color:inherit}
-.myday-tab.on .myday-tab-count{background:rgba(255,255,255,0.25)}
-.myday-empty{text-align:center;padding:60px 20px;color:var(--muted)}
-.myday-empty-icon{font-size:42px;margin-bottom:8px;opacity:0.5}
-.myday-summary{display:flex;gap:14px;justify-content:center;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:14px;flex-wrap:wrap}
-.myday-stat{text-align:center;min-width:80px}
-.myday-stat-val{font-size:22px;font-weight:700;color:var(--text)}
-.myday-stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px}
-.myday-activity-link{font-size:12px;color:var(--brand);background:none;border:0;cursor:pointer;font-weight:600;padding:6px 0;font-family:inherit}
-.myday-activity-link:hover{text-decoration:underline}
-@media (max-width:480px){
-  .myday-card{padding:14px;border-radius:12px}
-  .myday-customer{font-size:16px}
-  .myday-actions{grid-template-columns:1fr}
-}
-/* === Delivery History page === */
-.hist-filters{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;align-items:end}
-.hist-filters .fg{margin:0}
-.hist-filters label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;display:block}
-.hist-filters input[type=date],.hist-filters input[type=search]{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%;font-family:inherit}
-.hist-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px}
-.hist-pills button{background:transparent;border:0;color:var(--muted);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
-.hist-pills button:hover{background:#fafafa;color:var(--text)}
-.hist-pills button.on{background:var(--green);color:#fff}
-.hist-pills .count{margin-left:4px;font-size:10.5px;opacity:0.7}
-.hist-pills button.on .count{opacity:0.95}
-.hist-date-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
-.hist-date-header{background:#fafaf7;padding:10px 14px;font-size:13px;font-weight:700;color:var(--text);border-bottom:1px solid var(--border)}
-.hist-date-count{font-weight:500;color:var(--muted);margin-left:8px}
-.hist-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.1s}
-.hist-row:last-child{border-bottom:0}
-.hist-row:hover{background:#fafaf9}
-.hist-row-main{flex:1;min-width:0}
-.hist-row-cust{font-weight:600;font-size:13.5px;color:var(--text);margin-bottom:2px}
-.hist-row-addr{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hist-row-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px}
-.hist-row-icons{display:flex;gap:4px;align-items:center}
-.hist-row-iconbox{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151}
-.hist-row-iconbox.signed{background:#f0fdf4;color:#15803d}
-.hist-row-iconbox.has-photos{background:#eff6ff;color:#1d4ed8}
-.hist-row-expand{padding:0 14px 14px 14px;background:#fafaf8;border-bottom:1px solid #f3f4f6;display:none}
-.hist-row.expanded + .hist-row-expand{display:block}
-@media (max-width:600px){.hist-filters{grid-template-columns:1fr}}
 .drag-handle{color:#d1d5db;cursor:grab;font-size:16px;flex-shrink:0;padding:2px 4px;margin-top:2px}
 .stat-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:14px 16px;text-align:center}
 .stat-val{font-size:26px;font-weight:700}
@@ -210,66 +104,6 @@ textarea{resize:vertical}
 .tab-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:700}
 .comp-dot{width:28px;height:28px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;transition:transform 0.1s;cursor:pointer}
 .comp-dot:hover{transform:scale(1.2)}
-/* === Work-type tags (DEL / SCR / SW) === */
-.wt-tag{display:inline-block;font-size:9.5px;font-weight:800;padding:1.5px 5px;border-radius:3px;color:#fff;letter-spacing:0.04em;line-height:1.2;vertical-align:middle}
-.wt-DEL{background:#15803d}
-.wt-SCR{background:#1d4ed8}
-.wt-SW{background:#c2410c}
-.wt-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;align-items:center}
-.wt-filter-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-right:4px}
-.wt-filter-btn{background:transparent;border:1.5px solid #d1d5db;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;color:#9ca3af;transition:all 0.12s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
-.wt-filter-btn.on.wt-DEL-btn{background:#15803d;color:#fff;border-color:#15803d}
-.wt-filter-btn.on.wt-SCR-btn{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
-.wt-filter-btn.on.wt-SW-btn{background:#c2410c;color:#fff;border-color:#c2410c}
-.wt-filter-btn:hover{transform:translateY(-1px)}
-/* === Responsive sidebar drawer (tablet & phone) === */
-#nav-toggle{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0}
-#nav-toggle:hover{background:#fafafa}
-#nav-toggle span{display:block;width:18px;height:2px;background:#374151;position:relative;border-radius:2px}
-#nav-toggle span::before,#nav-toggle span::after{content:'';position:absolute;left:0;width:18px;height:2px;background:#374151;border-radius:2px}
-#nav-toggle span::before{top:-6px}
-#nav-toggle span::after{top:6px}
-#nav-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:95}
-body.nav-open #nav-backdrop{display:block}
-@media (max-width:1024px){
-  #nav-toggle{display:inline-flex}
-  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%);transition:transform 0.22s ease;box-shadow:6px 0 24px rgba(0,0,0,0.18);width:248px}
-  body.nav-open #sidebar{transform:translateX(0)}
-  #content{padding:14px 14px 80px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
-  #topbar{padding:8px 14px}
-  .myday-list{max-width:100%;padding-bottom:120px}
-  .myday-customer{font-size:19px}
-  .myday-job{font-size:24px}
-  .myday-address{font-size:15px}
-  .myday-actions .btn{min-height:48px;font-size:14px}
-  .myday-complete{min-height:52px;font-size:15px}
-  .page-title{font-size:19px}
-  .tab-bar{overflow-x:auto;white-space:nowrap}
-}
-@media (max-width:640px){
-  #content{padding:10px 10px 80px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
-  .myday-card{padding:14px}
-  .myday-summary{padding:10px 12px;gap:10px}
-  .myday-stat-val{font-size:19px}
-  .modal{padding:16px 18px;width:100%}
-  .sig-canvas{height:180px}
-}
-.prod-board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.prod-col{background:#fff;border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
-.prod-col-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:3px solid var(--border)}
-.prod-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-.prod-col-body{padding:8px;display:flex;flex-direction:column;gap:7px;max-height:62vh;overflow-y:auto}
-.prod-card{border:1px solid var(--border);border-left:4px solid #cbd5e1;border-radius:8px;padding:8px 10px;background:#fff}
-.prod-card.over{border-left-color:#ef4444;background:#fef2f2}
-@media (max-width:900px){.prod-board{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:560px){.prod-board{grid-template-columns:1fr}}
-/* production banner + drag */
-.prod-banner{background:linear-gradient(90deg,var(--green-dark),var(--green-light));border-radius:12px;padding:16px 20px;margin-bottom:16px}
-.prod-bar{height:14px;background:rgba(255,255,255,0.28);border-radius:8px;overflow:hidden}
-.prod-bar-fill{height:100%;background:#fff;border-radius:8px;transition:width 0.6s}
-.prod-grip{color:#cbd5e1;cursor:grab;font-size:13px;flex-shrink:0}
-.prod-card{cursor:default}
-.prod-card.dragging{opacity:0.45;border-style:dashed}
 </style>
 </head>
 <body>
@@ -284,14 +118,12 @@ body.nav-open #nav-backdrop{display:block}
   </div>
   <div id="main">
     <div id="topbar">
-      <button id="nav-toggle" aria-label="Open menu" onclick="document.body.classList.toggle('nav-open')"><span></span></button>
       <span class="topbar-pg" id="topbar-title">Deliveries</span>
       <div style="margin-left:auto" id="topbar-right"><div class="manager-badge" style="background: rgb(249, 250, 251); border: 1px solid var(--border);"><div class="sb-av" style="width: 22px; height: 22px; font-size: 10px; background: rgb(124, 58, 237);">B</div><span style="font-size: 12px; font-weight: 600; color: rgb(124, 58, 237);">Ben Gill (Admin)</span></div></div>
     </div>
     <div id="content"><div class="row jb mb3"><div><h1 class="page-title">Deliveries</h1><div class="page-sub">Schedule and manage deliveries</div></div><div class="row gap2"><button class="btn btn-p">+ New Delivery</button><button class="btn btn-o btn-sm">◀</button><div style="font-weight: 600; font-size: 13px; padding: 6px 8px; min-width: 140px; text-align: center;">May 2026</div><button class="btn btn-o btn-sm">▶</button></div></div><div class="row gap2 mb3"><button class="btn btn-o btn-sm">Month</button><button class="btn btn-p btn-sm">Week</button><button class="btn btn-o btn-sm">List</button></div><div class="cal-hdr-row"><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Mon</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">18</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--green);">Tue</div><div style="font-size: 16px; font-weight: 700; color: var(--green);">19</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Wed</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">20</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Thu</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">21</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Fri</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">22</div></div><div class="cal-hdr" style="padding: 10px 4px; line-height: 1.4;"><div style="font-weight: 600; color: var(--muted);">Sat</div><div style="font-size: 16px; font-weight: 700; color: var(--text);">23</div></div></div><div class="cal-grid"><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell c-today" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div><div class="cal-pill" draggable="true" style="background: rgb(220, 38, 38); margin-bottom: 2px; cursor: pointer;"><div class="not-paid-tag">⚠ NOT PAID — DO NOT DELIVER</div><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Kearny Build</div></div><div class="cal-pill" draggable="true" style="background: rgb(220, 38, 38); margin-bottom: 2px; cursor: pointer;"><div class="not-paid-tag">⚠ NOT PAID — DO NOT DELIVER</div><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Carter Developments</div></div><div class="cal-pill" draggable="true" style="background: rgb(180, 83, 9); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Ivo Constructions</div></div><div class="cal-pill" draggable="true" style="background: rgb(180, 83, 9); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Omaley Building</div></div><div class="cal-pill" draggable="true" style="background: rgb(22, 101, 52); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">alister </div><div style="font-size: 10px; opacity: 0.8;">09:09</div></div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div><div class="cal-pill" draggable="true" style="background: rgb(220, 38, 38); margin-bottom: 2px; cursor: pointer;"><div class="not-paid-tag">⚠ NOT PAID — DO NOT DELIVER</div><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 2</div><div style="font-size: 11px; line-height: 1.3;">Biton Building</div><div style="font-size: 10px; opacity: 0.8;">08:00</div></div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div><div class="cal-pill" draggable="true" style="background: rgb(22, 101, 52); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">David Dawe</div><div style="font-size: 10px; opacity: 0.8;">11:27</div></div><div class="cal-pill" draggable="true" style="background: rgb(22, 101, 52); margin-bottom: 2px; cursor: pointer;"><div style="font-size: 10px; font-weight: 700; opacity: 0.8;">Delivery 1</div><div style="font-size: 11px; line-height: 1.3;">Omaley Building</div><div style="font-size: 10px; opacity: 0.8;">08:00</div></div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div><div class="cal-cell" style="min-height: 220px;"><div class="cal-slot"><div class="cal-slot-lbl">Delivery 1</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 2</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 3</div></div><div class="cal-slot"><div class="cal-slot-lbl">Delivery 4</div></div></div></div><div class="row gap3 mt3" style="flex-wrap: wrap; padding: 10px 14px; background: rgb(255, 255, 255); border-radius: 10px; border: 1px solid var(--border);"><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(22, 101, 52); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Outgoing Delivery</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(29, 78, 216); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Incoming Delivery</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(220, 38, 38); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 700; color: rgb(220, 38, 38);">NOT PAID — Do Not Deliver</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(245, 158, 11); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Overdue / Undelivered</span></div><div class="row gap2" style="align-items: center;"><div style="width: 14px; height: 14px; border-radius: 3px; background: rgb(107, 114, 128); flex-shrink: 0;"></div><span style="font-size: 11.5px; font-weight: 500; color: rgb(55, 65, 81);">Cancelled</span></div></div></div>
   </div>
 </div>
-<div id="nav-backdrop" onclick="document.body.classList.remove('nav-open')"></div>
 <div id="login-screen" style="position: fixed; inset: 0px; background: rgb(28, 28, 28); z-index: 200; display: none; align-items: center; justify-content: center;">
   <div style="width:380px;max-width:95vw">
     <div style="text-align:center;margin-bottom:28px">
@@ -313,7 +145,6 @@ body.nav-open #nav-backdrop{display:block}
     <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:11px;margin-top:16px">Window Makers Factory Portal</p>
   </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 const SB='https://souwlbqovhhmjrfpxunv.supabase.co';
 const XERO_FN=SB+'/functions/v1';
@@ -341,32 +172,21 @@ async function refreshSession(){
 setInterval(function(){if(session&&session.expires_at-Date.now()<15*60*1000)refreshSession();},5*60*1000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&session&&session.expires_at-Date.now()<15*60*1000)refreshSession();});
 const SH=(x)=>Object.assign({'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'application/json','Prefer':'return=representation'},x||{});
-function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at,signedOffAt:r.signed_off_at||'',signedOffByName:r.signed_off_by_name||'',signatureUrl:r.signature_url||'',assignedDriverId:r.assigned_driver_id||null,assignedDriverName:r.assigned_driver_name||'',workType:r.work_type||'DEL'};}
-function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null,work_type:d.workType||'DEL'};}
-// Check a write response. Before this existed, a rejected write (expired login,
-// RLS, constraint) silently looked like success — the UI re-rendered as if saved.
-let _wrAlertAt=0;
-async function wr(r){
-  let d=null;try{d=await r.json();}catch(e){}
-  if(!r.ok){
-    const msg=(d&&(d.message||d.details||d.hint))||('HTTP '+r.status);
-    if(Date.now()-_wrAlertAt>4000){_wrAlertAt=Date.now();try{alert('⚠ NOT SAVED — the server rejected this change.\n\n'+msg+'\n\nIf you logged in a while ago your session may have expired — try logging in again, then redo the change.');}catch(e){}}
-    throw new Error('Write failed: '+msg);
-  }
-  return d;
-}
+function r2d(r){return{id:r.id,jobNumber:r.job_number||'',customer:r.customer||'',address:r.address||'',description:r.description||'',scheduledDate:r.scheduled_date||'',scheduledTime:r.scheduled_time||'',type:r.type||'Outgoing',status:r.status||'Scheduled',vehicle:r.vehicle||'Truck',vehicleOther:r.vehicle_other||'',crew:r.crew||'Driver only',crewOther:r.crew_other||'',deliveryOrder:r.delivery_order||'Delivery 1',deliverySequence:r.delivery_sequence||'Deliver 1st',bayNumber:r.bay_number||'',notes:r.notes||'',isPaid:r.is_paid||false,paidBy:r.paid_by||'',createdAt:r.created_at};}
+function d2r(d){return{job_number:d.jobNumber||'',customer:d.customer||'',address:d.address||'',description:d.description||'',scheduled_date:d.scheduledDate,scheduled_time:d.scheduledTime||null,type:d.type||'Outgoing',status:d.status||'Scheduled',vehicle:d.vehicle||'Truck',vehicle_other:d.vehicleOther||null,crew:d.crew||'Driver only',crew_other:d.crewOther||null,delivery_order:d.deliveryOrder||'Delivery 1',delivery_sequence:d.deliverySequence||'Deliver 1st',bay_number:d.bayNumber||null,notes:d.notes||null,is_paid:d.isPaid||false,paid_by:d.paidBy||null};}
 const DB={
   async list(from,to){try{const r=await fetch(SB+'/rest/v1/deliveries?scheduled_date=gte.'+from+'&scheduled_date=lte.'+to+'&order=scheduled_date,delivery_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d.map(r2d):[];}catch(e){return[];}},
-  async create(d){const r=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(d))});const x=await wr(r);return Array.isArray(x)?x.map(r2d):[r2d(x)];},
-  async update(id,d){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(d2r(d))});const x=await wr(r);return Array.isArray(x)?x.map(r2d):[r2d(x)];},
-  async patch(id,fields){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const x=await wr(r);return Array.isArray(x)?x.map(r2d):[r2d(x)];},
-  async del(id){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);}
+  async create(d){const r=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(d))});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
+  async update(id,d){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(d2r(d))});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
+  async del(id){await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
+  async patch(id,fields){const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const x=await r.json();return Array.isArray(x)?x.map(r2d):[r2d(x)];},
+  async del(id){await fetch(SB+'/rest/v1/deliveries?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});}
 };
 const CDB={
   async getArchivedMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.false&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async reactivateMember(id){const r=await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:true})});await wr(r);},
+  async reactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:true})});},
   async createMember(data){const r=await fetch(SB+'/rest/v1/team_members',{method:'POST',headers:SH({'Prefer':'return=representation'}),body:JSON.stringify(data)});const d=await r.json();if(!r.ok){console.error('createMember error:',r.status,JSON.stringify(d));throw new Error(JSON.stringify(d));}return Array.isArray(d)?d[0]:d;},
-  async deactivateMember(id){const r=await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:false})});await wr(r);},
+  async deactivateMember(id){await fetch(SB+'/rest/v1/team_members?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({is_active:false})});},
   async getMembers(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async uploadLeanPhoto(file,itemId,type){
     const ext=file.name.split('.').pop();
@@ -376,9 +196,9 @@ const CDB={
     return SB+'/storage/v1/object/public/lean-photos/'+path;
   },
   async getLeanItems(){try{const r=await fetch(SB+'/rest/v1/lean_items?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async createLeanItem(data){const r=await fetch(SB+'/rest/v1/lean_items',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
-  async updateLeanItem(id,data){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
-  async deleteLeanItem(id){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
+  async createLeanItem(data){const r=await fetch(SB+'/rest/v1/lean_items',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async updateLeanItem(id,data){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async deleteLeanItem(id){await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
   async getSafetyAlerts(){try{const r=await fetch(SB+'/rest/v1/safety_alerts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async uploadSafetyPhoto(file,refNo){
     const ext=file.name.split('.').pop();
@@ -387,90 +207,32 @@ const CDB={
     if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
     return SB+'/storage/v1/object/public/safety-photos/'+path;
   },
-  async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
-  async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
-  async deleteSafetyAlert(id){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
+  async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async deleteSafetyAlert(id){await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});},
   async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return m.exclude_from_compliance!==true;});}catch(e){return[];}},
   async getAssessors(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&is_assessor=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPs(){try{const r=await fetch(SB+'/rest/v1/safe_work_practices?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPsForMember(memberId){try{const[allSwps,assignments]=await Promise.all([this.getSWPs(),this.getAssignments(memberId)]);const assignedIds=new Set(assignments.map(function(a){return a.swp_id;}));return allSwps.filter(function(s){return !s.is_optional||assignedIds.has(s.id);});}catch(e){return this.getSWPs();}},
   async getSignoffs(){try{const r=await fetch(SB+'/rest/v1/signoffs?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async createSignoff(data){const r=await fetch(SB+'/rest/v1/signoffs',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
-  async updateSignoff(id,data){const r=await fetch(SB+'/rest/v1/signoffs?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async createSignoff(data){const r=await fetch(SB+'/rest/v1/signoffs',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
+  async updateSignoff(id,data){const r=await fetch(SB+'/rest/v1/signoffs?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await r.json();return Array.isArray(d)?d[0]:d;},
   async getCompetencyItems(swpId){try{const r=await fetch(SB+'/rest/v1/competency_items?swp_id=eq.'+swpId+'&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getCompetencyResponses(signoffId){try{const r=await fetch(SB+'/rest/v1/competency_responses?signoff_id=eq.'+signoffId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async saveCompetencyResponses(signoffId,responses){
     // Delete existing then insert new
-    const rd=await fetch(SB+'/rest/v1/competency_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});
-    await wr(rd);
+    await fetch(SB+'/rest/v1/competency_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});
     if(!responses.length)return;
     const r=await fetch(SB+'/rest/v1/competency_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});
-    return await wr(r);
+    return await r.json();
   },
   async getAssignments(memberId){try{const r=await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getAllAssignments(){try{const r=await fetch(SB+'/rest/v1/swp_assignments',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async assignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments',{method:'POST',headers:SH(),body:JSON.stringify({team_member_id:memberId,swp_id:swpId})});return await wr(r);},
-  async unassignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId+'&swp_id=eq.'+swpId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
+  async assignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments',{method:'POST',headers:SH(),body:JSON.stringify({team_member_id:memberId,swp_id:swpId})});return await r.json();},
+  async unassignSWP(memberId,swpId){await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId+'&swp_id=eq.'+swpId,{method:'DELETE',headers:SH({'Prefer':''})});},
   async getQuizQuestions(swpId){try{const r=await fetch(SB+'/rest/v1/quiz_questions?swp_id=eq.'+swpId+'&is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getQuizResponses(signoffId){try{const r=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async saveQuizResponses(signoffId,responses){const rd=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(rd);if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await wr(r);},
-  // --- Delivery activity log ---
-  async getDeliveryLog(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_log?delivery_id=eq.'+deliveryId+'&order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async addDeliveryNote(deliveryId,note){const body={delivery_id:deliveryId,action:'note',detail:note,user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async deleteDeliveryLog(logId){const r=await fetch(SB+'/rest/v1/delivery_log?id=eq.'+logId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
-  // --- Generic delivery log writer (used by photos and sign-off) ---
-  async addDeliveryLogEntry(deliveryId,action,detail,metadata){
-    const body={delivery_id:deliveryId,action:action,detail:detail||null,metadata:metadata||{},user_id:currentUser?currentUser.id:null,user_name:currentUser?currentUser.name:''};
-    const r=await fetch(SB+'/rest/v1/delivery_log',{method:'POST',headers:SH(),body:JSON.stringify(body)});
-    const d=await r.json();
-    if(!r.ok)throw new Error(JSON.stringify(d));
-    return Array.isArray(d)?d[0]:d;
-  },
-  // --- Delivery photos ---
-  async getDeliveryPhotos(deliveryId){try{const r=await fetch(SB+'/rest/v1/delivery_photos?delivery_id=eq.'+deliveryId+'&order=taken_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async uploadDeliveryPhoto(file,deliveryId,explicitExt){
-    let ext=explicitExt;
-    if(!ext){ ext=(file.name?file.name.split('.').pop():'')||'jpg'; }
-    const path='deliveries/'+deliveryId+'-'+Date.now()+'.'+ext;
-    const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
-    if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
-    return SB+'/storage/v1/object/public/delivery-photos/'+path;
-  },
-  async uploadDeliverySignature(blob,deliveryId){
-    const path='signatures/'+deliveryId+'-'+Date.now()+'.png';
-    const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'image/png','x-upsert':'true'},body:blob});
-    if(!r.ok){const e=await r.text();throw new Error('Signature upload failed: '+e);}
-    return SB+'/storage/v1/object/public/delivery-photos/'+path;
-  },
-  async addDeliveryPhotoRecord(deliveryId,photoUrl,caption){
-    const body={delivery_id:deliveryId,photo_url:photoUrl,caption:caption||null,taken_by_id:currentUser?currentUser.id:null,taken_by_name:currentUser?currentUser.name:''};
-    const r=await fetch(SB+'/rest/v1/delivery_photos',{method:'POST',headers:SH(),body:JSON.stringify(body)});
-    const d=await r.json();
-    if(!r.ok)throw new Error(JSON.stringify(d));
-    return Array.isArray(d)?d[0]:d;
-  },
-  async deleteDeliveryPhoto(photoId){const r=await fetch(SB+'/rest/v1/delivery_photos?id=eq.'+photoId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
-  // --- Sign-off (updates the delivery row + writes a log entry) ---
-  async setDeliverySignoff(deliveryId,customerName,signatureUrl){
-    const now=new Date().toISOString();
-    const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId,{method:'PATCH',headers:SH(),body:JSON.stringify({signed_off_at:now,signed_off_by_name:customerName,signature_url:signatureUrl})});
-    const d=await r.json();
-    if(!r.ok)throw new Error(JSON.stringify(d));
-    return Array.isArray(d)?d[0]:d;
-  },
-  // --- Refetch a single delivery (used after sign-off to refresh local state) ---
-  async getDeliveryById(deliveryId){try{const r=await fetch(SB+'/rest/v1/deliveries?id=eq.'+deliveryId+'&limit=1',{headers:SH()});const d=await r.json();return Array.isArray(d)&&d.length?r2d(d[0]):null;}catch(e){return null;}},
-  // Bulk lookup: how many photos does each delivery have? Returns { deliveryId: count, ... }
-  async getPhotoCountsForDeliveries(deliveryIds){
-    if(!deliveryIds||!deliveryIds.length)return{};
-    try{
-      const r=await fetch(SB+'/rest/v1/delivery_photos?delivery_id=in.('+deliveryIds.join(',')+')&select=delivery_id',{headers:SH()});
-      const d=await r.json();
-      const counts={};
-      if(Array.isArray(d))d.forEach(function(p){counts[p.delivery_id]=(counts[p.delivery_id]||0)+1;});
-      return counts;
-    }catch(e){return{};}
-  }
+  async saveQuizResponses(signoffId,responses){await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await r.json();}
 };
 function compStatus(so){
   if(!so||!so.self_signed_at)return 'unsigned';
@@ -485,37 +247,13 @@ function isAdmin(){return currentUser&&currentUser.role_level==='admin';}
 function isManager(){return currentUser&&['admin','manager'].includes(currentUser.role_level);}
 function isSupervisor(){return currentUser&&['admin','manager','supervisor'].includes(currentUser.role_level);}
 function canAssess(){return currentUser&&currentUser.is_assessor;}
-let mydayTab=(function(){try{const v=localStorage.getItem('wm_myday_tab');if(['DEL','SCR','SW'].indexOf(v)>=0)return v;}catch(_){}return 'DEL';})();
-function saveMyDayTab(){try{localStorage.setItem('wm_myday_tab',mydayTab);}catch(_){}}
-let workFilter=(function(){try{const s=localStorage.getItem('wm_work_filter');if(s){const o=JSON.parse(s);return{DEL:o.DEL!==false,SCR:o.SCR!==false,SW:o.SW!==false};}}catch(_){}return{DEL:true,SCR:true,SW:true};})();
-function saveWorkFilter(){try{localStorage.setItem('wm_work_filter',JSON.stringify(workFilter));}catch(_){}}
-function filterByWorkType(arr){return arr.filter(function(d){return workFilter[d.workType||'DEL'];});}
-const WT_LABELS={DEL:'Deliveries',SCR:'Screens',SW:'Site work'};
-function wtTag(code){const c=code||'DEL';return '<span class="wt-tag wt-'+c+'">'+c+'</span>';}
-function buildWorkFilterPills(c){
-  const row=dv({cls:'wt-filter'});
-  row.appendChild(sp({cls:'wt-filter-lbl'},'Show:'));
-  [['DEL','Deliveries'],['SCR','Screens'],['SW','Site work']].forEach(function(p){
-    const code=p[0],label=p[1];
-    const b=h('button',{cls:'wt-filter-btn wt-'+code+'-btn'+(workFilter[code]?' on':''),onclick:function(){
-      workFilter[code]=!workFilter[code];
-      saveWorkFilter();
-      c.innerHTML='';pgDel(c);
-    }});
-    b.appendChild(document.createTextNode(code+' · '+label));
-    row.appendChild(b);
-  });
-  return row;
-}
 let page='dashboard',deliveries=[],calDate=new Date(),calView='week',selDay=iso(new Date());
-let histFilters = { from:null, to:null, search:'', status:'all' };
-let lastPaymentSync=0, paymentSyncRunning=false;
 let msgs=[{id:1,title:'Site safety induction update',content:'All new starters must complete the updated induction before accessing the factory floor.',type:'Safety Alert',priority:'Urgent',author:'HR Team',pinned:true,createdAt:new Date(Date.now()-7200000).toISOString()},{id:2,title:'Q2 production targets announced',content:'Management has set Q2 targets. Review the production schedule.',type:'Announcement',priority:'High',author:'Management',pinned:false,createdAt:new Date(Date.now()-86400000).toISOString()},{id:3,title:'Forklift maintenance Wednesday',content:'Forklift 2 out of service 9am-1pm Wednesday.',type:'Maintenance',priority:'Medium',author:'Maintenance',pinned:false,createdAt:new Date(Date.now()-172800000).toISOString()}];
 let safety=[{id:1,refNo:'SA-001',title:'Unguarded machinery - Fab Bay 3',category:'Machine Safety',dept:'Fabrication',priority:'Critical',content:'Guard rail missing from press brake. Immediate attention required.',pinned:true,createdAt:new Date(Date.now()-172800000).toISOString()},{id:2,refNo:'SA-002',title:'Chemical storage non-compliant',category:'Hazardous Materials',dept:'Glass',priority:'High',content:'Chemical containers lack proper hazard labels.',pinned:true,createdAt:new Date(Date.now()-345600000).toISOString()},{id:3,refNo:'SA-003',title:'Slippery floor near dock',category:'Manual Handling',dept:'Dispatch',priority:'Medium',content:'Water pooling near dock door 2.',pinned:false,createdAt:new Date(Date.now()-432000000).toISOString()}];
 let prod=[{id:1,name:'Operations',completed:42,target:50,status:'On Track'},{id:2,name:'Fabrication',completed:38,target:40,status:'Ahead'},{id:3,name:'Glass',completed:12,target:30,status:'Behind'},{id:4,name:'Aluminium',completed:25,target:25,status:'On Track'},{id:5,name:'Dispatch',completed:18,target:20,status:'On Track'},{id:6,name:'Installation',completed:0,target:10,status:'Stopped'}];
 let lean=[{id:1,title:'Reduce offcut waste',dept:'Aluminium',priority:'High',status:'In Progress',submittedBy:'Jake T.',description:'Optimise cut patterns.',createdAt:new Date(Date.now()-259200000).toISOString()},{id:2,title:'5S glass storage',dept:'Glass',priority:'Medium',status:'Submitted',submittedBy:'Sarah M.',description:'Implement 5S.',createdAt:new Date(Date.now()-432000000).toISOString()},{id:3,title:'Digital job cards',dept:'Operations',priority:'Critical',status:'Under Review',submittedBy:'Tom W.',description:'Replace paper job cards.',createdAt:new Date(Date.now()-604800000).toISOString()},{id:4,title:'Improved dispatch packing',dept:'Dispatch',priority:'Medium',status:'Completed',submittedBy:'Lisa K.',description:'Redesign packing station.',createdAt:new Date(Date.now()-1209600000).toISOString()}];
 let sops=[{id:1,title:'Glass cutting safety procedure',category:'Safety',dept:'Glass',version:'2.1',status:'Active',createdAt:new Date(Date.now()-2592000000).toISOString()},{id:2,title:'Forklift operation checklist',category:'Operations',dept:'Dispatch',version:'1.4',status:'Active',createdAt:new Date(Date.now()-5184000000).toISOString()},{id:3,title:'Chemical handling acid wash',category:'Safety',dept:'Fabrication',version:'3.0',status:'Active',createdAt:new Date(Date.now()-7776000000).toISOString()},{id:4,title:'New employee onboarding',category:'HR',dept:'Admin',version:'1.0',status:'Draft',createdAt:new Date(Date.now()-432000000).toISOString()}];
-const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'goodsin',label:'Goods In',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'},{id:'ncr',label:'NCR Reports',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'}];
+const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'},{id:'ordering',label:'Supplier Ordering',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'}];
 const ORDERS=['Delivery 1','Delivery 2','Delivery 3','Delivery 4'];
 const SEQS=['Deliver 1st','Deliver 2nd','Deliver 3rd','Deliver 4th'];
 const VEHICLES=['Truck','Truck and Trailer','Hilux','Other'];
@@ -527,19 +265,6 @@ function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
 function sowMon(d){const r=new Date(d);r.setDate(r.getDate()-((r.getDay()+6)%7));return r;}
-function weekRangeLabel(d){
-  // "Mon 18 - Sat 23 May 2026" style. Handles month/year rollovers.
-  const start=sowMon(d), end=addD(start,5); // Mon-Sat (Sunday is skipped in delivery view)
-  const sameMonth=start.getMonth()===end.getMonth()&&start.getFullYear()===end.getFullYear();
-  const sameYear=start.getFullYear()===end.getFullYear();
-  if(sameMonth){
-    return start.getDate()+' - '+end.getDate()+' '+end.toLocaleDateString('en-AU',{month:'short',year:'numeric'});
-  }
-  if(sameYear){
-    return start.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' - '+end.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
-  }
-  return start.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})+' - '+end.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
-}
 function tod(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function h(tag,attrs){
   const e=document.createElement(tag);
@@ -604,10 +329,10 @@ function renderTop(){
       'Sign In'));
   }
 }
-function go(p){page=p;selDay=null;document.body.classList.remove('nav-open');renderNav();renderTop();renderPage();}
+function go(p){page=p;selDay=null;renderNav();renderTop();renderPage();}
 function renderPage(){
   const c=document.getElementById('content');c.innerHTML='';
-  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,goodsin:pgGoodsIn,ncr:pgNCR,sop:pgSOP,qrcodes:pgQR,admin:pgAdmin};
+  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,sop:pgSOP,qrcodes:pgQR,ordering:pgOrdering,admin:pgAdmin};
   if(pages[page])pages[page](c);else pgDash(c);
 }
 async function loadLoginDropdown(){
@@ -675,13 +400,7 @@ function closeLogin(){closeLoginScreen();}
 // ── DASHBOARD ────────────────────────────────────────────────────────
 async function pgDash(c){
   const today=new Date();
-  const [upcoming,members,swps,signoffs,safetyAlerts,leanLive]=await Promise.all([DB.list(iso(today),iso(addD(today,7))),CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs(),CDB.getSafetyAlerts(),CDB.getLeanItems()]);
-  let prodPctDash=null;
-  try{
-    const _pr=await fetch(SB+'/rest/v1/production_jobs?select=completed_min,prod_std_min&stage=eq.3',{headers:SH()});
-    const _pj=await _pr.json();
-    if(Array.isArray(_pj)){ let _d=0,_t=0; _pj.forEach(function(j){_d+=(+j.completed_min||0);_t+=(+j.prod_std_min||0);}); if(_t>0)prodPctDash=Math.round(100*_d/_t); }
-  }catch(e){}
+  const [upcoming,members,swps,signoffs,safetyAlerts]=await Promise.all([DB.list(iso(today),iso(addD(today,7))),CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs(),CDB.getSafetyAlerts()]);
   const todayStr=today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   c.appendChild(dv({cls:'mb4'},h('h1',{cls:'page-title'},'Factory Dashboard'),dv({cls:'page-sub'},todayStr)));
   const lookup={};signoffs.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lookup[k]||new Date(s.created_at)>new Date(lookup[k].created_at))lookup[k]=s;});
@@ -690,8 +409,8 @@ async function pgDash(c){
   members.forEach(function(m){swps.forEach(function(s){const st=compStatus(lookup[m.id+'_'+s.id]);if(st==='current')compCurrent++;if(st==='overdue'){compOverdue++;overdueList.push({m:m.name,s:s.title});}});});
   const compPct=total>0?Math.round(compCurrent/total*100):0;
   const pinned=safetyAlerts.filter(function(s){return s.is_pinned&&!s.is_archived;});
-  const sr=dv({cls:'mb4',st:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'12px'}});
-  [{v:prodPctDash===null?'\u2014':prodPctDash+'%',l:'Production',s:'Factory complete',col:prodPctDash===null?'#9ca3af':prodPctDash>=80?'#22c55e':prodPctDash>=50?'#f59e0b':'#ef4444',dest:'production'},{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8',dest:'delivery'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444',dest:'safety'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626',dest:'safety'},{v:leanLive.filter(function(i){return i.status!=='Completed'&&i.status!=='Rejected';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706',dest:'lean'}].forEach(function(x){
+  const sr=dv({cls:'g4 mb4'});
+  [{v:upcoming.length,l:'Upcoming Deliveries',s:'Next 7 days',col:'#1d4ed8',dest:'delivery'},{v:compPct+'%',l:'SWP Compliance',s:compOverdue+' overdue',col:compPct>=90?'#22c55e':compPct>=70?'#f59e0b':'#ef4444',dest:'safety'},{v:safetyAlerts.filter(function(a){return !a.is_archived;}).length,l:'Safety Alerts',s:pinned.length+' pinned',col:'#dc2626',dest:'safety'},{v:lean.filter(function(i){return i.status!=='Completed';}).length,l:'Open Improvements',s:'Lean items',col:'#d97706',dest:'lean'}].forEach(function(x){
     const sc2=dv({cls:'stat-card',st:{cursor:'pointer',transition:'box-shadow 0.15s,transform 0.15s'}});
     sc2.onmouseenter=function(){sc2.style.boxShadow='0 4px 16px rgba(0,0,0,0.10)';sc2.style.transform='translateY(-1px)';};
     sc2.onmouseleave=function(){sc2.style.boxShadow='';sc2.style.transform='';};
@@ -984,7 +703,7 @@ async function openSOMdl(member,swp,so,onSave){
 
 
     // ── QUIZ STEP: ECO Knowledge Quiz (if questions exist) ──────────────────
-    const quizAnswers={};let quizPassed=false;let quizSubmitted=false;
+    const quizAnswers={};let quizPassed=false;
     const quizAlreadyDone=existingQuizResponses.length>0;
     if(quizAlreadyDone){
       const mcQs=quizQuestions.filter(function(q){return q.question_type==='multiple_choice';});
@@ -1059,7 +778,7 @@ async function openSOMdl(member,swp,so,onSave){
           const mcQs=quizQuestions.filter(function(q){return q.question_type==='multiple_choice';});
           const mcCorrect=mcQs.filter(function(q){return quizAnswers[q.id]&&quizAnswers[q.id].selected===q.correct_option;}).length;
           const score=mcQs.length>0?mcCorrect/mcQs.length:1;
-          quizPassed=score>=0.7;quizSubmitted=true;
+          quizPassed=score>=0.7;
           // Show results
           quizStep.innerHTML='';
           quizStep.style.background=quizPassed?'#f0fdf4':'#fef2f2';
@@ -1071,7 +790,7 @@ async function openSOMdl(member,swp,so,onSave){
           if(mcQs.length>0){
             quizStep.appendChild(dv({st:{fontWeight:'700',fontSize:'15px',color:quizPassed?'#15803d':'#b91c1c',marginBottom:'6px'}},mcCorrect+'/'+mcQs.length+' correct ('+(Math.round(score*100))+'%)'));
             if(!quizPassed){
-              quizStep.appendChild(dv({cls:'txs muted mb2'},'Score below 70%. Review the training material above, then close this window and reopen the sign-off to retake the quiz. (Failed attempts are not saved.)'));
+              quizStep.appendChild(dv({cls:'txs muted mb2'},'Score below 70%. Please review the training material and try again. The quiz has been saved — your assessor can see your responses.'));
             }
           }
           // Show answers
@@ -1151,8 +870,7 @@ async function openSOMdl(member,swp,so,onSave){
       if(swp.pdf_url&&!pdfRead)return alert('Please open and read the SWP document first.');
       if(swp.pdf_url&&pdfChk&&!pdfChk.checked)return alert('Please tick to confirm you have read the SWP document.');
       if(quizQuestions.length>0&&!quizAlreadyDone&&Object.keys(quizAnswers).length<quizQuestions.length)return alert('Please complete the ECO quiz before signing.');
-      if(quizQuestions.length>0&&!quizAlreadyDone&&!quizSubmitted)return alert('Please press "Submit Quiz" to check your answers before signing.');
-      if(quizQuestions.length>0&&!quizAlreadyDone&&!quizPassed)return alert('Quiz score below 70%. Review the training material, then close and reopen this sign-off to retake the quiz.');
+      if(quizQuestions.length>0&&!quizAlreadyDone&&!quizPassed)return alert('Quiz score below 70%. Please review the training material and retry the quiz.');
       if(compItems.length>0&&Object.keys(selfRatings).length<compItems.length)return alert('Please rate all competency items before signing.');
       const ini=iniIn.value.trim().toUpperCase();
       if(!ini)return alert('Please enter your initials.');
@@ -1782,7 +1500,7 @@ function showLeanForm(wrap,members,item,prefilledBy){
       const wrap=dv({st:{position:'relative'}});
       const img=h('img',{src:url,st:{width:'70px',height:'70px',objectFit:'cover',borderRadius:'6px',border:'1px solid '+borderCol}});
       const del=dv({st:{position:'absolute',top:'-5px',right:'-5px',width:'16px',height:'16px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'10px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
-      del.textContent='×';del.onclick=function(){const ix=photoUrls.indexOf(url);if(ix!==-1)photoUrls.splice(ix,1);wrap.remove();if(photoUrls.length<3)addBtn.style.display='';};
+      del.textContent='×';del.onclick=function(){photoUrls.splice(ui,1);wrap.remove();if(photoUrls.length<3)addBtn.style.display='';};
       wrap.appendChild(img);wrap.appendChild(del);previewRow.appendChild(wrap);
     });
     section.appendChild(previewRow);
@@ -1799,7 +1517,8 @@ function showLeanForm(wrap,members,item,prefilledBy){
         const wrap2=dv({st:{position:'relative'}});
         const img2=h('img',{src:url,st:{width:'70px',height:'70px',objectFit:'cover',borderRadius:'6px',border:'1px solid '+borderCol}});
         const del2=dv({st:{position:'absolute',top:'-5px',right:'-5px',width:'16px',height:'16px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'10px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}});
-        del2.textContent='×';del2.onclick=function(){const ix=photoUrls.indexOf(url);if(ix!==-1)photoUrls.splice(ix,1);wrap2.remove();if(photoUrls.length<3)addBtn.style.display='';};
+        const capturedIdx=photoUrls.length-1;
+        del2.textContent='×';del2.onclick=function(){photoUrls.splice(capturedIdx,1);wrap2.remove();if(photoUrls.length<3)addBtn.style.display='';};
         wrap2.appendChild(img2);wrap2.appendChild(del2);previewRow.appendChild(wrap2);
         if(photoUrls.length>=3)addBtn.style.display='none';
       }catch(e){statusEl.textContent='Failed: '+e.message;statusEl.style.color='#dc2626';}
@@ -1838,626 +1557,79 @@ function showLeanForm(wrap,members,item,prefilledBy){
 }
 // ── PRODUCTION STATUS ─────────────────────────────────────────────────
 function pgProd(c){
-  c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'Production'),dv({cls:'page-sub'},'This week’s production — live from ESP')),
-    dv({cls:'row gap2',st:{alignItems:'center'}},
-      sp({cls:'txs muted',id:'prod-synced'},''),
-      btn('↻ Refresh','btn-o btn-sm',function(){c.innerHTML='';pgProd(c);})
-    )
+  c.appendChild(dv({cls:'row jb mb4'},dv({},h('h1',{cls:'page-title'},'Production Status'),dv({cls:'page-sub'},'Daily targets by department')),isManager()&&btn('Update Targets','btn-o',function(){showProdForm(c);})));
+  renderProdCards(c);
+}
+function renderProdCards(c){
+  let w=c.querySelector('#pc');if(!w){w=dv({id:'pc'});c.appendChild(w);}w.innerHTML='';
+  const statRow=dv({cls:'g4 mb4'});
+  const total=prod.reduce(function(a,b){return a+b.target;},0);
+  const done=prod.reduce(function(a,b){return a+b.completed;},0);
+  const pct=total>0?Math.round(done/total*100):0;
+  const ahead=prod.filter(function(d){return d.status==='Ahead';}).length;
+  const behind=prod.filter(function(d){return d.status==='Behind'||d.status==='Stopped';}).length;
+  [{v:pct+'%',l:'Overall Progress',col:pct>=80?'#22c55e':pct>=60?'#f59e0b':'#ef4444'},{v:done+'/'+total,l:'Units Completed',col:'#1d4ed8'},{v:ahead,l:'Depts Ahead',col:'#22c55e'},{v:behind,l:'Depts Behind',col:'#ef4444'}].forEach(function(x){
+    statRow.appendChild(dv({cls:'stat-card'},dv({cls:'stat-val',st:{color:x.col}},''+x.v),dv({cls:'stat-lbl'},x.l)));
+  });
+  w.appendChild(statRow);
+  const grid=dv({cls:'g2'});
+  prod.forEach(function(dept){
+    const pct2=dept.target>0?Math.round(dept.completed/dept.target*100):0;
+    const col=dept.status==='Ahead'||pct2>=100?'#22c55e':dept.status==='Behind'||dept.status==='Stopped'?'#ef4444':pct2>=70?'#f59e0b':'#3b82f6';
+    const card=dv({cls:'card'});
+    card.appendChild(dv({cls:'row jb mb2'},dv({cls:'fw6',st:{fontSize:'14px'}},dept.name),bdg(dept.status,dept.status==='Ahead'?'green':dept.status==='Behind'?'red':dept.status==='Stopped'?'red':dept.status==='On Track'?'blue':'gray')));
+    card.appendChild(dv({cls:'row jb mb2'},sp({cls:'txs muted'},'Progress'),sp({st:{fontWeight:'700',color:col}},dept.completed+' / '+dept.target+' units')));
+    card.appendChild(dv({cls:'pb-row mb1'},dv({cls:'pb-fill',st:{width:Math.min(pct2,100)+'%',background:col}})));
+    card.appendChild(dv({cls:'txs muted',st:{textAlign:'right'}},pct2+'%'));
+    grid.appendChild(card);
+  });
+  w.appendChild(grid);
+}
+function showProdForm(c){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal'});
+  modal.appendChild(dv({cls:'modal-title'},'Update Production Targets'));
+  const rows=[];
+  prod.forEach(function(dept){
+    const g=dv({cls:'g3 mb2',st:{alignItems:'center'}});
+    g.appendChild(dv({st:{fontWeight:'600',fontSize:'13px'}},dept.name));
+    const compIn=inp(''+dept.completed,'Completed','number');
+    const targIn=inp(''+dept.target,'Target','number');
+    compIn.style.cssText='padding:6px 8px;font-size:12px';targIn.style.cssText='padding:6px 8px;font-size:12px';
+    g.appendChild(frow('Done',compIn));g.appendChild(frow('Target',targIn));
+    modal.appendChild(g);rows.push({dept:dept,compIn:compIn,targIn:targIn});
+  });
+  modal.appendChild(dv({cls:'row gap2 mt3',st:{justifyContent:'flex-end'}},
+    btn('Cancel','btn-o',function(){overlay.remove();}),
+    btn('Save','btn-p',function(){
+      rows.forEach(function(r){r.dept.completed=parseInt(r.compIn.value)||0;r.dept.target=parseInt(r.targIn.value)||0;r.dept.status=r.dept.completed>=r.dept.target?'Ahead':r.dept.completed/r.dept.target>=0.8?'On Track':'Behind';});
+      overlay.remove();c.innerHTML='';pgProd(c);
+    })
   ));
-  const host=dv({id:'prod-host'});c.appendChild(host);
-  host.appendChild(dv({cls:'empty'},'Loading production…'));
-  loadProd(host);
-}
-
-const PROD_COLS=[
-  {key:'window_qty',ord:'window_order',name:'Window',col:'#2563eb'},
-  {key:'door_qty',ord:'door_order',name:'Door',col:'#16a34a'},
-  {key:'commercial_qty',ord:'commercial_order',name:'Commercial',col:'#d97706'},
-  {key:'screen_qty',ord:'screen_order',name:'Screen',col:'#7c3aed'}
-];
-
-async function loadProd(host){
-  let jobs=[];
-  try{
-    const r=await fetch(SB+'/rest/v1/production_jobs?select=*&stage=eq.3',{headers:SH()});
-    jobs=await r.json(); if(!Array.isArray(jobs))jobs=[];
-  }catch(e){ host.innerHTML=''; host.appendChild(dv({cls:'empty'},'Could not load production data: '+(e&&e.message||e))); return; }
-  host.innerHTML='';
-  let latest=null; jobs.forEach(function(j){ if(j.synced_at&&(!latest||j.synced_at>latest))latest=j.synced_at; });
-  const syncEl=document.getElementById('prod-synced');
-  if(syncEl){ syncEl.textContent = latest ? ('Synced '+new Date(latest).toLocaleString('en-AU',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})) : 'No data yet — run the ESP sync'; }
-  window._prodJobs=jobs;
-  renderProd(host,jobs);
-}
-
-function prodPct(list){
-  let done=0,total=0; list.forEach(function(j){ done+=(+j.completed_min||0); total+=(+j.prod_std_min||0); });
-  return total>0 ? Math.round(100*done/total) : null;
-}
-
-function renderProd(host,jobs){
-  host.innerHTML='';
-  const today=tod();
-  function daysTo(s){ if(!s)return null; return Math.round((new Date(s+'T00:00:00')-today)/86400000); }
-
-  const pct=prodPct(jobs);
-  const banner=dv({cls:'prod-banner'});
-  banner.appendChild(dv({cls:'row jb',st:{alignItems:'center',marginBottom:'8px'}},
-    sp({st:{fontSize:'15px',fontWeight:'800',color:'#fff'}},'Production complete'),
-    sp({st:{fontSize:'30px',fontWeight:'800',color:'#fff'}}, pct===null?'—':pct+'%')
-  ));
-  const bar=dv({cls:'prod-bar'}); bar.appendChild(dv({cls:'prod-bar-fill',st:{width:(pct===null?0:pct)+'%'}}));
-  banner.appendChild(bar);
-  host.appendChild(banner);
-
-  const strip=dv({cls:'g4 mb4'});
-  PROD_COLS.forEach(function(col){
-    const list=jobs.filter(function(j){ return (+j[col.key]||0)>0; });
-    let q=0; list.forEach(function(j){ q+=(+j[col.key]||0); });
-    const secPct=prodPct(list);
-    const sc=dv({cls:'stat-card',st:{borderTop:'4px solid '+col.col}});
-    sc.appendChild(dv({cls:'stat-val',st:{color:col.col}},''+q));
-    sc.appendChild(dv({cls:'stat-lbl'},col.name+'s to make'));
-    sc.appendChild(dv({cls:'txs',st:{fontWeight:'700',marginTop:'3px',color:'#6b7280'}}, secPct===null?'—':secPct+'% complete'));
-    strip.appendChild(sc);
-  });
-  host.appendChild(strip);
-
-  if(!jobs.length){ host.appendChild(dv({cls:'empty'},'No jobs currently in Production.')); return; }
-
-  const board=dv({cls:'prod-board'});
-  PROD_COLS.forEach(function(col){
-    let list=jobs.filter(function(j){ return (+j[col.key]||0)>0; });
-    list.sort(function(a,b){
-      const oa=a[col.ord], ob=b[col.ord];
-      const na=(oa===null||oa===undefined), nb=(ob===null||ob===undefined);
-      if(!na&&!nb&&oa!==ob) return oa-ob;
-      if(na!==nb) return na?1:-1;
-      const da=a.due_date||'9999', db=b.due_date||'9999';
-      return da<db?-1:da>db?1:0;
-    });
-    const totalQ=list.reduce(function(a,j){return a+(+j[col.key]||0);},0);
-    const colEl=dv({cls:'prod-col'});
-    colEl.appendChild(dv({cls:'prod-col-hd',st:{borderBottomColor:col.col}},
-      dv({cls:'row gap2',st:{alignItems:'center'}}, dv({cls:'prod-dot',st:{background:col.col}}), sp({st:{fontWeight:'800',fontSize:'14px'}},col.name+' Production')),
-      sp({st:{fontWeight:'800',fontSize:'15px',color:col.col}},''+totalQ)
-    ));
-    const body=dv({cls:'prod-col-body'});
-    body.setAttribute('data-col',col.ord);
-    list.forEach(function(j){ body.appendChild(makeProdCard(j,col,daysTo)); });
-    enableProdDrag(body,col);
-    colEl.appendChild(body);
-    board.appendChild(colEl);
-  });
-  host.appendChild(board);
-}
-
-function makeProdCard(j,col,daysTo){
-  const d=daysTo(j.due_date);
-  const rel = d===null?'':(d<0?(-d)+'d over':d===0?'today':'in '+d+'d');
-  const relCol = d===null?'#9ca3af':(d<0?'#ef4444':d<=7?'#d97706':'#9ca3af');
-  const qty=+j[col.key]||0;
-  const num = (j.job_number&&(''+j.job_number).trim()) ? j.job_number : (j.code||'—');
-  const card=dv({cls:'prod-card'+(d!==null&&d<0?' over':'')});
-  card.setAttribute('data-oid',j.esp_oid);
-  card.draggable=true;
-  card.appendChild(dv({cls:'row jb',st:{alignItems:'center',gap:'6px'}},
-    dv({cls:'row gap2',st:{alignItems:'center',minWidth:'0'}},
-      sp({cls:'prod-grip'},'⠿'),
-      sp({st:{fontFamily:'monospace',fontWeight:'800',fontSize:'13px'}},'#'+num)
-    ),
-    sp({st:{fontWeight:'800',fontSize:'13px',color:col.col,flexShrink:'0'}}, qty+'×')
-  ));
-  card.appendChild(dv({cls:'trunc',st:{fontWeight:'600',fontSize:'12.5px',marginTop:'2px'}}, j.customer||j.title||'—'));
-  card.appendChild(dv({cls:'row jb',st:{marginTop:'3px',alignItems:'center'}},
-    sp({cls:'txs muted'}, j.due_date?fmtD(j.due_date):'no date'),
-    sp({st:{fontSize:'11px',fontWeight:'700',color:relCol}}, rel)
-  ));
-  return card;
-}
-
-let _prodDrag=null;
-function enableProdDrag(body,col){
-  body.addEventListener('dragstart',function(e){
-    const card=e.target.closest('.prod-card'); if(!card)return;
-    _prodDrag=card; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move';
-  });
-  body.addEventListener('dragend',function(e){
-    const card=e.target.closest('.prod-card'); if(card)card.classList.remove('dragging');
-    _prodDrag=null; persistProdOrder(body,col);
-  });
-  body.addEventListener('dragover',function(e){
-    e.preventDefault();
-    if(!_prodDrag||_prodDrag.parentNode!==body)return;
-    const after=prodAfterElement(body,e.clientY);
-    if(after==null)body.appendChild(_prodDrag);
-    else body.insertBefore(_prodDrag,after);
-  });
-}
-function prodAfterElement(body,y){
-  const els=[].slice.call(body.querySelectorAll('.prod-card:not(.dragging)'));
-  let closest=null,closestOff=-Infinity;
-  els.forEach(function(el){
-    const box=el.getBoundingClientRect();
-    const off=y-box.top-box.height/2;
-    if(off<0&&off>closestOff){closestOff=off;closest=el;}
-  });
-  return closest;
-}
-async function persistProdOrder(body,col){
-  const cards=[].slice.call(body.querySelectorAll('.prod-card'));
-  const reqs=cards.map(function(card,idx){
-    const oid=parseInt(card.getAttribute('data-oid'));
-    const j=(window._prodJobs||[]).find(function(x){return x.esp_oid===oid;});
-    if(j)j[col.ord]=idx;
-    const patch={}; patch[col.ord]=idx;
-    return fetch(SB+'/rest/v1/production_jobs?esp_oid=eq.'+oid,{method:'PATCH',headers:SH(),body:JSON.stringify(patch)});
-  });
-  try{ await Promise.all(reqs); }catch(e){ console.error('order save failed',e); }
+  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
 }
 
 // ── DELIVERIES ────────────────────────────────────────────────────────
-async function renderHistoryInto(c){
-  // Default date range: last 30 days
-  const today=tod();
-  if(!histFilters.from){
-    const start=new Date(today);start.setDate(start.getDate()-30);
-    histFilters.from=iso(start);
-  }
-  if(!histFilters.to){ histFilters.to=iso(today); }
-
-  // Filter row
-  const filterCard=dv({cls:'hist-filters'});
-  const fromIn=h('input',{type:'date',value:histFilters.from});
-  const toIn=h('input',{type:'date',value:histFilters.to});
-  const searchIn=h('input',{type:'search',placeholder:'Customer name, job #, address...',value:histFilters.search});
-  filterCard.appendChild(dv({cls:'fg'},h('label',{},'From'),fromIn));
-  filterCard.appendChild(dv({cls:'fg'},h('label',{},'To'),toIn));
-  filterCard.appendChild(dv({cls:'fg'},h('label',{},'Search'),searchIn));
-  c.appendChild(filterCard);
-
-  // Status pill row
-  const pillsRow=dv({cls:'hist-pills'});
-  c.appendChild(pillsRow);
-
-  // Results container
-  const resultsC=dv();
-  c.appendChild(resultsC);
-
-  async function refresh(){
-    histFilters.from=fromIn.value;
-    histFilters.to=toIn.value;
-    histFilters.search=searchIn.value.trim();
-    if(!histFilters.from||!histFilters.to){return;}
-    resultsC.innerHTML='<div class="empty">Loading...</div>';
-    let dels=[];
-    try{ dels=await DB.list(histFilters.from,histFilters.to); }catch(e){console.error(e);}
-    // Search filter
-    const q=histFilters.search.toLowerCase();
-    if(q){
-      dels=dels.filter(function(d){
-        return ((d.customer||'').toLowerCase().indexOf(q)>=0)
-          || ((d.jobNumber||'').toLowerCase().indexOf(q)>=0)
-          || ((d.address||'').toLowerCase().indexOf(q)>=0);
-      });
-    }
-    // Status counts (computed BEFORE pill filter so we can show totals on each pill)
-    const counts={
-      all:dels.length,
-      completed:dels.filter(function(d){return d.status==='Completed';}).length,
-      signed:dels.filter(function(d){return !!d.signedOffAt;}).length,
-      cancelled:dels.filter(function(d){return d.status==='Cancelled';}).length,
-      open:dels.filter(function(d){return d.status!=='Completed'&&d.status!=='Cancelled';}).length
-    };
-    // Build pills
-    pillsRow.innerHTML='';
-    [
-      ['all','All'],
-      ['completed','Completed'],
-      ['signed','Signed off'],
-      ['cancelled','Cancelled'],
-      ['open','Still open']
-    ].forEach(function(p){
-      const b=h('button',{cls:histFilters.status===p[0]?'on':''},
-        p[1],sp({cls:'count'},'('+counts[p[0]]+')'));
-      b.onclick=function(){ histFilters.status=p[0]; refresh(); };
-      pillsRow.appendChild(b);
-    });
-    // Apply pill filter
-    let filtered=dels;
-    if(histFilters.status==='completed')filtered=dels.filter(function(d){return d.status==='Completed';});
-    else if(histFilters.status==='signed')filtered=dels.filter(function(d){return !!d.signedOffAt;});
-    else if(histFilters.status==='cancelled')filtered=dels.filter(function(d){return d.status==='Cancelled';});
-    else if(histFilters.status==='open')filtered=dels.filter(function(d){return d.status!=='Completed'&&d.status!=='Cancelled';});
-
-    // Sort newest date first, then by delivery_order
-    filtered.sort(function(a,b){
-      if(a.scheduledDate!==b.scheduledDate)return b.scheduledDate.localeCompare(a.scheduledDate);
-      return (ORDERS.indexOf(a.deliveryOrder)+99)-(ORDERS.indexOf(b.deliveryOrder)+99);
-    });
-
-    // Bulk photo count
-    const ids=filtered.map(function(d){return d.id;});
-    let photoCounts={};
-    try{ photoCounts=await CDB.getPhotoCountsForDeliveries(ids); }catch(e){}
-
-    renderHistoryResults(resultsC,filtered,photoCounts);
-  }
-
-  fromIn.addEventListener('change',refresh);
-  toIn.addEventListener('change',refresh);
-  let searchDebounce;
-  searchIn.addEventListener('input',function(){
-    clearTimeout(searchDebounce);
-    searchDebounce=setTimeout(refresh,250);
-  });
-  await refresh();
-}
-
-function renderHistoryResults(container,deliveries,photoCounts){
-  container.innerHTML='';
-  if(!deliveries.length){
-    container.appendChild(dv({cls:'empty'},'No deliveries match the current filters.'));
-    return;
-  }
-  // Group by scheduled_date
-  const groups={};
-  deliveries.forEach(function(d){
-    const k=d.scheduledDate||'';
-    if(!groups[k])groups[k]=[];
-    groups[k].push(d);
-  });
-  const sortedDates=Object.keys(groups).sort().reverse();
-  sortedDates.forEach(function(dateStr){
-    const card=dv({cls:'hist-date-card'});
-    const dateLabel=fmtD(dateStr);
-    const dayDels=groups[dateStr];
-    card.appendChild(dv({cls:'hist-date-header'},
-      dateLabel,
-      sp({cls:'hist-date-count'},dayDels.length+' deliver'+(dayDels.length===1?'y':'ies'))
-    ));
-    dayDels.forEach(function(d){renderHistoryRow(card,d,photoCounts[d.id]||0);});
-    container.appendChild(card);
-  });
-}
-
-function renderHistoryRow(card,delivery,photoCount){
-  const row=dv({cls:'hist-row'});
-  const main=dv({cls:'hist-row-main'});
-  main.appendChild(dv({cls:'hist-row-cust'},(delivery.customer||'(no customer)')));
-  if(delivery.address)main.appendChild(dv({cls:'hist-row-addr'},delivery.address));
-  // Meta line: order, status, signed badge, photo count, time
-  const meta=dv({cls:'hist-row-meta'});
-  meta.appendChild(bdg(delivery.deliveryOrder||'Delivery 1','gray'));
-  meta.appendChild(bdg(delivery.status,delivery.status==='Completed'?'green':delivery.status==='Cancelled'?'red':'amber'));
-  if(delivery.jobNumber)meta.appendChild(sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+delivery.jobNumber));
-  if(delivery.scheduledTime)meta.appendChild(sp({cls:'txs muted'},delivery.scheduledTime));
-  main.appendChild(meta);
-  row.appendChild(main);
-
-  // Right-side icons
-  const icons=dv({cls:'hist-row-icons'});
-  if(delivery.signedOffAt){
-    icons.appendChild(sp({cls:'hist-row-iconbox signed',title:'Signed by '+(delivery.signedOffByName||'')},'\u2713 Signed'));
-  }
-  if(photoCount>0){
-    icons.appendChild(sp({cls:'hist-row-iconbox has-photos',title:photoCount+' photo(s)'},'\ud83d\udcf7 '+photoCount));
-  }
-  row.appendChild(icons);
-
-  // Expansion section below the row (the existing activity log)
-  const expand=dv({cls:'hist-row-expand'});
-  const logSection=dv({cls:'del-log',st:{padding:'10px 0 0 0',background:'transparent'}});
-  expand.appendChild(logSection);
-  let loaded=false;
-  row.onclick=async function(){
-    const opening=!row.classList.contains('expanded');
-    row.classList.toggle('expanded',opening);
-    expand.style.display=opening?'block':'none';
-    if(opening&&!loaded){
-      await refreshDelLog(logSection,delivery);
-      loaded=true;
-    }
-  };
-
-  card.appendChild(row);
-  card.appendChild(expand);
-}
-
-async function refreshMyDayKeepingCard(c,delId){
-  const sc=document.getElementById('content');
-  const y=sc?sc.scrollTop:0;
-  c.innerHTML='';
-  await pgDel(c);
-  if(sc)sc.scrollTop=y;
-  if(delId){
-    const cardEl=c.querySelector('[data-del-id="'+delId+'"]');
-    if(cardEl)cardEl.scrollIntoView({block:'nearest'});
-  }
-}
-
-async function renderMyDayInto(c){
-  const today=tod();
-  // Sub-header row with date pill and refresh
-  c.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},
-    sp({cls:'txs muted'},today.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'}))
-  ));
-
-  // Fetch today's deliveries
-  const todayStr=iso(today);
-  const loading=dv({cls:'myday-empty'},'Loading today\u2019s deliveries...');
-  c.appendChild(loading);
-  let allToday=[];
-  try{ allToday=await DB.list(todayStr,todayStr); }catch(e){console.error(e);}
-  loading.remove();
-
-  // Counts per work type for the tab bar (apply driver/cancelled filter first)
-  const driverOK=function(d){if(isManager())return true;if(!d.assignedDriverId)return true;return currentUser&&d.assignedDriverId===currentUser.id;};
-  const todayVisible=allToday.filter(driverOK).filter(function(d){return d.status!=='Cancelled';});
-  const counts={DEL:0,SCR:0,SW:0};
-  todayVisible.forEach(function(d){const wt=d.workType||'DEL';if(counts[wt]!=null)counts[wt]++;});
-
-  // My Day tab bar — Deliveries / Screens / Site work
-  const tabBar=dv({cls:'myday-tabs'});
-  [['DEL','📦 Deliveries'],['SCR','🪟 Screens'],['SW','🔧 Site work']].forEach(function(p){
-    const code=p[0],lbl=p[1];
-    const tb=h('button',{cls:'myday-tab tab-'+code+(mydayTab===code?' on':''),onclick:function(){
-      if(mydayTab===code)return;
-      mydayTab=code;saveMyDayTab();
-      c.innerHTML='';pgDel(c);
-    }});
-    tb.appendChild(document.createTextNode(lbl));
-    tb.appendChild(sp({cls:'myday-tab-count'},''+counts[code]));
-    tabBar.appendChild(tb);
-  });
-  c.appendChild(tabBar);
-
-  // Filter to the active tab
-  const visible=todayVisible.filter(function(d){return (d.workType||'DEL')===mydayTab;});
-
-  // Sort by Delivery Order (1, 2, 3...)
-  visible.sort(function(a,b){
-    const oa=ORDERS.indexOf(a.deliveryOrder),ob=ORDERS.indexOf(b.deliveryOrder);
-    return (oa<0?99:oa)-(ob<0?99:ob);
-  });
-
-  // Summary stats
-  const completed=visible.filter(function(d){return d.status==='Completed';}).length;
-  const remaining=visible.length-completed;
-  const summary=dv({cls:'myday-summary'},
-    dv({cls:'myday-stat'},dv({cls:'myday-stat-val'},''+visible.length),dv({cls:'myday-stat-lbl'},'Total')),
-    dv({cls:'myday-stat'},dv({cls:'myday-stat-val',st:{color:'var(--green-dark)'}},''+completed),dv({cls:'myday-stat-lbl'},'Completed')),
-    dv({cls:'myday-stat'},dv({cls:'myday-stat-val',st:{color:'#d97706'}},''+remaining),dv({cls:'myday-stat-lbl'},'Remaining'))
-  );
-  c.appendChild(summary);
-
-  if(!visible.length){
-    const labelMap={DEL:'deliveries',SCR:'screen jobs',SW:'site work'};
-    c.appendChild(dv({cls:'myday-empty'},
-      dv({cls:'myday-empty-icon'},'\u2728'),
-      dv({},'No '+labelMap[mydayTab]+' scheduled for today.'),
-      dv({cls:'txs',st:{marginTop:'6px'}},'Try the other tabs above \u2014 or take the rest of the day off (just kidding).')
-    ));
-    return;
-  }
-
-  // Render one card per delivery
-  const list=dv({cls:'myday-list'});
-  c.appendChild(list);
-  visible.forEach(function(d){ list.appendChild(renderMyDayCard(d,c)); });
-}
-
-function renderMyDayCard(delivery,pageC){
-  const ov=new Date(delivery.scheduledDate)<tod()&&!['Completed','Cancelled'].includes(delivery.status);
-  const completed=delivery.status==='Completed';
-  const card=dv({cls:'myday-card'+(completed?' completed':'')+(ov?' overdue':'')});
-  card.setAttribute('data-del-id',delivery.id);
-
-  // Top row: work-type tag + order pill + status badge
-  const wtCode=delivery.workType||'DEL';
-  card.appendChild(dv({cls:'myday-top'},
-    sp({cls:'wt-tag wt-'+wtCode,st:{fontSize:'11px',padding:'3px 7px'}},wtCode),
-    sp({cls:'myday-order'},delivery.deliveryOrder||'Delivery 1'),
-    bdg(delivery.status,completed?'green':delivery.status==='Cancelled'?'red':ov?'red':'gray')
-  ));
-
-  // Job number — big, bold, top
-  if(delivery.jobNumber)card.appendChild(dv({cls:'myday-job'},'#'+delivery.jobNumber));
-  // Customer — big, bold
-  if(delivery.customer)card.appendChild(dv({cls:'myday-customer'},delivery.customer));
-  // Address — prominent for the driver
-  if(delivery.address)card.appendChild(dv({cls:'myday-address'},'\ud83d\udccd '+delivery.address));
-  // Meta line (no longer includes job number — it's the big header)
-  const meta=[];
-  if(delivery.vehicle)meta.push(delivery.vehicle);
-  if(delivery.scheduledTime)meta.push(delivery.scheduledTime);
-  if(delivery.crew&&delivery.crew!=='Driver only')meta.push(delivery.crew);
-  if(meta.length)card.appendChild(dv({cls:'myday-meta'},meta.join(' \u00b7 ')));
-  // Notes preview — what the driver should be delivering
-  if(delivery.notes){
-    const notesBox=dv({cls:'myday-notes'});
-    notesBox.appendChild(dv({cls:'myday-notes-label'},'\ud83d\udccb What you\u2019re delivering'));
-    notesBox.appendChild(document.createTextNode(delivery.notes));
-    card.appendChild(notesBox);
-  }
-  // Open entry form — view all details / add notes
-  const openFormBtn=h('button',{cls:'myday-openform',onclick:function(){
-    openDelForm(delivery,null,document.getElementById('content'));
-  }});
-  openFormBtn.appendChild(document.createTextNode('\ud83d\udcdd Open entry form (view / edit notes)'));
-  card.appendChild(openFormBtn);
-
-  // NOT PAID banner (prominent)
-  if(!delivery.isPaid){
-    card.appendChild(dv({cls:'myday-notpaid'},'\u26a0 NOT PAID \u2014 do not deliver without checking with office'));
-  }
-
-  // Signed-off banner
-  if(delivery.signedOffAt){
-    const when=new Date(delivery.signedOffAt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-    card.appendChild(dv({cls:'myday-signed-banner'},
-      '\u2713 Signed by '+(delivery.signedOffByName||'(no name)')+' at '+when
-    ));
-  }
-
-  // Action buttons: Take Photo + Get Sign-off (or both if already signed, photo still available)
-  const actions=dv({cls:'myday-actions'});
-  actions.appendChild(btn('\ud83d\udcf7 Take Photo','btn-o',function(){
-    capturePhoto(delivery,function(){refreshMyDayKeepingCard(pageC,delivery.id);});
-  }));
-  if(!delivery.signedOffAt){
-    actions.appendChild(btn('\u270d\ufe0f Get Sign-off','btn-p',function(){
-      openSignatureModal(delivery,function(){refreshMyDayKeepingCard(pageC,delivery.id);});
-    }));
-  } else {
-    // If already signed, replace second button with View signature
-    actions.appendChild(btn('\ud83d\udd0d View Signature','btn-o',function(){
-      if(delivery.signatureUrl)openLightbox(delivery.signatureUrl);
-    }));
-  }
-  card.appendChild(actions);
-
-  // Mark as Delivered button (hidden if already completed)
-  if(!completed&&delivery.status!=='Cancelled'){
-    card.appendChild(btn('\u2713 Mark as Delivered','btn-p',async function(){
-      if(!confirm('Mark this delivery as Completed?'))return;
-      try{
-        await DB.patch(delivery.id,{status:'Completed'});
-        pageC.innerHTML='';await pgDel(pageC);
-      }catch(err){alert('Update failed: '+err.message);}
-    },{cls:'btn btn-p myday-complete'}));
-  } else if(completed){
-    card.appendChild(btn('\u21ba Reopen','btn-o btn-sm',async function(){
-      if(!confirm('Reopen this delivery (set status back to Scheduled)?'))return;
-      try{
-        await DB.patch(delivery.id,{status:'Scheduled'});
-        pageC.innerHTML='';await pgDel(pageC);
-      }catch(err){alert('Update failed: '+err.message);}
-    }));
-  }
-
-  // Inline activity log toggle (reuses refreshDelLog)
-  const logSection=dv({cls:'del-log',st:{display:'none',marginTop:'12px',padding:'12px',borderRadius:'8px',background:'#fafaf8',border:'1px solid #f3f4f6'}});
-  let logLoaded=false;
-  const logToggle=h('button',{cls:'myday-activity-link'},'View activity log \u25be');
-  logToggle.onclick=async function(){
-    const opening=logSection.style.display==='none';
-    logSection.style.display=opening?'block':'none';
-    logToggle.textContent=opening?'Hide activity log \u25b4':'View activity log \u25be';
-    if(opening&&!logLoaded){
-      await refreshDelLog(logSection,delivery);
-      logLoaded=true;
-    }
-  };
-  card.appendChild(logToggle);
-  card.appendChild(logSection);
-
-  return card;
-}
-// ── Auto-refresh paid/unpaid status from Xero ─────────────────────────
-// Re-checks UNPAID, non-cancelled deliveries scheduled from ~2 weeks ago
-// onward against Xero. Flips is_paid=true for any now paid/reconciled.
-async function refreshPaymentsFromXero(opts){
-  opts=opts||{};
-  if(paymentSyncRunning)return {checked:0,flipped:0,skipped:true};
-  paymentSyncRunning=true;
-  lastPaymentSync=Date.now();
-  try{
-    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-14);
-    const future=addD(new Date(),365);
-    let pool=[];
-    try{ pool=await DB.list(iso(cutoff),iso(future)); }
-    catch(e){ paymentSyncRunning=false; return {checked:0,flipped:0,error:e.message}; }
-    const targets=pool.filter(function(d){
-      return !d.isPaid && d.status!=='Cancelled' && (d.jobNumber||'').trim();
-    });
-    let checked=0,flipped=0;
-    for(const d of targets){
-      checked++;
-      try{
-        const res=await fetch(XERO_FN+'/xero-lookup?job='+encodeURIComponent(String(d.jobNumber).trim()),
-          {headers:{'apikey':ANON,'Authorization':'Bearer '+authToken()}});
-        const data=await res.json();
-        if(data && !data.error && data.isPaid){
-          await DB.patch(d.id,{is_paid:true,paid_by:'Xero (auto)'});
-          flipped++;
-        }
-      }catch(e){ /* skip individual lookup errors */ }
-    }
-    return {checked:checked,flipped:flipped};
-  } finally { paymentSyncRunning=false; }
-}
-
-// Manual "Refresh payments" button for the Deliveries header
-function makeRefreshPayBtn(c){
-  const b=btn('\u21bb Refresh payments','btn-o btn-sm',async function(){
-    if(paymentSyncRunning){return;}
-    b.textContent='Checking Xero\u2026'; b.disabled=true;
-    const r=await refreshPaymentsFromXero({manual:true});
-    b.disabled=false; b.textContent='\u21bb Refresh payments';
-    if(r.error){ alert('Could not check Xero: '+r.error+'\n\nMake sure Xero is connected (Admin \u2192 Connect Xero).'); return; }
-    if(r.flipped>0){ c.innerHTML=''; await pgDel(c); }
-    alert(r.flipped>0
-      ? ('\u2713 '+r.flipped+' delivery'+(r.flipped>1?'ies':'')+' now marked PAID (green).')
-      : ('No new payments found. Checked '+r.checked+' unpaid job'+(r.checked===1?'':'s')+' against Xero.'));
-  });
-  return b;
-}
-
 async function pgDel(c){
-  // Subtitle and whether the calendar nav (date arrows) is relevant for this view
-  const subTitles={month:'Schedule and manage deliveries',week:'Schedule and manage deliveries',list:'Schedule and manage deliveries',myday:"Today's deliveries — sign-off and photo evidence",history:'Past deliveries with photos, signatures and activity logs'};
-  const hasCalNav=(calView==='month'||calView==='week');
-
   // Header
   c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},subTitles[calView]||subTitles.month)),
+    dv({},h('h1',{cls:'page-title'},'Deliveries'),dv({cls:'page-sub'},'Schedule and manage deliveries')),
     dv({cls:'row gap2'},
       isManager()&&btn('+ New Delivery','btn-p',function(){openDelForm(null,iso(calDate),c);}),
-      makeRefreshPayBtn(c),
-      hasCalNav&&btn('◀','btn-o btn-sm',function(){
-        if(calView==='week'){ calDate=addD(calDate,-7); }
-        else { calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1); }
-        c.innerHTML='';pgDel(c);
-      }),
-      hasCalNav&&btn('Today','btn-o btn-sm',function(){ calDate=new Date(); c.innerHTML=''; pgDel(c); }),
-      hasCalNav&&dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'180px',textAlign:'center'}},
-        calView==='week' ? weekRangeLabel(calDate) : calDate.toLocaleDateString('en-AU',{month:'long',year:'numeric'})
-      ),
-      hasCalNav&&btn('▶','btn-o btn-sm',function(){
-        if(calView==='week'){ calDate=addD(calDate,7); }
-        else { calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1); }
-        c.innerHTML='';pgDel(c);
-      })
+      btn('◀','btn-o btn-sm',function(){calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);c.innerHTML='';pgDel(c);}),
+      dv({st:{fontWeight:'600',fontSize:'13px',padding:'6px 8px',minWidth:'140px',textAlign:'center'}},calDate.toLocaleDateString('en-AU',{month:'long',year:'numeric'})),
+      btn('▶','btn-o btn-sm',function(){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);c.innerHTML='';pgDel(c);})
     )
   ));
-  // View toggle (5 buttons: Month / Week / List / My Day / History)
-  // Work-type filter pills (DEL / SCR / SW)
-  c.appendChild(buildWorkFilterPills(c));
-
+  // View toggle
   const tvRow=dv({cls:'row gap2 mb3'});
-  function vbtn(label,id){ return btn(label,'btn-'+(calView===id?'p':'o')+' btn-sm',function(){calView=id;c.innerHTML='';pgDel(c);}); }
-  tvRow.appendChild(vbtn('Month','month'));
-  tvRow.appendChild(vbtn('Week','week'));
-  tvRow.appendChild(vbtn('List','list'));
-  tvRow.appendChild(vbtn('My Day','myday'));
-  tvRow.appendChild(vbtn('History','history'));
+  const monthBtn=btn('Month','btn-'+(calView==='month'?'p':'o')+' btn-sm',function(){calView='month';c.innerHTML='';pgDel(c);});
+  const weekBtn=btn('Week','btn-'+(calView==='week'?'p':'o')+' btn-sm',function(){calView='week';c.innerHTML='';pgDel(c);});
+  const listBtn=btn('List','btn-'+(calView==='list'?'p':'o')+' btn-sm',function(){calView='list';c.innerHTML='';pgDel(c);});
+  tvRow.appendChild(monthBtn);tvRow.appendChild(weekBtn);tvRow.appendChild(listBtn);
   c.appendChild(tvRow);
 
-  // Auto-refresh payments from Xero in the background (throttled to once / 10 min).
-  // Covers every delivery view; re-renders the current view if anything flips to PAID.
-  if(Date.now()-lastPaymentSync > 10*60*1000){
-    refreshPaymentsFromXero({auto:true}).then(function(r){
-      if(r && r.flipped>0 && page==='delivery'){ c.innerHTML=''; pgDel(c); }
-    });
-  }
-
-  // Dispatch by view
-  if(calView==='myday'){ await renderMyDayInto(c); return; }
-  if(calView==='history'){ await renderHistoryInto(c); return; }
-
-  // Calendar/List views: load deliveries for the visible date range
+  // Load deliveries
   const y=calDate.getFullYear(),m=calDate.getMonth();
   let fromDate,toDate;
   if(calView==='week'){
@@ -2467,7 +1639,6 @@ async function pgDel(c){
   }
   const loading=dv({cls:'empty'},'Loading...');c.appendChild(loading);
   deliveries=await DB.list(iso(fromDate),iso(toDate));
-  deliveries=filterByWorkType(deliveries);
   loading.remove();
 
   if(calView==='list'){
@@ -2477,7 +1648,6 @@ async function pgDel(c){
   } else {
     renderDelMonth(c,deliveries,y,m);
   }
-
 }
 
 function renderDelMonth(c,dels,y,m){
@@ -2494,12 +1664,8 @@ function renderDelMonth(c,dels,y,m){
   c.appendChild(hdrRow);
   const grid=dv({cls:'cal-grid'});
   let dayCount=0;
-  // Leading empty cells. Grid has 6 columns (Mon–Sat, Sundays skipped), so a
-  // month starting on Sunday (startDow 6) needs 0 blanks — its Monday the 2nd
-  // sits in column 0. Capping at 5 blanks used to shift the whole month one
-  // cell right, putting every day under the wrong weekday header.
-  const leadBlanks=startDow===6?0:startDow;
-  for(let i=0;i<leadBlanks;i++){grid.appendChild(dv({cls:'cal-cell c-other'}));dayCount++;}
+  // Leading empty cells
+  for(let i=0;i<startDow&&i<5;i++){grid.appendChild(dv({cls:'cal-cell c-other'}));dayCount++;}
   for(let day=1;day<=daysInMonth;day++){
     const date=new Date(y,m,day);
     const dow=(date.getDay()+6)%7;
@@ -2509,10 +1675,7 @@ function renderDelMonth(c,dels,y,m){
     const isSel=selDay===dateStr;
     const isSat=dow===5;
     const cell=dv({cls:'cal-cell'+(isToday?' c-today':'')+(isSel?' c-sel':'')+(isSat?' c-sat':'')});
-    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;
-      // Re-render the whole Deliveries page (like Week view does) — re-rendering
-      // only the grid used to wipe the page header, filters and view switcher.
-      const pg=document.getElementById('content');pg.innerHTML='';pgDel(pg).then(function(){window.scrollTo({top:pg.scrollHeight,behavior:'smooth'});});};
+    cell.onclick=function(){selDay=selDay===dateStr?null:dateStr;c.innerHTML='';renderDelMonth(c,dels,y,m);window.scrollTo({top:document.getElementById('content').scrollHeight,behavior:'smooth'});};
     if(isManager()){
       cell.ondblclick=function(e){e.stopPropagation();openDelForm(null,dateStr,document.getElementById('content'));};
     }
@@ -2538,9 +1701,8 @@ function renderDelMonth(c,dels,y,m){
         const delId=parseInt(e.dataTransfer.getData('delId'));
         if(!delId)return;
         await DB.patch(delId,{scheduled_date:dateStr,delivery_order:order});
-        // Full page re-render: refetches AND re-applies the work-type filter
-        // (the old grid-only re-render brought hidden work types back).
-        const pg=document.getElementById('content');pg.innerHTML='';pgDel(pg);
+        deliveries=await DB.list(iso(new Date(y,m,1)),iso(new Date(y,m+1,0)));
+        c.innerHTML='';renderDelMonth(c,deliveries,y,m);
       };
       cell.appendChild(slot);
     });
@@ -2636,12 +1798,7 @@ function makePill(d){
   const pillBg=d.status==='Cancelled'?'#6b7280':overdue&&d.isPaid?'#b45309':bg;
   const pill=dv({cls:'cal-pill',st:{background:pillBg,marginBottom:'2px',cursor:'pointer'}});
   if(!d.isPaid){pill.appendChild(dv({cls:'not-paid-tag'},'⚠ NOT PAID — DO NOT DELIVER'));}
-  // Work-type tag (DEL/SCR/SW)
-  const wtt=document.createElement('span');wtt.className='wt-tag wt-'+(d.workType||'DEL');wtt.textContent=(d.workType||'DEL');
-  const orderRow=dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.85',display:'flex',alignItems:'center',gap:'4px'}});
-  orderRow.appendChild(wtt);
-  orderRow.appendChild(document.createTextNode(d.deliveryOrder||''));
-  pill.appendChild(orderRow);
+  pill.appendChild(dv({st:{fontSize:'10px',fontWeight:'700',opacity:'0.8'}},d.deliveryOrder));
   if(d.customer)pill.appendChild(dv({st:{fontSize:'11px',lineHeight:'1.3'}},d.customer));
   if(d.scheduledTime)pill.appendChild(dv({st:{fontSize:'10px',opacity:'0.8'}},d.scheduledTime));
   pill.onclick=function(e){e.stopPropagation();openDelForm(d,null,document.getElementById('content'));};
@@ -2693,9 +1850,7 @@ function renderDelRow(card,d,pageC){
   row.appendChild(handle);
   // Info
   const info=dv({st:{flex:'1',cursor:'pointer'},onclick:function(){openDelForm(d,null,pageC);}});
-  const wtBadge=sp({cls:'wt-tag wt-'+(d.workType||'DEL')},(d.workType||'DEL'));
-  info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap',alignItems:'center'}},
-    wtBadge,
+  info.appendChild(dv({cls:'row gap2 mb1',st:{flexWrap:'wrap'}},
     d.jobNumber&&sp({cls:'txs muted',st:{fontFamily:'monospace'}},'#'+d.jobNumber),
     bdg(d.type,d.type==='Incoming'?'blue':'green'),
     bdg(d.deliveryOrder,'gray'),
@@ -2706,24 +1861,6 @@ function renderDelRow(card,d,pageC){
   if(d.address)info.appendChild(dv({cls:'txs muted'},d.address));
   info.appendChild(dv({cls:'txs muted'},fmtD(d.scheduledDate)+(d.scheduledTime?' · '+d.scheduledTime:'')+' · '+d.vehicle+(d.crew&&d.crew!=='Driver only'?' · '+d.crew:'')));
   row.appendChild(info);
-
-  // Activity log section (collapsed by default, content lazy-loaded)
-  const logSection=dv({cls:'del-log',st:{display:'none'}});
-  const toggleBtn=h('button',{cls:'del-activity-toggle',title:'Show activity log and notes'},
-    'Activity ',sp({cls:'arrow'},'▾'));
-  let logLoaded=false;
-  toggleBtn.onclick=async function(e){
-    e.stopPropagation();
-    const opening=logSection.style.display==='none';
-    logSection.style.display=opening?'block':'none';
-    toggleBtn.classList.toggle('open',opening);
-    if(opening&&!logLoaded){
-      await refreshDelLog(logSection,d);
-      logLoaded=true;
-    }
-  };
-  row.appendChild(toggleBtn);
-
   if(isManager()){
     row.appendChild(btn('×','btn-d btn-sm',async function(e){
       e.stopPropagation();
@@ -2732,237 +1869,14 @@ function renderDelRow(card,d,pageC){
     }));
   }
   card.appendChild(row);
-  card.appendChild(logSection);
   return row;
-}
-
-// Build/refresh the contents of a single delivery's activity-log section
-async function refreshDelLog(container,delivery){
-  container.innerHTML='';
-
-  // Header row with title + action buttons (Take Photo, Get Sign-off)
-  const header=dv({cls:'row',st:{alignItems:'center',marginBottom:'8px'}});
-  header.appendChild(dv({cls:'del-log-title',st:{margin:'0'}},'Activity'));
-  const actions=dv({cls:'del-log-actions'});
-  actions.appendChild(btn('\ud83d\udcf7 Take Photo','btn-o btn-sm',function(){
-    capturePhoto(delivery,async function(){await refreshDelLog(container,delivery);});
-  }));
-  if(!delivery.signedOffAt){
-    actions.appendChild(btn('\u270d\ufe0f Get Sign-off','btn-p btn-sm',function(){
-      openSignatureModal(delivery,async function(){
-        const fresh=await CDB.getDeliveryById(delivery.id);
-        if(fresh)Object.assign(delivery,fresh);
-        await refreshDelLog(container,delivery);
-      });
-    }));
-  }
-  header.appendChild(actions);
-  container.appendChild(header);
-
-  // Sign-off summary card
-  if(delivery.signedOffAt){
-    const sigCard=dv({cls:'del-signoff-card'});
-    const info=dv({cls:'del-signoff-info'});
-    info.appendChild(dv({cls:'del-signoff-title'},'\u2713 Signed off by '+(delivery.signedOffByName||'(no name)')));
-    info.appendChild(dv({cls:'del-signoff-when'},new Date(delivery.signedOffAt).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})));
-    sigCard.appendChild(info);
-    if(delivery.signatureUrl){
-      const img=h('img',{src:delivery.signatureUrl,cls:'del-signature-thumb',title:'Click to view full size'});
-      img.onclick=function(){openLightbox(delivery.signatureUrl);};
-      sigCard.appendChild(img);
-    }
-    container.appendChild(sigCard);
-  }
-
-  // Photos grid
-  let photos=[];
-  try{ photos=await CDB.getDeliveryPhotos(delivery.id); }catch(e){console.error(e);}
-  if(photos.length){
-    container.appendChild(dv({cls:'del-log-title'},'Photos ('+photos.length+')'));
-    const grid=dv({cls:'del-photos-grid'});
-    photos.forEach(function(p){
-      const thumb=dv({cls:'del-photo-thumb'});
-      const img=h('img',{src:p.photo_url,title:'Click to view full size'});
-      img.onclick=function(){openLightbox(p.photo_url);};
-      thumb.appendChild(img);
-      if(isManager()){
-        const del=h('button',{cls:'del-photo-delete',title:'Delete photo'},'\u00d7');
-        del.onclick=async function(e){
-          e.stopPropagation();
-          if(!confirm('Delete this photo? This cannot be undone.'))return;
-          try{await CDB.deleteDeliveryPhoto(p.id);await refreshDelLog(container,delivery);}
-          catch(err){alert('Delete failed: '+err.message);}
-        };
-        thumb.appendChild(del);
-      }
-      grid.appendChild(thumb);
-    });
-    container.appendChild(grid);
-  }
-
-  // Activity timeline
-  container.appendChild(dv({cls:'del-log-title'},'Timeline'));
-  const listC=dv();
-  container.appendChild(listC);
-  const loading=dv({cls:'del-log-empty'},'Loading log...');
-  listC.appendChild(loading);
-  let entries=[];
-  try{ entries=await CDB.getDeliveryLog(delivery.id); }catch(e){ console.error(e); }
-  listC.innerHTML='';
-  if(!entries.length){
-    listC.appendChild(dv({cls:'del-log-empty'},'No activity yet for this delivery.'));
-  } else {
-    entries.forEach(function(entry){listC.appendChild(renderLogEntry(entry,delivery,container));});
-  }
-
-  // Add-note row
-  const noteRow=dv({cls:'del-log-addnote'});
-  const ta=h('textarea',{rows:'1',placeholder:'Add a note... (e.g. "Customer rescheduled to 3pm")'});
-  const saveBtn=btn('Add note','btn-p btn-sm',async function(){
-    const v=ta.value.trim();
-    if(!v)return;
-    saveBtn.disabled=true;saveBtn.textContent='Saving...';
-    try{
-      await CDB.addDeliveryNote(delivery.id,v);
-      ta.value='';
-      await refreshDelLog(container,delivery);
-    }catch(err){
-      alert('Could not add note: '+err.message);
-    }
-    saveBtn.disabled=false;saveBtn.textContent='Add note';
-  });
-  noteRow.appendChild(ta);noteRow.appendChild(saveBtn);
-  container.appendChild(noteRow);
-}
-
-// --- Photo capture: opens the native camera (mobile) or file picker (desktop) -
-function capturePhoto(delivery,refresh){
-  const inp=h('input',{type:'file',accept:'image/*',capture:'environment',st:{display:'none'}});
-  inp.onchange=async function(e){
-    const file=e.target.files&&e.target.files[0];
-    inp.remove();
-    if(!file)return;
-    try{
-      const url=await CDB.uploadDeliveryPhoto(file,delivery.id);
-      const rec=await CDB.addDeliveryPhotoRecord(delivery.id,url,null);
-      await CDB.addDeliveryLogEntry(delivery.id,'photo_added','Photo attached',{photo_id:rec.id,photo_url:url});
-      if(refresh)await refresh();
-    }catch(err){
-      alert('Photo upload failed: '+err.message);
-    }
-  };
-  document.body.appendChild(inp);
-  inp.click();
-}
-
-// --- Signature canvas modal --------------------------------------------------
-function openSignatureModal(delivery,onSaved){
-  const overlay=dv({cls:'modal-overlay'});
-  const modal=dv({cls:'modal',st:{width:'500px',maxWidth:'95vw'}});
-  modal.appendChild(dv({cls:'modal-title'},'Customer Sign-off'));
-  modal.appendChild(dv({cls:'txs muted mb3'},'Have the customer sign below to confirm they received this delivery.'));
-
-  const nameLabel=h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Customer name *');
-  const nameIn=h('input',{type:'text',placeholder:'Name of person receiving delivery',st:{width:'100%',padding:'8px 10px',border:'1px solid var(--border)',borderRadius:'6px',fontSize:'14px',fontFamily:'inherit',marginBottom:'12px'}});
-  modal.appendChild(nameLabel);
-  modal.appendChild(nameIn);
-
-  modal.appendChild(h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Signature *'));
-  const canvas=h('canvas',{cls:'sig-canvas',width:'460',height:'200'});
-  modal.appendChild(canvas);
-  modal.appendChild(dv({cls:'txs muted',st:{marginTop:'4px'}},'Sign with your finger on a phone/tablet, or click and drag with a mouse.'));
-
-  const ctx=canvas.getContext('2d');
-  ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f172a';
-  let drawing=false,hasInk=false;
-  function pos(e){
-    const r=canvas.getBoundingClientRect();
-    return{x:(e.clientX-r.left)*(canvas.width/r.width),y:(e.clientY-r.top)*(canvas.height/r.height)};
-  }
-  canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId);drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();});
-  canvas.addEventListener('pointermove',function(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasInk=true;e.preventDefault();});
-  canvas.addEventListener('pointerup',function(e){if(!drawing)return;drawing=false;try{canvas.releasePointerCapture(e.pointerId);}catch(_){}});
-  canvas.addEventListener('pointercancel',function(){drawing=false;});
-
-  const clearBtn=btn('Clear','btn-o btn-sm',function(){ctx.clearRect(0,0,canvas.width,canvas.height);hasInk=false;});
-  const cancelBtn=btn('Cancel','btn-o',function(){overlay.remove();});
-  const saveBtn=btn('Save sign-off','btn-p',async function(){
-    const name=nameIn.value.trim();
-    if(!name){alert('Please enter the customer name.');nameIn.focus();return;}
-    if(!hasInk){alert('Please draw the signature on the pad.');return;}
-    saveBtn.disabled=true;saveBtn.textContent='Saving...';
-    canvas.toBlob(async function(blob){
-      try{
-        const url=await CDB.uploadDeliverySignature(blob,delivery.id);
-        await CDB.setDeliverySignoff(delivery.id,name,url);
-        await CDB.addDeliveryLogEntry(delivery.id,'signed_off',name,{signature_url:url});
-        overlay.remove();
-        if(onSaved)await onSaved();
-      }catch(err){
-        alert('Sign-off failed: '+err.message);
-        saveBtn.disabled=false;saveBtn.textContent='Save sign-off';
-      }
-    },'image/png');
-  });
-
-  modal.appendChild(dv({cls:'row gap2 mt3'},clearBtn,dv({st:{flex:'1'}}),cancelBtn,saveBtn));
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-  setTimeout(function(){nameIn.focus();},50);
-}
-
-// --- Lightbox for viewing photos / signature full-size ----------------------
-function openLightbox(url){
-  const overlay=dv({cls:'lightbox'});
-  overlay.onclick=function(){overlay.remove();};
-  const img=h('img',{src:url});
-  overlay.appendChild(img);
-  document.body.appendChild(overlay);
-}
-
-function renderLogEntry(entry,delivery,container){
-  const iconText={created:'+',status_changed:'⟳',note:'✎',photo_added:'📷',signed_off:'✓',driver_assigned:'🚚'}[entry.action]||'•';
-  const iconCls={created:'created',status_changed:'status',note:'note',photo_added:'photo',signed_off:'signoff',driver_assigned:'status'}[entry.action]||'';
-  const row=dv({cls:'del-log-entry'});
-  row.appendChild(dv({cls:'del-log-icon '+iconCls},iconText));
-  const body=dv({cls:'del-log-body'});
-  const label={created:'Delivery created',status_changed:'Status: '+(entry.detail||''),note:entry.detail||'(empty note)',photo_added:'Photo added'+(entry.detail?': '+entry.detail:''),signed_off:'Signed off'+(entry.detail?' by '+entry.detail:''),driver_assigned:'Driver assigned'+(entry.detail?': '+entry.detail:'')}[entry.action]||(entry.detail||entry.action);
-  body.appendChild(dv({cls:'del-log-detail'},label));
-  const when=new Date(entry.created_at);
-  const ago=relativeTime(when);
-  const byWho=entry.user_name?(' by '+entry.user_name):'';
-  body.appendChild(dv({cls:'del-log-meta'},ago+byWho+' · '+when.toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})));
-  row.appendChild(body);
-  // Only show delete on manually-added notes, and only to managers (or note author)
-  if(entry.action==='note'&&(isManager()||(currentUser&&entry.user_id===currentUser.id))){
-    const delBtn=h('button',{cls:'del-log-delete',title:'Delete this note'},'×');
-    delBtn.onclick=async function(){
-      if(!confirm('Delete this note?'))return;
-      try{ await CDB.deleteDeliveryLog(entry.id); await refreshDelLog(container,delivery); }
-      catch(err){ alert('Could not delete: '+err.message); }
-    };
-    row.appendChild(delBtn);
-  }
-  return row;
-}
-
-function relativeTime(date){
-  const diffSec=Math.floor((Date.now()-date.getTime())/1000);
-  if(diffSec<60)return 'just now';
-  const m=Math.floor(diffSec/60);if(m<60)return m+' min'+(m===1?'':'s')+' ago';
-  const h=Math.floor(m/60);if(h<24)return h+' hour'+(h===1?'':'s')+' ago';
-  const d=Math.floor(h/24);if(d<14)return d+' day'+(d===1?'':'s')+' ago';
-  const w=Math.floor(d/7);if(w<8)return w+' week'+(w===1?'':'s')+' ago';
-  const mo=Math.floor(d/30);if(mo<12)return mo+' month'+(mo===1?'':'s')+' ago';
-  return Math.floor(d/365)+' year+ ago';
 }
 
 function renderDelKey(c){
   const key=dv({cls:'row gap3 mt3',st:{flexWrap:'wrap',padding:'10px 14px',background:'#fff',borderRadius:'10px',border:'1px solid var(--border)'}});
   const items=[
-    {col:'#15803d',label:'DEL — Delivery',bold:true},
-    {col:'#1d4ed8',label:'SCR — Screens',bold:true},
-    {col:'#c2410c',label:'SW — Site work',bold:true},
+    {col:'#166534',label:'Outgoing Delivery'},
+    {col:'#1d4ed8',label:'Incoming Delivery'},
     {col:'#dc2626',label:'NOT PAID — Do Not Deliver',bold:true},
     {col:'#f59e0b',label:'Overdue / Undelivered'},
     {col:'#6b7280',label:'Cancelled'},
@@ -3047,13 +1961,6 @@ function openDelForm(d,dateStr,c){
   const descIn=inp(d?d.description:'','Description');
   const dateIn=h('input',{type:'date',value:d?d.scheduledDate:dateStr||iso(calDate)});
   const timeIn=h('input',{type:'time',value:d?d.scheduledTime||'':''});
-  // Work type (DEL/SCR/SW) — built manually so labels are user-friendly while values are codes
-  const workSel=h('select',{});
-  [['DEL','📦 Delivery'],['SCR','🪟 Screens'],['SW','🔧 Site work']].forEach(function(p){
-    const opt=h('option',{value:p[0]},p[1]);
-    if(p[0]===(d?(d.workType||'DEL'):'DEL'))opt.selected=true;
-    workSel.appendChild(opt);
-  });
   const typeSel=sel(d?d.type:'Outgoing','Outgoing','Incoming');
   const statusSel=sel(d?d.status:'Scheduled','Scheduled','In Progress','Completed','Cancelled');
   const vehSel=sel(d?d.vehicle:'Truck',...VEHICLES);
@@ -3067,8 +1974,7 @@ function openDelForm(d,dateStr,c){
   modal.appendChild(g2(frow('Job #',jobIn),frow('Customer',custIn)));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Address'),addrIn));
   modal.appendChild(g2(frow('Date',dateIn),frow('Time (optional)',timeIn)));
-  modal.appendChild(g2(frow('Work Type',workSel),frow('Type (Outgoing/Incoming)',typeSel)));
-  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Status'),statusSel));
+  modal.appendChild(g2(frow('Type',typeSel),frow('Status',statusSel)));
   modal.appendChild(g2(frow('Vehicle',vehSel),frow('Crew',crewSel)));
   modal.appendChild(g2(frow('Delivery Order',orderSel),frow('Sequence',seqSel)));
   modal.appendChild(g2(frow('Bay Number',bayIn),frow('Description',descIn)));
@@ -3086,19 +1992,9 @@ function openDelForm(d,dateStr,c){
   btns.appendChild(btn('Cancel','btn-o',function(){overlay.remove();}));
   btns.appendChild(btn(isNew?'Create':'Save','btn-p',async function(){
     if(!dateIn.value)return alert('Date required');
-    const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,workType:workSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
-    try{
-      let res;
-      if(isNew){res=await fetch(SB+'/rest/v1/deliveries',{method:'POST',headers:SH(),body:JSON.stringify(d2r(data))});}
-      else{res=await fetch(SB+'/rest/v1/deliveries?id=eq.'+d.id,{method:'PATCH',headers:SH(),body:JSON.stringify(d2r(data))});}
-      if(!res.ok){
-        const errText=await res.text();
-        let msg=errText;try{const ej=JSON.parse(errText);msg=ej.message||ej.hint||errText;}catch(_){}
-        if(/work_type/i.test(msg)){alert('Save failed: the work_type column is missing from your database.\n\nThe SQL migration (_migration-work-type.sql) has not been run yet.\n\n1. Open Supabase Dashboard → SQL Editor\n2. Paste the contents of _migration-work-type.sql\n3. Click Run\n4. Try saving again.');return;}
-        alert('Save failed ('+res.status+'):\n\n'+msg);return;
-      }
-      overlay.remove();c.innerHTML='';pgDel(c);
-    }catch(err){alert('Save failed: '+(err&&err.message||err));}
+    const data={jobNumber:jobIn.value,customer:custIn.value,address:addrIn.value,description:descIn.value,scheduledDate:dateIn.value,scheduledTime:timeIn.value||null,type:typeSel.value,status:statusSel.value,vehicle:vehSel.value,crew:crewSel.value,deliveryOrder:orderSel.value,deliverySequence:seqSel.value,bayNumber:bayIn.value||null,notes:notesIn.value||null,isPaid:paidChk.checked,paidBy:paidByIn.value||null};
+    if(isNew){await DB.create(data);}else{await DB.update(d.id,data);}
+    overlay.remove();c.innerHTML='';pgDel(c);
   }));
   modal.appendChild(btns);
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
@@ -3607,400 +2503,225 @@ function exportCSV(members,swps,lk){
 }
 
 // ── ADMIN PANEL ──────────────────────────────────────────────────────
-// ===== Goods In (receiving) module =====
-const GRDB={
-  async list(){try{const r=await fetch(SB+'/rest/v1/goods_receipts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async create(row){const r=await fetch(SB+'/rest/v1/goods_receipts',{method:'POST',headers:SH(),body:JSON.stringify(row)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async patch(id,fields){const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async del(id){const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
-  async uploadDocket(file){const ext=(file.name?file.name.split('.').pop():'')||'pdf';const path='dockets/'+Date.now()+'-'+Math.floor(Math.random()*1000)+'.'+ext;const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'application/pdf','x-upsert':'true'},body:file});if(!r.ok){const e=await r.text();throw new Error('Docket upload failed: '+e);}return SB+'/storage/v1/object/public/delivery-photos/'+path;},
-  async parse(text,supplier){const r=await fetch(XERO_FN+'/parse-docket',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify({text:text,supplier:supplier||''})});const d=await r.json();if(!r.ok)throw new Error(d&&d.error?d.error:('Parse failed ('+r.status+')'));return d;}
+// ============ SUPPLIER ORDERING (stock take → auto order email) ============
+const STOCK={
+  async suppliers(){try{const r=await fetch(SB+'/rest/v1/stock_suppliers?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async items(sup){try{const r=await fetch(SB+'/rest/v1/stock_items?supplier=eq.'+encodeURIComponent(sup)+'&is_active=eq.true&order=sort_order,product',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async updateItem(id,patch){const r=await fetch(SB+'/rest/v1/stock_items?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(patch)});return r.ok;},
+  async addItem(row){const r=await fetch(SB+'/rest/v1/stock_items',{method:'POST',headers:SH(),body:JSON.stringify(row)});return r.ok;},
+  async orders(){try{const r=await fetch(SB+'/rest/v1/stock_orders?order=created_at.desc&limit=12',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async createOrder(row){const r=await fetch(SB+'/rest/v1/stock_orders',{method:'POST',headers:SH(),body:JSON.stringify(row)});const x=await r.json();return Array.isArray(x)?x[0]:x;},
+  async setOrderStatus(id,status){const r=await fetch(SB+'/rest/v1/stock_orders?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({status:status})});return r.ok;}
 };
-let pdfWorkerSet=false;
-async function extractDocketText(file){
-  if(typeof pdfjsLib==='undefined')throw new Error('PDF reader not loaded — check your connection and reload.');
-  if(!pdfWorkerSet){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';pdfWorkerSet=true;}
-  const buf=await file.arrayBuffer();
-  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-  let out='';
-  for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const tc=await pg.getTextContent();out+='\n----- PAGE '+i+' -----\n'+tc.items.map(function(it){return it.str;}).join(' ');}
-  return out;
-}
-function grColour(d){const a=[d.colourExternal,d.colourInternal].filter(Boolean);if(!a.length)return '';return a[0]===a[1]?a[0]+' (ext & int)':a.join(' / ');}
-// Deliveries arrive Tue & Thu. Map a date to its delivery day: Mon/Tue->Tue, Wed/Thu->Thu, Fri/Sat/Sun->next Tue.
-function giDeliveryDateFromDate(d){if(!d||isNaN(d.getTime()))return null;d=new Date(d);d.setHours(0,0,0,0);const dow=d.getDay();const monday=new Date(d);monday.setDate(d.getDate()-((dow+6)%7));const tuesday=new Date(monday);tuesday.setDate(monday.getDate()+1);const thursday=new Date(monday);thursday.setDate(monday.getDate()+3);if(dow===1||dow===2)return tuesday;if(dow===3||dow===4)return thursday;const nextTue=new Date(tuesday);nextTue.setDate(tuesday.getDate()+7);return nextTue;}
-function giIsoLocal(d){if(!d||isNaN(d.getTime()))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function grStatusPill(s){const map={'Pending':{bg:'#f3f4f6',fg:'#6b7280',bd:'#e5e7eb'},'Receiving':{bg:'#fff4e0',fg:'#a06400',bd:'#f3d29a'},'Received':{bg:'#eafaf0',fg:'#15803d',bd:'#bbf7d0'},'Discrepancy':{bg:'#fdeceb',fg:'#dc2626',bd:'#f6c6c2'}};const m=map[s]||map['Pending'];return sp({st:{display:'inline-block',padding:'2px 9px',borderRadius:'11px',fontSize:'11px',fontWeight:'700',background:m.bg,color:m.fg,border:'1px solid '+m.bd}},s);}
-function grComputeStatus(items){let any=false,allRec=true,disc=false;(items||[]).forEach(function(it){if(it.received)any=true;else allRec=false;const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);if(it.received&&!isNaN(del)&&!isNaN(rec)&&rec<del)disc=true;if(it.ncr_id||(it.ncrs&&it.ncrs.length))disc=true;});if(disc)return 'Discrepancy';if(allRec&&items&&items.length)return 'Received';if(any)return 'Receiving';return 'Pending';}
-function grLineNcrs(it){let arr=Array.isArray(it.ncrs)?it.ncrs:[];if(!arr.length&&it.ncr_id)arr=[{id:it.ncr_id,no:'',reason:it.ncr_reason||'',qty:it.ncr_qty||'',at:it.ncr_at||''}];return arr;}
-function grLineNcrText(it){const arr=grLineNcrs(it);if(!arr.length)return '';const last=arr[arr.length-1];return arr.length+' NCR'+(arr.length>1?'s':'')+' · last '+(last.no||last.reason||'NCR')+(last.qty?(' ×'+last.qty):'')+(last.at?(' · '+ncrFmtDT(last.at)):'');}
-function raiseNcrFromReceiptLine(rcpt,it,reason){
-  let qa='';const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
-  if(reason==='Short supplied'&&!isNaN(del)&&!isNaN(rec))qa=String(Math.max(0,del-rec));
-  window.__ncrPrefill={supplier:rcpt.supplier||'',delivery_no:rcpt.delivery_no||'',customer_po:rcpt.customer_po||'',item_no:it.item_no||'',item_desc:it.item_desc||'',qty_affected:qa,reason:reason||'Damaged',receipt_id:rcpt.id,special_instruction:it.note||''};
-  go('ncr');
-}
-async function linkNcrToReceipt(receiptId,itemNo,itemDesc,ncrId){
-  try{
-    const r=await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+receiptId,{headers:SH()});const arr=await r.json();const g=Array.isArray(arr)?arr[0]:null;if(!g)return;
-    let touched=false;const items=(g.items||[]).map(function(it){if(!touched&&(it.item_no||'')===(itemNo||'')&&(it.item_desc||'')===(itemDesc||'')){if(!Array.isArray(it.ncrs))it.ncrs=[];it.ncrs.push({id:ncrId,no:'',reason:'',qty:'',at:new Date().toISOString()});it.ncr_id=ncrId;touched=true;}return it;});
-    await fetch(SB+'/rest/v1/goods_receipts?id=eq.'+receiptId,{method:'PATCH',headers:SH(),body:JSON.stringify({items:items,status:'Discrepancy'})});
-  }catch(e){}
-}
-window.linkNcrToReceipt=linkNcrToReceipt;
-
-async function pgGoodsIn(c){
-  c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'Goods In'),dv({cls:'page-sub'},'Receive supplier deliveries, check items off, and raise NCRs')),
-    false
-  ));
-  const supBar=dv({cls:'tab-bar',st:{fontWeight:'700'}});let supplier='AWS';
-  const tabBar=dv({cls:'tab-bar'});let activeTab='list';let detailId=null;const tc=dv({id:'gitc'});
-  c.appendChild(supBar);c.appendChild(tabBar);c.appendChild(tc);
-  function giSupOf(g){if(g.supplier_group)return g.supplier_group;const s=(g.supplier||'').toLowerCase();if(s.indexOf('alspec')>=0)return 'Alspec';if(s.indexOf('viridian')>=0)return 'Viridian';return 'AWS';}
-  function renderSupTabs(){supBar.innerHTML='';['AWS','Alspec','Viridian'].forEach(function(s){supBar.appendChild(h('button',{cls:'tab-btn'+(supplier===s?' active':''),onclick:function(){supplier=s;detailId=null;renderSupTabs();renderTabs();renderTab();}},s));});}
-  function renderTabs(){tabBar.innerHTML='';[{id:'receive',label:'Receive a delivery'},{id:'list',label:'Incoming deliveries'}].forEach(function(t){tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;detailId=null;renderTabs();renderTab();}},t.label));});}
-  async function renderTab(){tc.innerHTML='';if(activeTab==='receive')renderReceive(tc);else if(detailId)await renderDetail(tc,detailId);else await renderList(tc);}
-  renderSupTabs();renderTabs();await renderTab();
-
-  function renderReceive(box){
-    if(!currentUser){box.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before receiving deliveries.')));return;}
-    const status=dv({cls:'page-sub',st:{marginTop:'10px'}});
-    const dateIn=h('input',{type:'date'});
-    const dateCard=dv({cls:'card',st:{marginBottom:'10px'}},dv({cls:'row gap2',st:{alignItems:'flex-end',flexWrap:'wrap'}},frow('Delivery date (optional)',dateIn)),dv({cls:'txs muted',st:{marginTop:'4px'}},'Leave blank for today’s Tue/Thu run. Set a past date when back-dating old packing sheets.'));
-    const drop=dv({cls:'card',st:{border:'2px dashed var(--border)',textAlign:'center',padding:'32px 20px',cursor:'pointer'}},
-      dv({cls:'fw6',st:{marginBottom:'4px'}},'Drop the '+supplier+' delivery docket (PDF)'),
-      dv({cls:'txs muted'},'or tap to choose a file — items are read automatically')
-    );
-    const fileIn=h('input',{type:'file',accept:'application/pdf',st:{display:'none'}});
-    drop.appendChild(fileIn);
-    drop.onclick=function(){fileIn.click();};
-    drop.ondragover=function(e){e.preventDefault();drop.style.background='#f0fdf4';};
-    drop.ondragleave=function(){drop.style.background='';};
-    drop.ondrop=function(e){e.preventDefault();drop.style.background='';if(e.dataTransfer.files[0])handle(e.dataTransfer.files[0]);};
-    fileIn.onchange=function(e){if(e.target.files[0])handle(e.target.files[0]);};
-    async function handle(file){
-      if(!(file.name||'').toLowerCase().endsWith('.pdf')){status.style.color='#ef4444';status.textContent='Please drop a PDF docket.';return;}
-      try{
-        status.style.color='';status.textContent='Reading docket...';
-        const text=await extractDocketText(file);
-        status.textContent='Reading items (this can take a few seconds)...';
-        const parsed=await GRDB.parse(text,supplier);
-        const dels=(parsed&&parsed.deliveries)||[];
-        if(!dels.length){status.style.color='#ef4444';status.textContent='No deliveries found in that PDF.';return;}
-        status.textContent='Storing docket...';
-        let url='';try{url=await GRDB.uploadDocket(file);}catch(upErr){url='';}
-        const expDate=dateIn.value||giIsoLocal(giDeliveryDateFromDate(new Date()));
-        let made=0;
-        for(const d of dels){
-          const items=(d.items||[]).map(function(it){return {line:it.line||'',item_no:it.itemNo||'',item_desc:it.itemDesc||'',qty_delivered:it.qtyDelivered||'',package_no:it.packageNo||'',qty_received:'',received:false,short:false,note:it.specialInstruction||'',ncr_id:null};});
-          const row={supplier:d.supplier||'',supplier_group:supplier,delivery_no:d.deliveryNo||'',customer_po:d.customerPo||'',order_no:d.orderNo||'',departure_date:d.departureDate||'',expected_date:expDate,facility:d.facility||'',colour:grColour(d),docket_url:url,docket_filename:file.name,items:items,status:'Pending',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
-          await GRDB.create(row);made++;
-        }
-        status.style.color='#15803d';status.textContent=made+' delivery'+(made===1?'':' loads')+' logged.'+(url?'':' (Docket too large to store a copy — item details still captured.)')+' Open one from “Incoming deliveries” to check items off.';
-        activeTab='list';renderTabs();renderTab();
-      }catch(err){status.style.color='#ef4444';status.textContent='Error: '+err.message;}
-    }
-    box.appendChild(dateCard);box.appendChild(drop);box.appendChild(status);
+let stockSupplier=null;
+function pgOrdering(c){
+  c.appendChild(dv({cls:'row jb mb4'},
+    dv({},h('h1',{cls:'page-title'},'Supplier Ordering'),
+      dv({cls:'page-sub'},'Mini stock take — count what’s left; anything at or below its minimum goes on the order to the office')),
+    null));
+  if(!currentUser){
+    c.appendChild(dv({cls:'card',st:{padding:'24px',textAlign:'center'}},
+      dv({st:{fontSize:'15px',fontWeight:'600',marginBottom:'6px'}},'Sign in to do a stock take'),
+      dv({st:{color:'var(--muted,#6b7280)',fontSize:'13px',marginBottom:'14px'}},'Orders are emailed to the office under your name, so we need to know who’s counting.'),
+      btn('Sign In','btn-p',openLoginScreen)));
+    return;
   }
-
-  async function renderList(box){
-    const lo=dv({cls:'empty'},'Loading...');box.appendChild(lo);
-    const all=await GRDB.list();const list=all.filter(function(g){return giSupOf(g)===supplier;});lo.remove();
-    if(!list.length){box.appendChild(dv({cls:'empty'},'No '+supplier+' deliveries yet. Use the “Receive a delivery” tab to drop a docket.'));return;}
-    const search=inp('','Search by Customer PO, delivery no or supplier');search.style.marginBottom='12px';search.style.maxWidth='440px';
-    const results=dv({});
-    function makeCard(g){
-      const items=g.items||[];const recd=items.filter(function(i){return i.received;}).length;
-      const cd=dv({cls:'card mb3',st:{cursor:'pointer'}});
-      cd.onclick=function(){detailId=g.id;renderTab();};
-      cd.appendChild(dv({cls:'row jb'},
-        dv({},h('div',{cls:'fw6'},(g.supplier||'Supplier')+(g.customer_po?(' — PO '+g.customer_po):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.delivery_no?(' · Del '+g.delivery_no):'')+' · '+recd+'/'+items.length+' checked')),
-        grStatusPill(g.status||'Pending')
-      ));
-      return cd;
-    }
-    async function delGroup(grp){
-      if(!confirm('Delete all '+grp.items.length+' '+supplier+' delivery'+(grp.items.length===1?'':'ies')+' from '+grp.key+'?\n\nThis cannot be undone.'))return;
-      for(var i=0;i<grp.items.length;i++){try{await GRDB.del(grp.items[i].id);}catch(e){}}
-      detailId=null;await renderTab();
-    }
-    // Expected delivery date: editable g.expected_date, else computed from upload day (Tue/Thu).
-    function recDate(g){if(g.expected_date){const p=new Date(g.expected_date+'T00:00:00');if(!isNaN(p.getTime()))return p;}return giDeliveryDateFromDate(g.created_at?new Date(g.created_at):null);}
-    function dayKey(g){const d=recDate(g);if(d)return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});return 'No date';}
-    function isDueToday(g){const d=recDate(g);if(!d)return false;const n=new Date();n.setHours(0,0,0,0);return d.getTime()===n.getTime();}
-    const openDates={};
-    function draw(){
-      results.innerHTML='';
-      const q=(search.value||'').trim().toLowerCase();
-      if(q){
-        const filtered=list.filter(function(g){return ((g.customer_po||'')+' '+(g.delivery_no||'')+' '+(g.supplier||'')+' '+(g.order_no||'')).toLowerCase().indexOf(q)>=0;});
-        if(!filtered.length){results.appendChild(dv({cls:'empty'},'No deliveries match that search.'));return;}
-        filtered.forEach(function(g){results.appendChild(makeCard(g));});
-        return;
-      }
-      const groups=[];const gidx={};
-      list.forEach(function(g){const k=dayKey(g);if(!(k in gidx)){gidx[k]=groups.length;const pd=recDate(g);groups.push({key:k,today:isDueToday(g),sort:pd?pd.getTime():-1,items:[]});}groups[gidx[k]].items.push(g);});
-      groups.sort(function(a,b){return b.sort-a.sort;});
-      const anyToday=groups.some(function(x){return x.today;});
-      groups.forEach(function(grp,gi){
-        if(openDates[grp.key]===undefined)openDates[grp.key]=(anyToday?grp.today:gi===0);
-        const open=openDates[grp.key];
-        const right=dv({cls:'row gap2',st:{alignItems:'center'}});
-        if(isManager()){right.appendChild(btn('Delete all ('+grp.items.length+')','btn-o btn-sm',function(ev){if(ev&&ev.stopPropagation)ev.stopPropagation();delGroup(grp);}));}
-        right.appendChild(sp({cls:'txs muted'},open?'▾':'▸'));
-        const head=dv({cls:'card',st:{cursor:'pointer',marginBottom:'8px',display:'flex',justifyContent:'space-between',alignItems:'center',background:grp.today?'#f0fdf4':''}},
-          dv({},sp({cls:'fw6'},(grp.today?'Due today · ':'')+grp.key),sp({cls:'txs muted',st:{marginLeft:'8px'}},grp.items.length+' deliver'+(grp.items.length===1?'y':'ies'))),
-          right
-        );
-        head.onclick=function(){openDates[grp.key]=!openDates[grp.key];draw();};
-        results.appendChild(head);
-        if(open){const wrap=dv({st:{marginBottom:'10px'}});grp.items.forEach(function(g){wrap.appendChild(makeCard(g));});results.appendChild(wrap);}
-      });
-    }
-    search.oninput=draw;
-    box.appendChild(search);box.appendChild(results);
-    draw();
+  const wrap=dv({id:'stock-wrap'});c.appendChild(wrap);
+  renderStockPage(wrap);
+}
+async function renderStockPage(wrap){
+  wrap.innerHTML='';
+  const sups=await STOCK.suppliers();
+  if(!sups.length){wrap.appendChild(dv({cls:'card',st:{padding:'20px'}},'No suppliers set up yet.'));return;}
+  if(!stockSupplier||!sups.some(function(s){return s.name===stockSupplier;}))stockSupplier=(sups.find(function(s){return !s.is_pending;})||sups[0]).name;
+  // Supplier tabs
+  const tabs=dv({cls:'row mb4',st:{gap:'8px',flexWrap:'wrap'}});
+  sups.forEach(function(s){
+    const active=s.name===stockSupplier;
+    const b=btn(s.name+(s.is_pending?' ⏳':''),active?'btn-p':'btn-o',function(){stockSupplier=s.name;renderStockPage(wrap);});
+    if(s.is_pending)b.title='Parts list pending upload';
+    tabs.appendChild(b);
+  });
+  wrap.appendChild(tabs);
+  const sup=sups.find(function(s){return s.name===stockSupplier;});
+  const body=dv({});wrap.appendChild(body);
+  if(sup.is_pending){
+    body.appendChild(dv({cls:'card',st:{padding:'24px',textAlign:'center'}},
+      dv({st:{fontSize:'28px',marginBottom:'8px'}},'⏳'),
+      dv({st:{fontSize:'15px',fontWeight:'600',marginBottom:'6px'}},sup.name+' — parts list pending upload'),
+      dv({st:{color:'var(--muted,#6b7280)',fontSize:'13px'}},'The '+sup.name+' order form hasn’t been loaded yet. Once the parts list is added, stock takes for this supplier will work like the others.')));
+    renderStockHistory(body);
+    return;
   }
-
-  async function renderDetail(box,id){
-    const list=await GRDB.list();const g=list.find(function(x){return String(x.id)===String(id);});
-    if(!g){box.appendChild(dv({cls:'empty'},'Not found.'));return;}
-    let items=(g.items||[]).map(function(x){return Object.assign({},x);});
-    const ackMap={};
-    try{const ar=await fetch(SB+'/rest/v1/ncr_reports?receipt_id=eq.'+g.id+'&select=id,acknowledged_at',{headers:SH()}).then(function(r){return r.json();});if(Array.isArray(ar))ar.forEach(function(n){if(n.acknowledged_at)ackMap[String(n.id)]=n.acknowledged_at;});}catch(e){}
-    box.appendChild(dv({cls:'row gap3 mb3',st:{alignItems:'center',flexWrap:'wrap'}},
-      btn('← Back','btn-o',function(){detailId=null;renderTab();}),
-      dv({},h('h2',{cls:'page-title',st:{fontSize:'18px'}},(g.supplier||'Supplier')+(g.customer_po?(' — PO '+g.customer_po):'')),dv({cls:'txs muted'},(g.departure_date||'')+(g.delivery_no?(' · Del '+g.delivery_no):'')+(g.colour?(' · '+g.colour):''))),
-      grStatusPill(g.status||'Pending')
-    ));
-    var expDef=giDeliveryDateFromDate(g.created_at?new Date(g.created_at):new Date());
-    var expInp=h('input',{type:'date',value:(g.expected_date||giIsoLocal(expDef))});
-    var expStatus=sp({cls:'txs muted',st:{marginLeft:'8px'}});
-    expInp.onchange=async function(){try{await GRDB.patch(g.id,{expected_date:expInp.value||null});g.expected_date=expInp.value;expStatus.style.color='#15803d';expStatus.textContent='Saved — will move to that day in the list.';}catch(e){expStatus.style.color='#ef4444';expStatus.textContent=e.message;}};
-    box.appendChild(dv({cls:'card',st:{marginBottom:'10px'}},dv({cls:'row gap2',st:{alignItems:'flex-end',flexWrap:'wrap'}},frow('Expected delivery date',expInp),expStatus),dv({cls:'txs muted',st:{marginTop:'4px'}},'Change this for back-dated dockets so they file under the right day.')));
-    if(g.docket_url)box.appendChild(dv({cls:'mb3'},h('a',{href:g.docket_url,target:'_blank',rel:'noopener',cls:'login-btn',st:{textDecoration:'none'}},'View docket PDF')));
-    const listBox=dv({});box.appendChild(listBox);
-    const saveStatus=dv({cls:'txs muted',st:{marginTop:'8px'}});
-    async function persist(){
-      const stt=grComputeStatus(items);const fields={items:items,status:stt};
-      if(stt==='Received'&&!g.received_at){fields.received_at=new Date().toISOString();fields.received_by_name=currentUser?currentUser.name:'';}
-      try{await GRDB.patch(g.id,fields);g.status=stt;saveStatus.style.color='#15803d';saveStatus.textContent='Saved.';}catch(e){saveStatus.style.color='#ef4444';saveStatus.textContent='Save failed: '+e.message;}
-    }
-    const ncrState=items.map(function(){return {flag:false,reason:'',note:'',qty:'',photos:[]};});
-    function renderItems(){
-      listBox.innerHTML='';
-      items.forEach(function(it,idx){
-        const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
-        const isShort=it.received&&!isNaN(del)&&!isNaN(rec)&&rec<del;
-        const st=ncrState[idx];
-        const lineNcrs=grLineNcrs(it);
-        const ackd=lineNcrs.filter(function(x){return ackMap[String(x.id)];}).length;
-        const allAck=lineNcrs.length>0&&ackd===lineNcrs.length;
-        const hasNcr=lineNcrs.length>0;
-        const ncrColor=allAck?'#15803d':'#dc2626';
-        const row=dv({cls:'card',st:{padding:'12px',marginBottom:'8px',borderLeft:'4px solid '+(hasNcr?ncrColor:(it.received?(isShort?'#f59e0b':'#22c55e'):'#e5e7eb'))}});
-        let ncrText=grLineNcrText(it);
-        if(hasNcr)ncrText+=allAck?' · ✓ office received':(ackd>0?(' · ✓ '+ackd+'/'+lineNcrs.length+' received'):'');
-        row.appendChild(dv({cls:'row jb',st:{flexWrap:'wrap',gap:'8px'}},
-          dv({},h('div',{cls:'fw6 txs'},((it.item_no||'')+' '+(it.item_desc||'')).trim()||'Item'),dv({cls:'txs muted'},'Delivered: '+(it.qty_delivered||'-')+(it.note?(' · '+it.note):''))),
-          (ncrText?sp({st:{fontSize:'11px',fontWeight:'700',color:ncrColor,textAlign:'right'}},ncrText):(isShort?sp({st:{fontSize:'11px',fontWeight:'700',color:'#a06400'}},'SHORT'):false))
-        ));
-        const recInp=inp(it.qty_received||'','Qty received','number');recInp.style.maxWidth='130px';
-        recInp.onchange=function(){it.qty_received=recInp.value;if(recInp.value!=='')it.received=true;renderItems();persist();};
-        const cb=h('input',{type:'checkbox'});cb.checked=!!it.received;cb.style.width='18px';cb.style.height='18px';
-        cb.onchange=function(){it.received=cb.checked;if(it.received&&(it.qty_received===''||it.qty_received==null)){it.qty_received=it.qty_delivered||'';}renderItems();persist();};
-        row.appendChild(dv({cls:'row gap3',st:{marginTop:'8px',flexWrap:'wrap',alignItems:'center'}},
-          dv({cls:'row gap1',st:{alignItems:'center'}},cb,sp({cls:'txs'},'Received')),
-          frow('Qty received',recInp)
-        ));
-        const ncrBox=dv({st:{marginTop:'6px'}});
-        function drawNcrBox(){
-          ncrBox.innerHTML='';
-          if(!st.flag)return;
-          if(!st.reason)st.reason=isShort?'Short supplied':'Damaged';
-          if((st.qty===''||st.qty==null)&&isShort&&!isNaN(del)&&!isNaN(rec))st.qty=String(Math.max(0,del-rec));
-          const rsel=sel(st.reason,'Damaged','Short supplied','Wrong item','Other');rsel.onchange=function(){st.reason=rsel.value;};
-          const qin=inp(st.qty||'','Qty affected','number');qin.style.maxWidth='120px';qin.oninput=function(){st.qty=qin.value;};
-          const note=inp(st.note||'','Fault note (optional)');note.oninput=function(){st.note=note.value;};
-          ncrBox.appendChild(dv({cls:'row gap2',st:{flexWrap:'wrap',alignItems:'flex-end'}},frow('NCR reason',rsel),frow('Qty affected',qin),frow('Note',note)));
-          if(!st.photos)st.photos=[];
-          const photoIn=h('input',{type:'file',accept:'image/*',multiple:'true'});
-          const prev=dv({cls:'row gap2',st:{flexWrap:'wrap',marginTop:'4px'}});
-          function drawPrev(){prev.innerHTML='';st.photos.forEach(function(p,pi){const w=dv({st:{position:'relative',width:'58px',height:'58px',borderRadius:'6px',overflow:'hidden',border:'1px solid var(--border)'}});w.appendChild(h('img',{src:p.url,st:{width:'100%',height:'100%',objectFit:'cover'}}));w.appendChild(h('button',{cls:'btn',st:{position:'absolute',top:'1px',right:'1px',padding:'0',width:'16px',height:'16px',borderRadius:'50%',background:'rgba(0,0,0,0.6)',color:'#fff',fontSize:'11px',lineHeight:'1'},onclick:function(){st.photos.splice(pi,1);drawPrev();}},'×'));prev.appendChild(w);});}
-          photoIn.onchange=function(e){Array.from(e.target.files).forEach(function(f){if(!(f.type||'').startsWith('image/'))return;const rd=new FileReader();rd.onload=function(ev){st.photos.push({file:f,url:ev.target.result});drawPrev();};rd.readAsDataURL(f);});photoIn.value='';};
-          ncrBox.appendChild(dv({st:{marginTop:'6px'}},sp({cls:'txs muted'},'Photos of the fault: '),photoIn,prev));
-          drawPrev();
-        }
-        const fcb=h('input',{type:'checkbox'});fcb.checked=!!st.flag;fcb.style.width='16px';fcb.style.height='16px';
-        fcb.onchange=function(){st.flag=fcb.checked;drawNcrBox();updateBatchBtn();};
-        row.appendChild(dv({cls:'row gap1',st:{marginTop:'8px',alignItems:'center'}},fcb,sp({cls:'txs'},hasNcr?'Raise another NCR for this line':'Raise NCR for this line')));
-        row.appendChild(ncrBox);drawNcrBox();
-        listBox.appendChild(row);
-      });
-    }
-    const batchStatus=dv({cls:'txs',st:{marginTop:'8px'}});
-    const batchBtn=btn('Raise NCRs & notify office','btn-p',async function(){
-      const chosen=[];ncrState.forEach(function(s,idx){if(s.flag)chosen.push({it:items[idx],reason:s.reason||'Damaged',note:s.note||'',qty:s.qty||'',photos:s.photos||[]});});
-      if(!chosen.length)return;
-      if(!currentUser){batchStatus.style.color='#ef4444';batchStatus.textContent='Please sign in first.';return;}
-      batchBtn.disabled=true;batchStatus.style.color='';batchStatus.textContent='Raising '+chosen.length+' NCR(s)...';
-      try{
-        const ex=await fetch(SB+'/rest/v1/ncr_reports?select=ncr_no&order=created_at.desc',{headers:SH()}).then(function(r){return r.json();}).catch(function(){return [];});
-        const yr=new Date().getFullYear();const pre='NCR-'+yr+'-';let max=0;(Array.isArray(ex)?ex:[]).forEach(function(n){if((n.ncr_no||'').indexOf(pre)===0){const v=parseInt(n.ncr_no.slice(pre.length),10);if(v>max)max=v;}});
-        const created=[];
-        for(let k=0;k<chosen.length;k++){
-          const it=chosen[k].it;const del=parseFloat(it.qty_delivered),rec=parseFloat(it.qty_received);
-          let qa=chosen[k].qty||'';
-          if(!qa&&chosen[k].reason==='Short supplied'&&!isNaN(del)&&!isNaN(rec))qa=String(Math.max(0,del-rec));
-          const no=pre+String(max+1+k).padStart(3,'0');
-          const urls=[];const ph=chosen[k].photos||[];
-          for(let pi=0;pi<ph.length;pi++){try{urls.push({url:await NCRDB.uploadPhoto(ph[pi].file,no),caption:ph[pi].file.name});}catch(e){}}
-          const row={ncr_no:no,reason:chosen[k].reason,receipt_id:g.id,supplier:g.supplier||'',delivery_no:g.delivery_no||'',customer_po:g.customer_po||'',order_no:g.order_no||'',departure_date:g.departure_date||'',facility:g.facility||'',colour:g.colour||'',line_no:it.line||'',item_no:it.item_no||'',item_desc:it.item_desc||'',package_no:it.package_no||'',qty_delivered:it.qty_delivered||'',special_instruction:it.note||'',qty_affected:qa,damage_description:chosen[k].note||it.note||(chosen[k].reason+' identified on receipt'),photos:urls,status:'Open',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
-          const saved=await NCRDB.create(row);created.push(saved);
-          if(!Array.isArray(it.ncrs))it.ncrs=[];
-          it.ncrs.push({id:saved.id,no:no,reason:chosen[k].reason,qty:qa,at:new Date().toISOString()});
-          it.ncr_id=saved.id;it.ncr_qty=qa;it.ncr_reason=chosen[k].reason;
-        }
-        let emailed=false;
-        try{const er=await fetch(XERO_FN+'/ncr-notify',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify({ncrs:created})});emailed=er.ok;}catch(e){}
-        await GRDB.patch(g.id,{items:items,status:'Discrepancy'});
-        batchStatus.style.color='#15803d';batchStatus.textContent=created.length+' NCR'+(created.length===1?'':'s')+' raised.'+(emailed?' Office notified in one email.':' (Saved — email not set up yet.)');
-        detailId=g.id;renderTab();
-      }catch(err){batchStatus.style.color='#ef4444';batchStatus.textContent='Error: '+err.message;batchBtn.disabled=false;}
+  const items=await STOCK.items(sup.name);
+  if(!items.length){body.appendChild(dv({cls:'card',st:{padding:'20px'}},'No items for '+sup.name+' yet.'));renderStockHistory(body);return;}
+  // Stock take card
+  const card=dv({cls:'card',st:{padding:'0',overflow:'hidden',marginBottom:'16px'}});
+  card.appendChild(dv({st:{padding:'14px 18px',borderBottom:'1px solid var(--border,#e5e7eb)',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'8px'}},
+    dv({},dv({st:{fontWeight:'700',fontSize:'15px'}},sup.name+' — stock take'),
+      dv({st:{fontSize:'12px',color:'var(--muted,#6b7280)'}},'Enter how many you have left. Leave blank to skip an item. Use Manual order to order extra for a big job — it overrides the normal order qty.')),
+    isManager()?btn('+ Add item','btn-o btn-sm',function(){showStockItemForm(sup.name,wrap);}):null));
+  const tbl=h('table',{st:{width:'100%',borderCollapse:'collapse'}});
+  const thst={padding:'8px 12px',fontSize:'11px',color:'var(--muted,#6b7280)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'left',borderBottom:'1px solid var(--border,#e5e7eb)'};
+  const hr=h('tr',{});
+  [['Product',null],['Spec / Code',null],['Min','center'],['Order qty','center'],['Qty left','center'],['Manual order','center'],['Status',null]].forEach(function(x){
+    const th=h('th',{st:Object.assign({},thst,x[1]?{textAlign:x[1]}:{})},x[0]);hr.appendChild(th);
+  });
+  tbl.appendChild(hr);
+  const state={}; // id -> {count, force}
+  function rowStatus(it,cell){
+    cell.innerHTML='';
+    const st=state[it.id]||{};
+    const mq=parseFloat(st.manual);
+    if(!isNaN(mq)&&mq>0){cell.appendChild(bdg('Manual — will order '+mq,'blue'));return;}
+    if(st.force){cell.appendChild(bdg('Will order '+(st.orderQty||it.order_qty),'amber'));return;}
+    if(st.count===''||st.count==null){cell.appendChild(bdg('Not counted','gray'));return;}
+    const n=parseFloat(st.count);
+    if(isNaN(n)||n<0){cell.appendChild(bdg('Invalid','red'));return;}
+    if(n<=parseFloat(it.min_qty)){cell.appendChild(bdg('Low — will order '+(st.orderQty||it.order_qty),'red'));}
+    else cell.appendChild(bdg('OK','green'));
+  }
+  const tdst={padding:'8px 12px',borderBottom:'1px solid var(--border,#f3f4f6)',fontSize:'14px'};
+  items.forEach(function(it){
+    state[it.id]={count:'',force:false,manual:'',orderQty:it.order_qty};
+    const tr=h('tr',{});
+    tr.appendChild(h('td',{st:Object.assign({},tdst,{fontWeight:'600'})},it.product));
+    tr.appendChild(h('td',{st:Object.assign({},tdst,{color:'var(--muted,#6b7280)'})},it.spec||'—'));
+    // Min qty (editable for managers)
+    const minTd=h('td',{st:Object.assign({},tdst,{textAlign:'center'})});
+    if(isManager()){
+      const mi=h('input',{type:'number',min:'0',value:''+it.min_qty,st:{width:'56px',textAlign:'center',padding:'4px',border:'1px solid var(--border,#e5e7eb)',borderRadius:'6px'},
+        onchange:function(){const v=parseFloat(mi.value);if(!isNaN(v)&&v>=0){it.min_qty=v;STOCK.updateItem(it.id,{min_qty:v});rowStatus(it,statTd);}}});
+      minTd.appendChild(mi);
+    } else minTd.appendChild(document.createTextNode(''+it.min_qty));
+    tr.appendChild(minTd);
+    // Order qty (editable for managers; used when low)
+    const oqTd=h('td',{st:Object.assign({},tdst,{textAlign:'center'})});
+    if(isManager()){
+      const oi=h('input',{type:'number',min:'1',value:''+it.order_qty,st:{width:'56px',textAlign:'center',padding:'4px',border:'1px solid var(--border,#e5e7eb)',borderRadius:'6px'},
+        onchange:function(){const v=parseFloat(oi.value);if(!isNaN(v)&&v>0){it.order_qty=v;state[it.id].orderQty=v;STOCK.updateItem(it.id,{order_qty:v});rowStatus(it,statTd);}}});
+      oqTd.appendChild(oi);
+    } else oqTd.appendChild(document.createTextNode(''+it.order_qty));
+    tr.appendChild(oqTd);
+    // Count input
+    const cntTd=h('td',{st:Object.assign({},tdst,{textAlign:'center'})});
+    const ci=h('input',{type:'number',min:'0',placeholder:it.last_count!=null?'last: '+it.last_count:'—',
+      st:{width:'72px',textAlign:'center',padding:'6px',border:'2px solid #fbbf24',borderRadius:'8px',fontWeight:'700',fontSize:'15px',background:'#fffbeb'},
+      oninput:function(){state[it.id].count=ci.value;rowStatus(it,statTd);}});
+    cntTd.appendChild(ci);tr.appendChild(cntTd);
+    // Manual order qty — overrides the auto order qty (e.g. big job coming up)
+    const manTd=h('td',{st:Object.assign({},tdst,{textAlign:'center'})});
+    const mi2=h('input',{type:'number',min:'0',placeholder:'—',
+      title:'Manual order — order this many regardless of the count (e.g. big job coming up)',
+      st:{width:'72px',textAlign:'center',padding:'6px',border:'2px solid #93c5fd',borderRadius:'8px',fontWeight:'700',fontSize:'15px',background:'#eff6ff'},
+      oninput:function(){state[it.id].manual=mi2.value;rowStatus(it,statTd);}});
+    manTd.appendChild(mi2);tr.appendChild(manTd);
+    // Status + force-order toggle
+    const statTd=h('td',{st:tdst});
+    tr.appendChild(statTd);
+    statTd.style.cursor='pointer';
+    statTd.title='Tap to force-order this item even if it’s not low';
+    statTd.onclick=function(){state[it.id].force=!state[it.id].force;rowStatus(it,statTd);};
+    rowStatus(it,statTd);
+    tbl.appendChild(tr);
+  });
+  card.appendChild(dv({st:{overflowX:'auto'}},tbl));
+  // Footer: notes + submit
+  const notesIn=h('input',{type:'text',placeholder:'Notes for the office (optional)',st:{flex:'1',minWidth:'200px',padding:'9px 12px',border:'1px solid var(--border,#e5e7eb)',borderRadius:'8px'}});
+  const msg=sp({st:{fontSize:'13px'}});
+  const submitBtn=btn('Finish stock take → send order','btn-p',async function(){
+    const toOrder=[],counted=[];
+    items.forEach(function(it){
+      const st=state[it.id];const has=st.count!==''&&st.count!=null;
+      const n=has?parseFloat(st.count):null;
+      if(has&&!isNaN(n))counted.push({it:it,n:n});
+      const low=has&&!isNaN(n)&&n<=parseFloat(it.min_qty);
+      const mq=parseFloat(st.manual);
+      if(!isNaN(mq)&&mq>0)toOrder.push({product:it.product,spec:it.spec,on_hand:has?n:null,min_qty:it.min_qty,order_qty:mq,manual:true});
+      else if(low||st.force)toOrder.push({product:it.product,spec:it.spec,on_hand:has?n:null,min_qty:it.min_qty,order_qty:st.orderQty||it.order_qty});
     });
-    function updateBatchBtn(){const n=ncrState.filter(function(s){return s.flag;}).length;batchBtn.textContent='Raise '+n+' NCR'+(n===1?'':'s')+' & send one email';batchBtn.disabled=(n===0);batchBtn.style.opacity=n===0?'0.5':'';}
-    renderItems();updateBatchBtn();
-    box.appendChild(dv({cls:'row gap2',st:{marginTop:'10px',flexWrap:'wrap'}},
-      batchBtn,
-      btn('Mark all received','btn-o',function(){items.forEach(function(it){it.received=true;if(it.qty_received===''||it.qty_received==null)it.qty_received=it.qty_delivered||'';});renderItems();persist();}),
-      (isManager()?btn('Delete delivery','btn-o btn-sm',async function(){if(confirm('Delete this received delivery?')){try{await GRDB.del(g.id);detailId=null;renderTab();}catch(e){alert('Delete failed: '+e.message);}}}):false)
-    ));
-    box.appendChild(batchStatus);
-    box.appendChild(saveStatus);
-  }
-}
-
-// ===== NCR (Non-Compliance Report) module =====
-const NCRDB={
-  async list(){try{const r=await fetch(SB+'/rest/v1/ncr_reports?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async create(row){const r=await fetch(SB+'/rest/v1/ncr_reports',{method:'POST',headers:SH(),body:JSON.stringify(row)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async patch(id,fields){const r=await fetch(SB+'/rest/v1/ncr_reports?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(fields)});const d=await r.json();if(!r.ok)throw new Error(JSON.stringify(d));return Array.isArray(d)?d[0]:d;},
-  async del(id){const r=await fetch(SB+'/rest/v1/ncr_reports?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
-  async uploadPhoto(file,ref){const ext=(file.name?file.name.split('.').pop():'')||'jpg';const path='ncr/'+ref+'-'+Date.now()+'-'+Math.floor(Math.random()*1000)+'.'+ext;const r=await fetch(SB+'/storage/v1/object/delivery-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}return SB+'/storage/v1/object/public/delivery-photos/'+path;},
-  async notify(row){try{const r=await fetch(XERO_FN+'/ncr-notify',{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+authToken()},body:JSON.stringify(row)});return r.ok;}catch(e){return false;}}
-};
-function ncrSuggestNo(list){const yr=new Date().getFullYear();const pre='NCR-'+yr+'-';let max=0;(list||[]).forEach(function(n){if((n.ncr_no||'').indexOf(pre)===0){const v=parseInt(n.ncr_no.slice(pre.length),10);if(v>max)max=v;}});return pre+String(max+1).padStart(3,'0');}
-function ncrPill(status){const map={'Open':{bg:'#fff4e0',fg:'#a06400',bd:'#f3d29a'},'Logged with supplier':{bg:'#e6f0fb',fg:'#1d4ed8',bd:'#bcd4f5'},'Resolved':{bg:'#eafaf0',fg:'#15803d',bd:'#bbf7d0'}};const m=map[status]||map['Open'];return sp({st:{display:'inline-block',padding:'2px 9px',borderRadius:'11px',fontSize:'11px',fontWeight:'700',background:m.bg,color:m.fg,border:'1px solid '+m.bd}},status);}
-function ncrFmtDT(iso){try{return new Date(iso).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
-
-async function pgNCR(c){
-  c.appendChild(dv({cls:'row jb mb3'},
-    dv({},h('h1',{cls:'page-title'},'Non-Compliance Reports'),dv({cls:'page-sub'},'Log damaged or non-compliant supplier deliveries')),
-    false
-  ));
-  const tabBar=dv({cls:'tab-bar'});let activeTab='new';const tc=dv({id:'ncrtc'});
-  c.appendChild(tabBar);c.appendChild(tc);
-  function renderTabs(){tabBar.innerHTML='';[{id:'new',label:'Log an NCR'},{id:'list',label:'Logged NCRs'}].forEach(function(t){tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;renderTabs();renderTab();}},t.label));});}
-  async function renderTab(){tc.innerHTML='';if(activeTab==='new')renderForm(tc);else await renderList(tc);}
-  renderTabs();await renderTab();
-
-  function renderForm(box){
-    if(!currentUser){box.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before logging an NCR, so we know who reported it.')));return;}
-    const pf=window.__ncrPrefill||{};window.__ncrPrefill=null;
-    const receiptId=pf.receipt_id||null;
-    const photos=[];
-    const reason=sel(pf.reason||'Damaged','Damaged','Short supplied','Wrong item','Other');
-    const supplier=inp(pf.supplier||'','e.g. Architectural Window Systems (AWS)');
-    const deliveryNo=inp(pf.delivery_no||'','Delivery / docket number');
-    const po=inp(pf.customer_po||'','Customer PO / order no (optional)');
-    const itemNo=inp(pf.item_no||'','Item number');
-    const itemDesc=inp(pf.item_desc||'','Item description');
-    const qty=inp(pf.qty_affected||'','Qty affected','number');
-    const fault=h('textarea',{rows:'4',placeholder:'Describe the damage or defect...',st:{width:'100%',padding:'8px 10px',border:'1px solid var(--border)',borderRadius:'6px',fontFamily:'inherit',fontSize:'14px',boxSizing:'border-box'}});
-    if(pf.special_instruction)fault.value=pf.special_instruction;
-    const photoIn=h('input',{type:'file',accept:'image/*',multiple:'true'});
-    const preview=dv({cls:'row gap2',st:{flexWrap:'wrap',marginTop:'8px'}});
-    function renderPrev(){preview.innerHTML='';photos.forEach(function(p,i){const wrap=dv({st:{position:'relative',width:'76px',height:'76px',borderRadius:'6px',overflow:'hidden',border:'1px solid var(--border)'}});wrap.appendChild(h('img',{src:p.url,st:{width:'100%',height:'100%',objectFit:'cover'}}));wrap.appendChild(h('button',{cls:'btn',st:{position:'absolute',top:'2px',right:'2px',padding:'0',width:'20px',height:'20px',borderRadius:'50%',background:'rgba(0,0,0,0.6)',color:'#fff',fontSize:'12px',lineHeight:'1'},onclick:function(){photos.splice(i,1);renderPrev();}},'×'));preview.appendChild(wrap);});}
-    photoIn.onchange=function(e){Array.from(e.target.files).forEach(function(f){if(!(f.type||'').startsWith('image/'))return;const rd=new FileReader();rd.onload=function(ev){photos.push({file:f,url:ev.target.result});renderPrev();};rd.readAsDataURL(f);});photoIn.value='';};
-    const status=dv({cls:'page-sub',st:{marginTop:'10px'}});
-    const grid=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'10px'}},
-      frow('Reason',reason),
-      frow('Supplier',supplier),
-      frow('Delivery / docket no',deliveryNo),
-      frow('Customer PO / order no',po),
-      frow('Item number',itemNo),
-      frow('Item description',itemDesc),
-      frow('Qty affected',qty)
-    );
-    const photoWrap=dv({});photoWrap.appendChild(photoIn);photoWrap.appendChild(preview);
-    const card=dv({cls:'card'},
-      grid,
-      frow('Nature of damage / fault',fault),
-      frow('Photos of the damage',photoWrap),
-      dv({cls:'row gap2',st:{marginTop:'12px',flexWrap:'wrap'}},
-        btn('Submit NCR & notify office','btn-p',async function(ev){
-          const b=ev.currentTarget;
-          if(!fault.value.trim()){status.style.color='#ef4444';status.textContent='Please describe the damage / fault.';return;}
-          if(!qty.value.trim()){status.style.color='#ef4444';status.textContent='Enter the quantity affected.';return;}
-          b.disabled=true;
-          try{
-            const list=await NCRDB.list();const no=ncrSuggestNo(list);
-            status.style.color='';status.textContent='Uploading photos...';
-            const urls=[];for(const p of photos){try{urls.push({url:await NCRDB.uploadPhoto(p.file,no),caption:p.file.name});}catch(e){}}
-            status.textContent='Saving NCR...';
-            const row={ncr_no:no,reason:reason.value,receipt_id:receiptId,supplier:supplier.value.trim(),delivery_no:deliveryNo.value.trim(),customer_po:po.value.trim(),item_no:itemNo.value.trim(),item_desc:itemDesc.value.trim(),qty_affected:qty.value.trim(),damage_description:fault.value.trim(),photos:urls,status:'Open',created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:''};
-            const saved=await NCRDB.create(row);
-            if(receiptId&&window.linkNcrToReceipt){try{await window.linkNcrToReceipt(receiptId,itemNo.value.trim(),itemDesc.value.trim(),saved.id);}catch(e){}}
-            const emailed=await NCRDB.notify(saved);
-            status.style.color='#15803d';status.textContent='NCR '+no+' submitted.'+(emailed?' Office notified by email.':' (Saved — email not set up yet.)');
-            supplier.value='';deliveryNo.value='';po.value='';itemNo.value='';itemDesc.value='';qty.value='';fault.value='';photos.length=0;renderPrev();
-          }catch(err){status.style.color='#ef4444';status.textContent='Error: '+err.message;}
-          b.disabled=false;
-        }),
-        btn('View logged NCRs','btn-o',function(){activeTab='list';renderTabs();renderTab();})
-      ),
-      status
-    );
-    box.appendChild(card);
-  }
-
-  async function renderList(box){
-    const lo=dv({cls:'empty'},'Loading...');box.appendChild(lo);
-    const list=await NCRDB.list();lo.remove();
-    if(!list.length){box.appendChild(dv({cls:'empty'},'No NCRs logged yet. Use the “Log an NCR” tab to start one.'));return;}
-    list.forEach(function(n){
-      const card=dv({cls:'card mb3'});
-      card.appendChild(dv({cls:'row jb'},
-        dv({},h('div',{cls:'fw6'},(n.ncr_no||'NCR')+(n.supplier?(' — '+n.supplier):'')),dv({cls:'txs muted'},(n.delivery_no?('Delivery '+n.delivery_no):'')+(n.customer_po?(' · PO '+n.customer_po):''))),
-        ncrPill(n.status||'Open')
-      ));
-      card.appendChild(dv({st:{marginTop:'6px'}},h('div',{cls:'fw6 txs'},((n.item_no||'')+' '+(n.item_desc||'')).trim()),dv({cls:'txs muted'},(n.reason?(n.reason+' · '):'')+'Qty affected: '+(n.qty_affected||'-'))));
-      if(n.damage_description)card.appendChild(dv({st:{fontSize:'13px',margin:'6px 0'}},n.damage_description));
-      if(n.photos&&n.photos.length){const pr=dv({cls:'row gap2',st:{flexWrap:'wrap',margin:'6px 0'}});n.photos.forEach(function(p){pr.appendChild(h('a',{href:p.url,target:'_blank',rel:'noopener'},h('img',{src:p.url,st:{width:'64px',height:'64px',objectFit:'cover',borderRadius:'6px',border:'1px solid var(--border)'}})));});card.appendChild(pr);}
-      card.appendChild(dv({cls:'txs muted'},'Logged by '+(n.created_by_name||'?')+(n.created_at?(' · '+ncrFmtDT(n.created_at)):'')));
-      if(n.acknowledged_at)card.appendChild(dv({st:{fontSize:'11px',fontWeight:'700',color:'#15803d',marginTop:'2px'}},'✓ Office received · '+ncrFmtDT(n.acknowledged_at)));
-      const ctrl=dv({cls:'row gap2',st:{marginTop:'8px',flexWrap:'wrap',alignItems:'flex-end'}});
-      if(isManager()){
-        const stSel=sel(n.status||'Open','Open','Logged with supplier','Resolved');
-        stSel.onchange=async function(){try{const f={status:stSel.value};if(stSel.value==='Resolved')f.resolved_at=new Date().toISOString();if(stSel.value==='Logged with supplier')f.logged_with_supplier=true;await NCRDB.patch(n.id,f);activeTab='list';renderTab();}catch(e){alert('Update failed: '+e.message);}};
-        ctrl.appendChild(frow('Status',stSel));
-        const refIn=inp(n.supplier_ref||'','RA / credit no');refIn.onchange=async function(){try{await NCRDB.patch(n.id,{supplier_ref:refIn.value});}catch(e){alert('Save failed: '+e.message);}};
-        ctrl.appendChild(frow('Supplier ref',refIn));
+    if(!counted.length&&!toOrder.length)return alert('Enter at least one count first.');
+    if(!toOrder.length){
+      if(!confirm('Nothing is at or below minimum — no order will be emailed.\n\nSave the counts anyway?'))return;
+    } else {
+      const lines=toOrder.map(function(x){return '• '+x.product+(x.spec?' ('+x.spec+')':'')+' — order '+x.order_qty+(x.manual?' (manual)':'');}).join('\n');
+      if(!confirm('Send this '+sup.name+' order to the office?\n\n'+lines))return;
+    }
+    submitBtn.disabled=true;msg.textContent='Sending…';msg.style.color='var(--muted,#6b7280)';
+    try{
+      // Save counts
+      const now=new Date().toISOString();
+      await Promise.all(counted.map(function(x){return STOCK.updateItem(x.it.id,{last_count:x.n,last_counted_at:now,last_counted_by:currentUser.name});}));
+      if(toOrder.length){
+        const order=await STOCK.createOrder({supplier:sup.name,items:toOrder,notes:notesIn.value.trim()||null,submitted_by:currentUser.name,status:'sent'});
+        const res=await fetch(XERO_FN+'/stock-order-notify',{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'application/json'},
+          body:JSON.stringify({supplier:sup.name,submitted_by:currentUser.name,notes:notesIn.value.trim(),items:toOrder})});
+        const data=await res.json().catch(function(){return{};});
+        if(!res.ok||!data.ok){
+          msg.textContent='⚠ Order saved but email failed — tell the office. ('+((data&&data.error&&(data.error.message||JSON.stringify(data.error)))||res.status)+')';
+          msg.style.color='#b45309';submitBtn.disabled=false;return;
+        }
+        msg.textContent='✓ Order emailed to the office ('+toOrder.length+' item'+(toOrder.length===1?'':'s')+'). Counts saved.';
+      } else {
+        msg.textContent='✓ Counts saved. Nothing needed ordering.';
       }
-      if(isManager()){ctrl.appendChild(btn('Delete','btn-o btn-sm',async function(){if(confirm('Delete this NCR? This cannot be undone.')){try{await NCRDB.del(n.id);activeTab='list';renderTab();}catch(e){alert('Delete failed: '+e.message);}}}));}
-      if(ctrl.childNodes.length)card.appendChild(ctrl);
-      box.appendChild(card);
-    });
-  }
+      msg.style.color='#15803d';
+      setTimeout(function(){renderStockPage(wrap);},2500);
+    }catch(e){msg.textContent='⚠ '+e;msg.style.color='#b91c1c';submitBtn.disabled=false;}
+  });
+  card.appendChild(dv({st:{padding:'14px 18px',display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap',borderTop:'1px solid var(--border,#e5e7eb)',background:'#fafafa'}},notesIn,submitBtn,msg));
+  body.appendChild(card);
+  renderStockHistory(body);
 }
-
+async function renderStockHistory(body){
+  const orders=await STOCK.orders();
+  if(!orders.length)return;
+  const hist=dv({cls:'card',st:{padding:'0',overflow:'hidden'}});
+  hist.appendChild(dv({st:{padding:'12px 18px',borderBottom:'1px solid var(--border,#e5e7eb)',fontWeight:'700',fontSize:'14px'}},'Recent orders'));
+  orders.forEach(function(o){
+    const its=Array.isArray(o.items)?o.items:[];
+    const line=its.map(function(x){return x.product+(x.spec?' ('+x.spec+')':'')+' ×'+x.order_qty+(x.manual?' (manual)':'');}).join(', ');
+    const stCls={sent:'amber',ordered:'blue',received:'green'}[o.status]||'gray';
+    const row=dv({st:{padding:'10px 18px',borderBottom:'1px solid #f3f4f6',display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap'}},
+      bdg(o.status==='sent'?'Sent to office':o.status==='ordered'?'Ordered':'Received',stCls),
+      sp({st:{fontWeight:'600',fontSize:'13px'}},o.supplier),
+      sp({st:{fontSize:'12px',color:'var(--muted,#6b7280)',flex:'1',minWidth:'160px'}},line),
+      sp({st:{fontSize:'11px',color:'var(--muted,#9ca3af)'}},(o.submitted_by||'')+' · '+ago(o.created_at)));
+    if(isManager()&&o.status!=='received'){
+      row.appendChild(btn(o.status==='sent'?'Mark ordered':'Mark received','btn-o btn-sm',async function(){
+        await STOCK.setOrderStatus(o.id,o.status==='sent'?'ordered':'received');
+        const w=document.getElementById('stock-wrap');if(w)renderStockPage(w);
+      }));
+    }
+    hist.appendChild(row);
+  });
+  body.appendChild(hist);
+}
+function showStockItemForm(supplier,wrap){
+  const p=h('input',{type:'text',placeholder:'e.g. Black Tape'});
+  const s=h('input',{type:'text',placeholder:'e.g. 100mm or PC16 (optional)'});
+  const mn=h('input',{type:'number',min:'0',value:'1'});
+  const oq=h('input',{type:'number',min:'1',value:'1'});
+  const ov=dv({st:{position:'fixed',inset:'0',background:'rgba(0,0,0,0.4)',zIndex:'999',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}});
+  const box=dv({cls:'card',st:{padding:'20px',maxWidth:'420px',width:'100%'}},
+    h('h3',{st:{margin:'0 0 12px',fontSize:'16px'}},'Add item — '+supplier),
+    frow('Product',p),frow('Spec / Code',s),frow('Minimum qty (reorder point)',mn),frow('Order qty (how many to order when low)',oq),
+    dv({cls:'row',st:{gap:'8px',marginTop:'14px',justifyContent:'flex-end'}},
+      btn('Cancel','btn-o',function(){ov.remove();}),
+      btn('Add item','btn-p',async function(){
+        if(!p.value.trim())return alert('Enter a product name');
+        await STOCK.addItem({supplier:supplier,product:p.value.trim(),spec:s.value.trim()||null,min_qty:parseFloat(mn.value)||0,order_qty:parseFloat(oq.value)||1,sort_order:99});
+        ov.remove();renderStockPage(wrap);
+      })));
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.appendChild(box);document.body.appendChild(ov);
+}
 async function pgAdmin(c){
   if(!isAdmin()){c.appendChild(dv({cls:'empty'},'Access denied.'));return;}
   c.appendChild(dv({cls:'row jb mb4'},
     dv({},h('h1',{cls:'page-title'},'Admin Panel'),dv({cls:'page-sub'},'Manage team members, roles, passwords and SWP assignments')),
     btn('🔗 Connect Xero','btn-o',async function(){
-      const res=await fetch(XERO_FN+'/Xero-auth/connect',{headers:SH()});
+      const res=await fetch(XERO_FN+'/Xero-auth/connect');
       const data=await res.json();
       if(data.url)window.location.href=data.url;
       else alert('Could not start Xero connection: '+(data.error||'unknown error'));
