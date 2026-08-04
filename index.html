@@ -4051,12 +4051,12 @@ async function renderStockPage(wrap){
   const card=dv({cls:'card',st:{padding:'0',overflow:'hidden',marginBottom:'16px'}});
   card.appendChild(dv({st:{padding:'14px 18px',borderBottom:'1px solid var(--border,#e5e7eb)',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'8px'}},
     dv({},dv({st:{fontWeight:'700',fontSize:'15px'}},sup.name+' — stock take'),
-      dv({st:{fontSize:'12px',color:'var(--muted,#6b7280)'}},'Enter how many you have left. Leave blank to skip an item. Use Manual order to order extra for a big job — it overrides the normal order qty.')),
+      dv({st:{fontSize:'12px',color:'var(--muted,#6b7280)'}},'Enter how many you have left. Leave blank to skip an item. Use Manual order to order extra for a big job — it overrides the normal order qty. The list order follows the shelf — managers can drag it into shelf order with the ▲▼ arrows and set each item’s shelf location.')),
     isManager()?btn('+ Add item','btn-o btn-sm',function(){showStockItemForm(sup.name,wrap);}):null));
   const tbl=h('table',{st:{width:'100%',borderCollapse:'collapse'}});
   const thst={padding:'8px 12px',fontSize:'11px',color:'var(--muted,#6b7280)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'left',borderBottom:'1px solid var(--border,#e5e7eb)'};
   const hr=h('tr',{});
-  [['Product',null],['Spec / Code',null],['Min','center'],['Order qty','center'],['Qty left','center'],['Manual order','center'],['Status',null]].forEach(function(x){
+  [['Product',null],['Spec / Code',null],['Shelf','center'],['Min','center'],['Order qty','center'],['Qty left','center'],['Manual order','center'],['Status',null]].forEach(function(x){
     const th=h('th',{st:Object.assign({},thst,x[1]?{textAlign:x[1]}:{})},x[0]);hr.appendChild(th);
   });
   tbl.appendChild(hr);
@@ -4077,8 +4077,30 @@ async function renderStockPage(wrap){
   items.forEach(function(it){
     state[it.id]={count:'',force:false,manual:'',orderQty:it.order_qty};
     const tr=h('tr',{});
-    tr.appendChild(h('td',{st:Object.assign({},tdst,{fontWeight:'600'})},it.product));
+    const prodTd=h('td',{st:Object.assign({},tdst,{fontWeight:'600'})});
+    if(isManager()){
+      const arr=dv({st:{display:'inline-flex',flexDirection:'column',marginRight:'8px',verticalAlign:'middle'}});
+      const mkArrow=function(sym,delta){return h('button',{cls:'link-btn',st:{padding:'0 4px',fontSize:'10px',lineHeight:'11px'},title:'Move '+(delta<0?'up':'down')+' — set the list order to match the shelf',onclick:async function(){
+        const i=items.indexOf(it),j=i+delta;if(j<0||j>=items.length)return;
+        items.splice(i,1);items.splice(j,0,it);
+        await Promise.all(items.map(function(x,k){return STOCK.updateItem(x.id,{sort_order:k+1});}));
+        renderStockPage(wrap);
+      }},sym);};
+      arr.appendChild(mkArrow('▲',-1));arr.appendChild(mkArrow('▼',1));
+      prodTd.appendChild(arr);
+    }
+    prodTd.appendChild(document.createTextNode(it.product));
+    tr.appendChild(prodTd);
     tr.appendChild(h('td',{st:Object.assign({},tdst,{color:'var(--muted,#6b7280)'})},it.spec||'—'));
+    // Shelf location (editable for managers, shown to everyone)
+    const shTd=h('td',{st:Object.assign({},tdst,{textAlign:'center'})});
+    if(isManager()){
+      const shIn=h('input',{type:'text',value:it.shelf_location||'',placeholder:'—',
+        st:{width:'70px',textAlign:'center',padding:'4px',border:'1px solid var(--border,#e5e7eb)',borderRadius:'6px',fontSize:'13px'},
+        onchange:function(){it.shelf_location=shIn.value.trim();STOCK.updateItem(it.id,{shelf_location:shIn.value.trim()||null});}});
+      shTd.appendChild(shIn);
+    } else shTd.appendChild(sp({st:{fontWeight:'600',color:'#0369a1'}},it.shelf_location||'—'));
+    tr.appendChild(shTd);
     // Min qty (editable for managers)
     const minTd=h('td',{st:Object.assign({},tdst,{textAlign:'center'})});
     if(isManager()){
