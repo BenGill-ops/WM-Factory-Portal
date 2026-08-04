@@ -4090,6 +4090,10 @@ async function renderStockPage(wrap){
       prodTd.appendChild(arr);
     }
     prodTd.appendChild(document.createTextNode(it.product));
+    if(isManager()){
+      prodTd.appendChild(h('button',{cls:'link-btn',st:{marginLeft:'6px',fontSize:'12px'},title:'Edit this item — name, code, quantities, or remove it',
+        onclick:function(){showStockItemForm(sup.name,wrap,it);}},'✎'));
+    }
     tr.appendChild(prodTd);
     tr.appendChild(h('td',{st:Object.assign({},tdst,{color:'var(--muted,#6b7280)'})},it.spec||'—'));
     // Shelf location (editable for managers, shown to everyone)
@@ -4211,20 +4215,28 @@ async function renderStockHistory(body){
   });
   body.appendChild(hist);
 }
-function showStockItemForm(supplier,wrap){
-  const p=h('input',{type:'text',placeholder:'e.g. Black Tape'});
-  const s=h('input',{type:'text',placeholder:'e.g. 100mm or PC16 (optional)'});
-  const mn=h('input',{type:'number',min:'0',value:'1'});
-  const oq=h('input',{type:'number',min:'1',value:'1'});
+function showStockItemForm(supplier,wrap,item){
+  const p=h('input',{type:'text',placeholder:'e.g. Black Tape',value:item?item.product:''});
+  const s=h('input',{type:'text',placeholder:'e.g. 100mm or PC16 (optional)',value:item&&item.spec?item.spec:''});
+  const sh=h('input',{type:'text',placeholder:'e.g. A3 (optional)',value:item&&item.shelf_location?item.shelf_location:''});
+  const mn=h('input',{type:'number',min:'0',value:item?''+item.min_qty:'1'});
+  const oq=h('input',{type:'number',min:'1',value:item?''+item.order_qty:'1'});
   const ov=dv({st:{position:'fixed',inset:'0',background:'rgba(0,0,0,0.4)',zIndex:'999',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}});
   const box=dv({cls:'card',st:{padding:'20px',maxWidth:'420px',width:'100%'}},
-    h('h3',{st:{margin:'0 0 12px',fontSize:'16px'}},'Add item — '+supplier),
-    frow('Product',p),frow('Spec / Code',s),frow('Minimum qty (reorder point)',mn),frow('Order qty (how many to order when low)',oq),
-    dv({cls:'row',st:{gap:'8px',marginTop:'14px',justifyContent:'flex-end'}},
+    h('h3',{st:{margin:'0 0 12px',fontSize:'16px'}},(item?'Edit item — ':'Add item — ')+supplier),
+    frow('Product',p),frow('Spec / Code',s),frow('Shelf location',sh),frow('Minimum qty (reorder point)',mn),frow('Order qty (how many to order when low)',oq),
+    dv({cls:'row',st:{gap:'8px',marginTop:'14px',justifyContent:'flex-end',flexWrap:'wrap'}},
+      item?btn('Remove item','btn-d',async function(){
+        if(!confirm('Remove "'+item.product+(item.spec?' ('+item.spec+')':'')+'" from the '+supplier+' list?\n\nIt disappears from stock takes but past orders keep their records.'))return;
+        await STOCK.updateItem(item.id,{is_active:false});
+        ov.remove();renderStockPage(wrap);
+      }):null,
       btn('Cancel','btn-o',function(){ov.remove();}),
-      btn('Add item','btn-p',async function(){
+      btn(item?'Save changes':'Add item','btn-p',async function(){
         if(!p.value.trim())return alert('Enter a product name');
-        await STOCK.addItem({supplier:supplier,product:p.value.trim(),spec:s.value.trim()||null,min_qty:parseFloat(mn.value)||0,order_qty:parseFloat(oq.value)||1,sort_order:99});
+        const data={product:p.value.trim(),spec:s.value.trim()||null,shelf_location:sh.value.trim()||null,min_qty:parseFloat(mn.value)||0,order_qty:parseFloat(oq.value)||1};
+        if(item)await STOCK.updateItem(item.id,data);
+        else await STOCK.addItem(Object.assign({supplier:supplier,sort_order:99},data));
         ov.remove();renderStockPage(wrap);
       })));
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
