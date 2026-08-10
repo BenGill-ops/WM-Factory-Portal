@@ -381,6 +381,45 @@ const CDB={
   async updateLeanItem(id,data){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
   async deleteLeanItem(id){const r=await fetch(SB+'/rest/v1/lean_items?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async getSafetyAlerts(){try{const r=await fetch(SB+'/rest/v1/safety_alerts?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  // Server-side ref numbers — the old client-side random suffix could collide.
+  async nextRef(fn,prefix){
+    try{
+      const r=await fetch(SB+'/rest/v1/rpc/'+fn,{method:'POST',headers:SH(),body:'{}'});
+      if(r.ok){const d=await r.json();if(typeof d==='string'&&d)return d;}
+    }catch(e){}
+    const n=new Date();
+    return prefix+'-'+n.getFullYear().toString().slice(2)+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0')+'-'+String(Date.now()%10000).padStart(4,'0');
+  },
+  // ── Toolbox talks ──────────────────────────────────────────────────
+  async getToolboxTalks(){try{const r=await fetch(SB+'/rest/v1/toolbox_talks?order=held_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async getToolboxTalk(id){try{const r=await fetch(SB+'/rest/v1/toolbox_talks?id=eq.'+id,{headers:SH()});const d=await r.json();return Array.isArray(d)?d[0]:null;}catch(e){return null;}},
+  async createToolboxTalk(data){const r=await fetch(SB+'/rest/v1/toolbox_talks',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async updateToolboxTalk(id,data){const r=await fetch(SB+'/rest/v1/toolbox_talks?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async deleteToolboxTalk(id){const r=await fetch(SB+'/rest/v1/toolbox_talks?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
+  async getAttendees(talkId){try{const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?talk_id=eq.'+talkId+'&order=id',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async getAllAttendees(){try{const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?order=id',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
+  async addAttendees(talkId,memberIds){
+    if(!memberIds.length)return[];
+    const rows=memberIds.map(function(id){return{talk_id:talkId,team_member_id:id,is_required:true};});
+    const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?on_conflict=talk_id,team_member_id',{method:'POST',headers:SH({'Prefer':'resolution=ignore-duplicates,return=representation'}),body:JSON.stringify(rows)});
+    return await wr(r);
+  },
+  async removeAttendee(id){const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
+  async updateAttendee(id,data){const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async uploadToolboxSignature(blob,talkId,memberId){
+    const path='toolbox/'+talkId+'-'+memberId+'-'+Date.now()+'.png';
+    const r=await fetch(SB+'/storage/v1/object/safety-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'image/png','x-upsert':'true'},body:blob});
+    if(!r.ok){const e=await r.text();throw new Error('Signature upload failed: '+e);}
+    return SB+'/storage/v1/object/public/safety-photos/'+path;
+  },
+  async deleteSafetyFile(publicUrl){
+    try{
+      const marker='/object/public/safety-photos/';const i=publicUrl.indexOf(marker);
+      if(i<0)return;
+      const path=publicUrl.slice(i+marker.length);
+      await fetch(SB+'/storage/v1/object/safety-photos/'+path,{method:'DELETE',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken()}});
+    }catch(e){}
+  },
   async uploadSafetyPhoto(file,refNo){
     const ext=file.name.split('.').pop();
     const path='alerts/'+refNo+'-'+Date.now()+'.'+ext;
@@ -394,7 +433,9 @@ const CDB={
   async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return m.exclude_from_compliance!==true;});}catch(e){return[];}},
   async getAssessors(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&is_assessor=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPs(){try{const r=await fetch(SB+'/rest/v1/safe_work_practices?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async getSWPsForMember(memberId){try{const[allSwps,assignments]=await Promise.all([this.getSWPs(),this.getAssignments(memberId)]);const assignedIds=new Set(assignments.map(function(a){return a.swp_id;}));return allSwps.filter(function(s){return !s.is_optional||assignedIds.has(s.id);});}catch(e){return this.getSWPs();}},
+  // Applicability rules: an explicit swp_assignments row wins (applies true/false);
+  // with no row, mandatory SWPs apply and optional ones do not.
+  async getSWPsForMember(memberId){try{const[allSwps,assignments]=await Promise.all([this.getSWPs(),this.getAssignments(memberId)]);return filterApplicable(allSwps,assignments);}catch(e){return this.getSWPs();}},
   async getSignoffs(){try{const r=await fetch(SB+'/rest/v1/signoffs?order=created_at.desc',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async createSignoff(data){const r=await fetch(SB+'/rest/v1/signoffs',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
   async updateSignoff(id,data){const r=await fetch(SB+'/rest/v1/signoffs?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
@@ -410,8 +451,15 @@ const CDB={
   },
   async getAssignments(memberId){try{const r=await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getAllAssignments(){try{const r=await fetch(SB+'/rest/v1/swp_assignments',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
-  async assignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments',{method:'POST',headers:SH(),body:JSON.stringify({team_member_id:memberId,swp_id:swpId})});return await wr(r);},
+  async assignSWP(memberId,swpId){return this.setSWPApplies(memberId,swpId,true);},
   async unassignSWP(memberId,swpId){const r=await fetch(SB+'/rest/v1/swp_assignments?team_member_id=eq.'+memberId+'&swp_id=eq.'+swpId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
+  // Upsert an explicit "this SWP does / does not apply to this employee" row.
+  async setSWPApplies(memberId,swpId,applies,reason){
+    const body={team_member_id:memberId,swp_id:swpId,applies:!!applies,excluded_reason:applies?null:(reason||null),updated_at:new Date().toISOString()};
+    if(currentUser)body.assigned_by=currentUser.id;
+    const r=await fetch(SB+'/rest/v1/swp_assignments?on_conflict=team_member_id,swp_id',{method:'POST',headers:SH({'Prefer':'resolution=merge-duplicates,return=representation'}),body:JSON.stringify(body)});
+    const d=await wr(r);return Array.isArray(d)?d[0]:d;
+  },
   async getQuizQuestions(swpId){try{const r=await fetch(SB+'/rest/v1/quiz_questions?swp_id=eq.'+swpId+'&is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getQuizResponses(signoffId){try{const r=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async saveQuizResponses(signoffId,responses){const rd=await fetch(SB+'/rest/v1/quiz_responses?signoff_id=eq.'+signoffId,{method:'DELETE',headers:SH({'Prefer':''})});await wr(rd);if(!responses.length)return;const r=await fetch(SB+'/rest/v1/quiz_responses',{method:'POST',headers:SH(),body:JSON.stringify(responses)});return await wr(r);},
@@ -476,13 +524,40 @@ const CDB={
 function compStatus(so){
   if(!so||!so.self_signed_at)return 'unsigned';
   if(!so.assessor_signed_at)return 'self-only';
+  // A verified sign-off with no expiry date is treated as current, not overdue.
+  if(!so.expires_at)return 'current';
   const exp=new Date(so.expires_at),now=new Date(),days=(exp-now)/86400000;
+  if(isNaN(days))return 'current';
   if(days<0)return 'overdue';if(days<60)return 'due-soon';return 'current';
+}
+// 'current' and 'due-soon' both mean the employee holds a valid, in-date
+// certification. Only these count toward compliance.
+function isCompliant(st){return st==='current'||st==='due-soon';}
+// Tally the five statuses in one place so every view agrees.
+function tallyStatuses(statuses){
+  const t={current:0,'due-soon':0,overdue:0,'self-only':0,unsigned:0};
+  statuses.forEach(function(st){if(t[st]===undefined)t.unsigned++;else t[st]++;});
+  t.compliant=t.current+t['due-soon'];
+  t.total=statuses.length;
+  t.pct=t.total>0?Math.round(t.compliant/t.total*100):0;
+  return t;
+}
+// An explicit swp_assignments row wins (applies true/false). With no row,
+// mandatory SWPs apply and optional ones do not.
+function swpApplies(swp,assignmentRow){
+  if(assignmentRow)return assignmentRow.applies!==false;
+  return !swp.is_optional;
+}
+function filterApplicable(swps,assignments){
+  const byId={};(assignments||[]).forEach(function(a){byId[a.swp_id]=a;});
+  return swps.filter(function(s){return swpApplies(s,byId[s.id]);});
 }
 function statusColor(s){return{current:'#22c55e','due-soon':'#f59e0b',overdue:'#ef4444','self-only':'#3b82f6',unsigned:'#e5e7eb'}[s]||'#e5e7eb';}
 function statusLabel(s){return{current:'Current','due-soon':'Due Soon',overdue:'Overdue','self-only':'Awaiting Assessor',unsigned:'Not Signed'}[s]||'Unknown';}
 let currentUser=null;
 function isAdmin(){return currentUser&&currentUser.role_level==='admin';}
+// Assessor verification is gated on the is_assessor flag, not on job title.
+function isAssessorUser(){return !!(currentUser&&currentUser.is_assessor);}
 function isManager(){return currentUser&&['admin','manager'].includes(currentUser.role_level);}
 function isSupervisor(){return currentUser&&['admin','manager','supervisor'].includes(currentUser.role_level);}
 function canAssess(){return currentUser&&currentUser.is_assessor;}
@@ -776,38 +851,43 @@ async function pgSafe(c){
   c.appendChild(tabBar);c.appendChild(tabContent);
   function renderTabs(){
     tabBar.innerHTML='';
-    [{id:'alerts',label:'Safety Alerts'},{id:'compliance',label:'SWP Compliance'},{id:'log',label:'Sign-off Log'}].forEach(function(t){
+    [{id:'alerts',label:'Safety Alerts'},{id:'toolbox',label:'Toolbox Talks'},{id:'compliance',label:'SWP Compliance'},{id:'log',label:'Sign-off Log'}].forEach(function(t){
       tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;renderTabs();renderTabContent();}},t.label));
     });
   }
   async function renderTabContent(){
     tabContent.innerHTML='';
     if(activeTab==='alerts')await renderAlerts(tabContent);
+    else if(activeTab==='toolbox')await renderToolboxTalks(tabContent);
     else if(activeTab==='compliance')await renderComplianceTiles(tabContent);
     else await renderLog(tabContent);
   }
+  // Allow deep links / other pages to open a specific safety sub-tab
+  window.__openSafetyTab=function(id){activeTab=id;renderTabs();renderTabContent();};
   renderTabs();await renderTabContent();
 }
 
 async function renderComplianceTiles(c){
   const lo=dv({cls:'empty'},'Loading...');c.appendChild(lo);
-  const [members,swps,signoffs]=await Promise.all([CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs()]);
+  const [members,swps,signoffs,allAssignments]=await Promise.all([CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getSignoffs(),CDB.getAllAssignments()]);
   lo.remove();
   // Build lookup
   const lk={};signoffs.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lk[k]||new Date(s.created_at)>new Date(lk[k].created_at))lk[k]=s;});
+  // Per-member applicable SWP set — an SWP an employee never uses is not
+  // counted against them, and never inflates the denominator.
+  const asgnByMember={};allAssignments.forEach(function(a){(asgnByMember[a.team_member_id]=asgnByMember[a.team_member_id]||[]).push(a);});
+  const swpsFor={};members.forEach(function(m){swpsFor[m.id]=filterApplicable(swps,asgnByMember[m.id]);});
   // Overall stats bar
-  let totalCur=0,totalOv=0,totalSelf=0,totalUn=0;
-  members.forEach(function(m){swps.forEach(function(s){
-    const st=compStatus(lk[m.id+'_'+s.id]);
-    if(st==='current')totalCur++;else if(st==='overdue')totalOv++;else if(st==='self-only')totalSelf++;else totalUn++;
-  });});
-  const totalAll=members.length*swps.length;
-  const pct=totalAll>0?Math.round(totalCur/totalAll*100):0;
-  const statRow=dv({cls:'g4 mb4'});
+  const allStatuses=[];
+  members.forEach(function(m){swpsFor[m.id].forEach(function(s){allStatuses.push(compStatus(lk[m.id+'_'+s.id]));});});
+  const T=tallyStatuses(allStatuses);
+  const pct=T.pct;
+  const statRow=dv({cls:'mb4',st:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'12px'}});
   [{v:pct+'%',l:'Overall Compliance',col:pct>=90?'#22c55e':pct>=70?'#f59e0b':'#ef4444'},
-   {v:totalOv,l:'Overdue',col:'#ef4444'},
-   {v:totalSelf,l:'Awaiting Assessor',col:'#3b82f6'},
-   {v:totalUn,l:'Not Signed',col:'#9ca3af'}
+   {v:T['due-soon'],l:'Due Soon (60 days)',col:'#f59e0b'},
+   {v:T.overdue,l:'Overdue',col:'#ef4444'},
+   {v:T['self-only'],l:'Awaiting Assessor',col:'#3b82f6'},
+   {v:T.unsigned,l:'Not Signed',col:'#9ca3af'}
   ].forEach(function(x){
     statRow.appendChild(dv({cls:'stat-card'},dv({cls:'stat-val',st:{color:x.col}},''+x.v),dv({cls:'stat-lbl'},x.l)));
   });
@@ -815,23 +895,22 @@ async function renderComplianceTiles(c){
   // Export button
   c.appendChild(dv({cls:'row jb mb3'},
     dv({cls:'fw6',st:{fontSize:'14px'}},'Team Members'),
-    btn('Export CSV','btn-o btn-sm',function(){exportCSV(members,swps,lk);})
+    btn('Export CSV','btn-o btn-sm',function(){exportCSV(members,swps,lk,swpsFor);})
   ));
   // Employee tiles grid
   const grid=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px'}});
   members.forEach(function(member){
-    let cur=0,ov=0,self=0,un=0;
-    swps.forEach(function(s){
-      const st=compStatus(lk[member.id+'_'+s.id]);
-      if(st==='current')cur++;else if(st==='overdue')ov++;else if(st==='self-only')self++;else un++;
-    });
-    const mpct=swps.length>0?Math.round(cur/swps.length*100):0;
+    const mySwps=swpsFor[member.id]||[];
+    const mt=tallyStatuses(mySwps.map(function(s){return compStatus(lk[member.id+'_'+s.id]);}));
+    const cur=mt.current,ds=mt['due-soon'],ov=mt.overdue,self=mt['self-only'],un=mt.unsigned;
+    const naCount=swps.length-mySwps.length;
+    const mpct=mt.pct;
     const ini=member.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
     const rc={admin:'#7c3aed',manager:'#15803d',supervisor:'#0369a1',team_member:'#374151'};
     const tile=dv({cls:'card',st:{cursor:'pointer',transition:'box-shadow 0.15s,transform 0.15s',padding:'16px'}});
     tile.onmouseenter=function(){tile.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)';tile.style.transform='translateY(-2px)';};
     tile.onmouseleave=function(){tile.style.boxShadow='';tile.style.transform='';};
-    tile.onclick=async function(){const mswps=await CDB.getSWPsForMember(member.id);renderMemberSWPs(c,member,mswps,lk,signoffs,members);};
+    tile.onclick=function(){renderMemberSWPs(c,member,mySwps,lk,signoffs,members);};
     // Avatar + name
     tile.appendChild(dv({cls:'row gap3 mb3'},
       dv({st:{width:'44px',height:'44px',borderRadius:'50%',background:rc[member.role_level]||'var(--green-light)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'700',flexShrink:'0'}},ini),
@@ -851,9 +930,11 @@ async function renderComplianceTiles(c){
     // Status dots row
     const dots=dv({cls:'row gap2',st:{flexWrap:'wrap'}});
     if(cur>0)dots.appendChild(dv({cls:'row gap1'},dv({st:{width:'8px',height:'8px',borderRadius:'50%',background:'#22c55e',flexShrink:'0'}}),sp({cls:'txs muted'},cur+' current')));
+    if(ds>0)dots.appendChild(dv({cls:'row gap1'},dv({st:{width:'8px',height:'8px',borderRadius:'50%',background:'#f59e0b',flexShrink:'0'}}),sp({st:{fontSize:'11px',fontWeight:'600',color:'#b45309'}},ds+' due soon')));
     if(self>0)dots.appendChild(dv({cls:'row gap1'},dv({st:{width:'8px',height:'8px',borderRadius:'50%',background:'#3b82f6',flexShrink:'0'}}),sp({cls:'txs muted'},self+' waiting')));
     if(ov>0)dots.appendChild(dv({cls:'row gap1'},dv({st:{width:'8px',height:'8px',borderRadius:'50%',background:'#ef4444',flexShrink:'0'}}),sp({st:{fontSize:'11px',fontWeight:'600',color:'#ef4444'}},ov+' overdue')));
     if(un>0)dots.appendChild(dv({cls:'row gap1'},dv({st:{width:'8px',height:'8px',borderRadius:'50%',background:'#e5e7eb',flexShrink:'0'}}),sp({cls:'txs muted'},un+' not signed')));
+    if(naCount>0)dots.appendChild(dv({cls:'row gap1'},sp({cls:'txs muted',st:{fontStyle:'italic'}},naCount+' n/a')));
     tile.appendChild(dots);
     grid.appendChild(tile);
   });
@@ -963,6 +1044,8 @@ async function openSOMdl(member,swp,so,onSave){
       if(!confirm('Revoke all sign-offs for this SWP?'))return;
       await CDB.updateSignoff(so.id,{self_signed_at:null,self_signed_initials:null,status:'pending',assessor_signed_at:null,assessor_signed_initials:null,assessor_name:null,expires_at:null});
       await CDB.saveCompetencyResponses(so.id,[]);
+      // Clear quiz responses too, otherwise the retrain skips the quiz.
+      await CDB.saveQuizResponses(so.id,[]);
       overlay.remove();onSave();
     })));
   } else {
@@ -1155,6 +1238,9 @@ async function openSOMdl(member,swp,so,onSave){
       if(quizQuestions.length>0&&!quizAlreadyDone&&!quizSubmitted)return alert('Please press "Submit Quiz" to check your answers before signing.');
       if(quizQuestions.length>0&&!quizAlreadyDone&&!quizPassed)return alert('Quiz score below 70%. Review the training material, then close and reopen this sign-off to retake the quiz.');
       if(compItems.length>0&&Object.keys(selfRatings).length<compItems.length)return alert('Please rate all competency items before signing.');
+      // An SWP with no competency items cannot be signed off as competent —
+      // otherwise a blank self-assessment counts as training.
+      if(compItems.length===0)return alert('This SWP has no competency checklist set up yet, so it cannot be signed off.\n\nAsk a manager to add the competency items first.');
       const ini=iniIn.value.trim().toUpperCase();
       if(!ini)return alert('Please enter your initials.');
       if(!confirm('Confirm: '+member.name+' has completed the self-assessment for "'+swp.title+'"?'))return;
@@ -1230,12 +1316,15 @@ async function openSOMdl(member,swp,so,onSave){
         overlay.remove();onSave();
       })
     ));
-  } else if(selfSigned&&isSupervisor()){
+  } else if(selfSigned&&isAssessorUser()&&currentUser.id!==member.id){
     step3.appendChild(dv({cls:'txs muted mb3'},'Rate each competency independently based on direct observation, then sign off.'));
-    // Assessor dropdown
-    const aDropWrap=dv({cls:'fg mb2'});aDropWrap.appendChild(h('label',{},'Select Assessor'));
-    const aDrop=h('select',{});aDrop.appendChild(h('option',{value:''},'Loading...'));aDropWrap.appendChild(aDrop);step3.appendChild(aDropWrap);
-    CDB.getAssessors().then(function(assessors){aDrop.innerHTML='';aDrop.appendChild(h('option',{value:''},'-- Select assessor --'));assessors.forEach(function(a){if(a.id===member.id)return;aDrop.appendChild(h('option',{value:a.id+'|'+a.name},a.name+(a.role?' ('+a.role+')':'')));});});
+    // The assessor IS the signed-in user. A signature can no longer be
+    // attributed to someone who was not present — the database enforces this
+    // too, so a mismatched name is rejected server-side.
+    step3.appendChild(dv({st:{padding:'10px 12px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'8px',marginBottom:'12px'}},
+      dv({cls:'txs',st:{color:'#1e40af',fontWeight:'600'}},'Signing as assessor: '+currentUser.name),
+      dv({cls:'txs muted mt1'},'You are signing this verification in your own name. If someone else assessed '+member.name+', they must sign it from their own login.')
+    ));
 
     // Assessor competency ratings
     const assRatings={};
@@ -1285,15 +1374,16 @@ async function openSOMdl(member,swp,so,onSave){
     step3.appendChild(dv({cls:'fg mb2 mt3',st:{maxWidth:'220px'}},h('label',{},'Assessor initials'),aIni));
     step3.appendChild(dv({cls:'fg mb3'},h('label',{},'Comments'),aComments));
 
-    step3.appendChild(btn('Confirm All Competencies Verified','btn-p',async function(){
-      const selVal=aDrop.value;if(!selVal)return alert('Please select an assessor');
-      const aName=selVal.split('|')[1];const aId=parseInt(selVal.split('|')[0]);
+    const vBtn=btn('Confirm All Competencies Verified','btn-p',async function(){
+      const aName=currentUser.name;const aId=currentUser.id;
       const ini=aIni.value.trim().toUpperCase();if(!ini)return alert('Please enter assessor initials');
       if(aId===member.id)return alert('An employee cannot be their own assessor.');
       if(compItems.length>0&&Object.keys(assRatings).length<compItems.length)return alert('Please rate all competency items before signing off.');
       if(!confirm('Confirm: '+aName+' has verified all competencies for '+member.name+'?'))return;
       const now=new Date();const exp=new Date(now);exp.setMonth(exp.getMonth()+(swp.renewal_months||12));
-      await CDB.updateSignoff(so.id,{assessor_signed_at:now.toISOString(),assessor_signed_initials:ini,assessor_name:aName,expires_at:exp.toISOString(),status:'current',notes:aComments.value||null});
+      vBtn.disabled=true;vBtn.textContent='Saving...';
+      try{
+      await CDB.updateSignoff(so.id,{assessor_signed_at:now.toISOString(),assessor_signed_initials:ini,assessor_name:aName,assessor_member_id:aId,expires_at:exp.toISOString(),status:'current',notes:aComments.value||null});
       // Update competency responses with assessor ratings
       const updatedResponses=compItems.map(function(item){
         const selfResp=existingResponses.find(function(r){return r.competency_item_id===item.id;});
@@ -1301,9 +1391,20 @@ async function openSOMdl(member,swp,so,onSave){
       });
       await CDB.saveCompetencyResponses(so.id,updatedResponses);
       overlay.remove();onSave();
-    }));
+      }catch(err){
+        vBtn.disabled=false;vBtn.textContent='Confirm All Competencies Verified';
+        alert('Sign-off rejected: '+(err&&err.message?err.message:err));
+      }
+    });
+    step3.appendChild(vBtn);
   } else if(selfSigned){
-    step3.appendChild(dv({cls:'txs muted',st:{fontStyle:'italic'}},'Awaiting authorised assessor: Ben Gill, Mick Rosolen, Tom Shearer or Scott Bartrim.'));
+    // Names come from the is_assessor flag, not a hardcoded list.
+    const waitMsg=dv({cls:'txs muted',st:{fontStyle:'italic'}},'Awaiting an authorised assessor.');
+    step3.appendChild(waitMsg);
+    CDB.getAssessors().then(function(as){
+      const names=as.filter(function(a){return a.id!==member.id;}).map(function(a){return a.name;});
+      if(names.length)waitMsg.textContent='Awaiting authorised assessor: '+names.join(', ')+'. They must sign in as themselves to verify.';
+    });
   } else {
     step3.appendChild(dv({cls:'txs muted',st:{fontStyle:'italic'}},'Employee must complete self-assessment first.'));
   }
@@ -3189,7 +3290,7 @@ async function renderAlerts(c){
   const hdr=dv({cls:'row jb mb4'});
   hdr.appendChild(dv({},dv({cls:'fw6',st:{fontSize:'14px'}},'Safety Alerts & Concerns'),dv({cls:'txs muted mt1'},'Logged safety issues, hazards and concerns')));
   if(currentUser){
-    hdr.appendChild(btn('+ Raise Alert','btn-p',function(){showSafetyAlertForm(c);}));
+    hdr.appendChild(btn('+ Raise Alert','btn-p',function(){showSafetyAlertForm(c,function(){loadAndRender();});}));
   } else {
     hdr.appendChild(dv({cls:'txs muted',st:{fontStyle:'italic',alignSelf:'center'}},'Sign in to raise an alert'));
   }
@@ -3246,10 +3347,9 @@ function renderAlertCard(c,a,onRefresh){
       acts.appendChild(btn(a.is_pinned?'Unpin':'Pin','btn-o btn-sm',async function(){
         await CDB.updateSafetyAlert(a.id,{is_pinned:!a.is_pinned});onRefresh();
       }));
-      acts.appendChild(btn('Archive','btn-o btn-sm',async function(){
-        if(!confirm('Archive this alert?'))return;
-        await CDB.updateSafetyAlert(a.id,{is_archived:true,is_pinned:false});onRefresh();
-      }));
+      // An alert is closed by recording what was actually done about it,
+      // not by being quietly archived.
+      acts.appendChild(btn('Close out','btn-p btn-sm',function(){showAlertCloseOut(a,onRefresh);}));
     } else {
       acts.appendChild(btn('Restore','btn-o btn-sm',async function(){
         await CDB.updateSafetyAlert(a.id,{is_archived:false});onRefresh();
@@ -3290,6 +3390,23 @@ function renderAlertCard(c,a,onRefresh){
       }
     }catch(e){}
   }
+  // Corrective action
+  if(a.assigned_to_name||a.due_date){
+    const act=dv({cls:'row gap3 mb2',st:{flexWrap:'wrap',padding:'6px 10px',background:'#f8faf7',borderRadius:'6px'}});
+    if(a.assigned_to_name)act.appendChild(sp({cls:'txs'},'Assigned to '+a.assigned_to_name));
+    if(a.due_date){
+      const overdue=!a.closed_at&&new Date(a.due_date)<new Date();
+      act.appendChild(sp({cls:'txs',st:{color:overdue?'#dc2626':'var(--muted)',fontWeight:overdue?'700':'400'}},'Due '+new Date(a.due_date).toLocaleDateString('en-AU')+(overdue?' — OVERDUE':'')));
+    }
+    card.appendChild(act);
+  }
+  if(a.action_taken){
+    card.appendChild(dv({st:{padding:'8px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'6px',marginBottom:'8px'}},
+      dv({cls:'txs fw6',st:{color:'#15803d',marginBottom:'2px'}},'Action taken'),
+      dv({st:{fontSize:'12.5px',color:'#374151',lineHeight:'1.5'}},a.action_taken),
+      a.closed_by_name&&dv({cls:'txs muted mt1'},'Closed by '+a.closed_by_name+(a.closed_at?' · '+new Date(a.closed_at).toLocaleDateString('en-AU'):''))
+    ));
+  }
   // Footer
   const footer=dv({cls:'row gap3',st:{flexWrap:'wrap'}});
   footer.appendChild(sp({cls:'txs muted'},'Raised by '+a.raised_by));
@@ -3299,7 +3416,34 @@ function renderAlertCard(c,a,onRefresh){
   c.appendChild(card);
 }
 
-function showSafetyAlertForm(c){
+// Close out an alert by recording the control that was actually put in place.
+function showAlertCloseOut(a,onRefresh){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'520px',maxWidth:'95vw'}});
+  modal.appendChild(dv({cls:'modal-title'},'Close out: '+a.title));
+  modal.appendChild(dv({cls:'txs muted mb3'},'Record what was done to control this hazard. This becomes part of the safety record, so be specific.'));
+  const actIn=h('textarea',{rows:'4',placeholder:'e.g. Guard refitted to the saw and checked by M. Rosolen; operators re-briefed at toolbox talk 12/08.'});
+  modal.appendChild(dv({cls:'fg mb3'},h('label',{},'Action taken *'),actIn));
+  const saveBtn=btn('Close out alert','btn-p',async function(){
+    const txt=actIn.value.trim();
+    if(!txt)return alert('Please record what was done before closing this alert.');
+    saveBtn.disabled=true;saveBtn.textContent='Saving...';
+    try{
+      await CDB.updateSafetyAlert(a.id,{
+        action_taken:txt,is_archived:true,is_pinned:false,
+        closed_by_member_id:currentUser?currentUser.id:null,
+        closed_by_name:currentUser?currentUser.name:null,
+        closed_at:new Date().toISOString()
+      });
+      overlay.remove();onRefresh();
+    }catch(e){saveBtn.disabled=false;saveBtn.textContent='Close out alert';alert('Could not close alert: '+e.message);}
+  });
+  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},btn('Cancel','btn-o',function(){overlay.remove();}),saveBtn));
+  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
+  setTimeout(function(){actIn.focus();},50);
+}
+
+function showSafetyAlertForm(c,onDone){
   const overlay=dv({cls:'modal-overlay'});
   const modal=dv({cls:'modal'});
   modal.appendChild(dv({cls:'modal-title'},'Raise Safety Alert'));
@@ -3311,15 +3455,22 @@ function showSafetyAlertForm(c){
   const locIn=inp('','Location / area (e.g. Fab Bay 3)');
   const contIn=h('textarea',{rows:'4',placeholder:'Describe the hazard or concern in detail...'});
   const pinChk=h('input',{type:'checkbox',st:{width:'14px',height:'14px',accentColor:'var(--green)',cursor:'pointer'}});
+  // Who is fixing this, and by when — a hazard report with no owner is a note.
+  const asgSel=h('select',{});asgSel.appendChild(h('option',{value:''},'— Unassigned —'));
+  CDB.getMembers().then(function(ms){ms.forEach(function(m){asgSel.appendChild(h('option',{value:''+m.id},m.name));});});
+  const dueIn=h('input',{type:'date'});
   const g=dv({cls:'g2 mb2'});
   g.appendChild(frow('Category',catSel));g.appendChild(frow('Priority',priSel));
   const g2=dv({cls:'g2 mb2'});
   g2.appendChild(frow('Department',deptSel));g2.appendChild(frow('Location',locIn));
+  const g3=dv({cls:'g2 mb2'});
+  g3.appendChild(frow('Assign to',asgSel));g3.appendChild(frow('Action due by',dueIn));
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Title'),tiIn));
-  modal.appendChild(g);modal.appendChild(g2);
+  modal.appendChild(g);modal.appendChild(g2);modal.appendChild(g3);
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Details'),contIn));
   // Photo upload section
   const photoUrls=[];
+  let saved=false;   // set true once the alert is written, so cancel can clean up
   const photoPreviewRow=dv({cls:'row gap2 mb2',st:{flexWrap:'wrap'}});
   const photoInput=h('input',{type:'file',st:{display:'none'}});
   photoInput.accept='image/*';
@@ -3332,14 +3483,15 @@ function showSafetyAlertForm(c){
     addPhotoBtn.textContent='Uploading...';addPhotoBtn.disabled=true;
     photoUploadStatus.textContent='';
     try{
-      const url=await CDB.uploadSafetyPhoto(file,'TEMP-'+Date.now());
+      const url=await CDB.uploadSafetyPhoto(file,'alert');
       photoUrls.push(url);
       // Show preview
       const preview=dv({st:{position:'relative',display:'inline-block'}});
       const img=h('img',{src:url,st:{width:'80px',height:'80px',objectFit:'cover',borderRadius:'6px',border:'1px solid var(--border)'}});
       const delBtn=dv({st:{position:'absolute',top:'-6px',right:'-6px',width:'18px',height:'18px',borderRadius:'50%',background:'#ef4444',color:'#fff',fontSize:'11px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',lineHeight:'1'}});
       delBtn.textContent='×';
-      delBtn.onclick=function(){photoUrls.splice(photoUrls.indexOf(url),1);preview.remove();if(photoUrls.length<3)addPhotoBtn.style.display='';};
+      // Actually remove the file, not just the thumbnail.
+      delBtn.onclick=function(){photoUrls.splice(photoUrls.indexOf(url),1);preview.remove();CDB.deleteSafetyFile(url);if(photoUrls.length<3)addPhotoBtn.style.display='';};
       preview.appendChild(img);preview.appendChild(delBtn);
       photoPreviewRow.appendChild(preview);
       if(photoUrls.length>=3)addPhotoBtn.style.display='none';
@@ -3353,14 +3505,19 @@ function showSafetyAlertForm(c){
     photoPreviewRow
   ));
   modal.appendChild(photoInput);
-  modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},pinChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Pin to dashboard')));
+  modal.appendChild(dv({cls:'row gap2 mb3',st:{alignItems:'center'}},pinChk,sp({st:{fontSize:'13px',fontWeight:'600'}},'Pin to dashboard'),sp({cls:'txs muted'},'(Critical and High pin automatically)')));
+  // Abandoning the form must not leave uploaded photos stranded in storage.
+  function discard(){if(!saved)photoUrls.forEach(function(u){CDB.deleteSafetyFile(u);});overlay.remove();}
   modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
-    btn('Cancel','btn-o',function(){overlay.remove();}),
+    btn('Cancel','btn-o',discard),
     btn('Raise Alert','btn-p',async function(){
       if(!tiIn.value.trim())return alert('Please enter a title');
       if(!contIn.value.trim())return alert('Please describe the issue');
-      const now=new Date();
-      const refNo='SA-'+now.getFullYear().toString().slice(2)+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'-'+String(Math.floor(Math.random()*900)+100);
+      // Critical and High alerts are pinned automatically so they cannot be
+      // raised and then go unseen.
+      const autoPin=pinChk.checked||priSel.value==='Critical'||priSel.value==='High';
+      const refNo=await CDB.nextRef('next_safety_ref','SA');
+      const asgId=asgSel.value?parseInt(asgSel.value):null;
       await CDB.createSafetyAlert({
         ref_no:refNo,
         title:tiIn.value.trim(),
@@ -3369,18 +3526,418 @@ function showSafetyAlertForm(c){
         dept:deptSel.value||null,
         location:locIn.value.trim()||null,
         content:contIn.value.trim(),
-        is_pinned:pinChk.checked,
+        is_pinned:autoPin,
         is_archived:false,
         raised_by:currentUser?currentUser.name:'Unknown',
+        raised_by_member_id:currentUser?currentUser.id:null,
+        assigned_to_member_id:asgId,
+        assigned_to_name:asgId?(asgSel.options[asgSel.selectedIndex].textContent||null):null,
+        due_date:dueIn.value||null,
         photo_urls:photoUrls.length>0?JSON.stringify(photoUrls):null
       });
+      saved=true;
       overlay.remove();
-      // Refresh the alerts list
-      const listWrap=document.getElementById('sal');
-      if(listWrap){listWrap.innerHTML='';const alerts2=await CDB.getSafetyAlerts();alerts2.filter(function(a){return !a.is_archived;}).forEach(function(a){renderAlertCard(listWrap,a,function(){go('safety');});});}
+      if(onDone)onDone();
     })
   ));
+  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)discard();};document.body.appendChild(overlay);
+}
+
+// ── TOOLBOX TALKS ─────────────────────────────────────────────────────
+// A toolbox talk is a record that a safety conversation happened and who was
+// party to it. The evidence is a drawn signature per attendee, captured on a
+// phone or tablet on the floor. Everyone signs for themselves — the database
+// rejects a signature saved against anyone but the signed-in user.
+const TBT_CATEGORIES=['General Safety','Machine Safety','Manual Handling','Hazardous Materials','Electrical','Fire & Emergency','Housekeeping','Slip/Trip/Fall','Quality','Incident Review','Other'];
+
+async function renderToolboxTalks(c){
+  c.innerHTML='';   // may be returning from the detail view
+  const hdr=dv({cls:'row jb mb4'});
+  hdr.appendChild(dv({},
+    dv({cls:'fw6',st:{fontSize:'14px'}},'Toolbox Talks'),
+    dv({cls:'txs muted mt1'},'Signed records of safety conversations held with the team')
+  ));
+  if(isSupervisor())hdr.appendChild(btn('+ New Toolbox Talk','btn-p',function(){showToolboxTalkForm(function(id){openToolboxTalk(c,id);});}));
+  c.appendChild(hdr);
+
+  const listWrap=dv({});c.appendChild(listWrap);
+
+  async function load(){
+    listWrap.innerHTML='<div class="empty">Loading...</div>';
+    const [talks,attendees,members]=await Promise.all([CDB.getToolboxTalks(),CDB.getAllAttendees(),CDB.getMembers()]);
+    listWrap.innerHTML='';
+    const mMap={};members.forEach(function(m){mMap[m.id]=m;});
+    const byTalk={};attendees.forEach(function(a){(byTalk[a.talk_id]=byTalk[a.talk_id]||[]).push(a);});
+
+    // "You still need to sign" banner — the whole point of the tab for a
+    // factory employee is to find their own outstanding sign-offs fast.
+    if(currentUser){
+      const mine=attendees.filter(function(a){return a.team_member_id===currentUser.id&&!a.signed_at;});
+      if(mine.length){
+        const banner=dv({st:{padding:'12px 14px',borderRadius:'10px',border:'1px solid #fde68a',background:'#fffbeb',marginBottom:'14px'}});
+        banner.appendChild(dv({cls:'fw6',st:{fontSize:'13px',color:'#92400e',marginBottom:'6px'}},'You have '+mine.length+' toolbox talk'+(mine.length>1?'s':'')+' to sign'));
+        mine.forEach(function(a){
+          const talk=talks.find(function(t){return t.id===a.talk_id;});
+          if(!talk)return;
+          const row=dv({cls:'row jb mb2',st:{alignItems:'center'}});
+          row.appendChild(dv({},sp({cls:'txs muted',st:{fontFamily:'monospace'}},talk.ref_no+'  '),sp({cls:'fw6 tsm'},talk.title)));
+          row.appendChild(btn('Sign now','btn-p btn-sm',function(){openToolboxSignature(talk,a,load);}));
+          banner.appendChild(row);
+        });
+        listWrap.appendChild(banner);
+      }
+    }
+
+    if(!talks.length){listWrap.appendChild(dv({cls:'empty'},'No toolbox talks recorded yet.'));return;}
+
+    talks.forEach(function(t){
+      const att=byTalk[t.id]||[];
+      const signed=att.filter(function(a){return a.signed_at;}).length;
+      const total=att.length;
+      const pct=total>0?Math.round(signed/total*100):0;
+      const complete=total>0&&signed===total;
+      const card=dv({cls:'card mb3',st:{borderLeft:'4px solid '+(complete?'#22c55e':'#f59e0b'),cursor:'pointer'}});
+      card.onclick=function(){openToolboxTalk(c,t.id);};
+      card.appendChild(dv({cls:'row jb mb2'},
+        dv({cls:'row gap2',st:{flexWrap:'wrap'}},
+          bdg(t.category||'General Safety','gray'),
+          bdg(complete?'All signed':signed+' of '+total+' signed',complete?'green':'amber'),
+          t.status==='closed'&&bdg('Closed','gray')
+        ),
+        sp({cls:'txs muted'},new Date(t.held_at).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'}))
+      ));
+      card.appendChild(dv({cls:'row gap2 mb1',st:{alignItems:'baseline'}},
+        sp({st:{fontFamily:'monospace',fontSize:'11px',color:'var(--muted)',flexShrink:'0'}},t.ref_no),
+        dv({cls:'fw6',st:{fontSize:'14px'}},t.title)
+      ));
+      if(t.content)card.appendChild(dv({st:{fontSize:'13px',color:'#374151',lineHeight:'1.6',marginBottom:'8px',display:'-webkit-box',WebkitLineClamp:'2',WebkitBoxOrient:'vertical',overflow:'hidden'}},t.content));
+      card.appendChild(dv({cls:'pb-row mb2'},dv({cls:'pb-fill',st:{width:pct+'%',background:complete?'#22c55e':'#f59e0b'}})));
+      const foot=dv({cls:'row gap3',st:{flexWrap:'wrap'}});
+      foot.appendChild(sp({cls:'txs muted'},'Presented by '+(t.presenter_name||'—')));
+      if(t.location)foot.appendChild(sp({cls:'txs muted'},'📍 '+t.location));
+      const unsignedNames=att.filter(function(a){return !a.signed_at;}).map(function(a){return mMap[a.team_member_id]?mMap[a.team_member_id].name:'?';});
+      if(unsignedNames.length)foot.appendChild(sp({cls:'txs',st:{color:'#b45309'}},'Outstanding: '+unsignedNames.join(', ')));
+      card.appendChild(foot);
+      listWrap.appendChild(card);
+    });
+  }
+  await load();
+}
+
+// Create the talk and pick who was in the room.
+function showToolboxTalkForm(onCreated){
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'620px',maxWidth:'95vw'}});
+  modal.appendChild(dv({cls:'modal-title'},'New Toolbox Talk'));
+  modal.appendChild(dv({cls:'txs muted mb3'},'Record the talk first, then the team sign it. You can hold the talk now or back-date one you have already run.'));
+
+  const tiIn=inp('','e.g. Safe use of the Yilmaz mitre saw');
+  const catSel=sel('General Safety',...TBT_CATEGORIES);
+  const locIn=inp('','Location (e.g. Fabrication floor)');
+  // Default to now, in the user's local time, formatted for datetime-local
+  const nowLocal=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const whenIn=h('input',{type:'datetime-local'});whenIn.value=nowLocal;
+  const contIn=h('textarea',{rows:'4',placeholder:'What was covered — the key points of the conversation...'});
+  const hazIn=h('textarea',{rows:'2',placeholder:'Hazards discussed (optional)'});
+  const ctrlIn=h('textarea',{rows:'2',placeholder:'Controls agreed (optional)'});
+  const actIn=h('textarea',{rows:'2',placeholder:'Follow-up actions (optional)'});
+
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Topic *'),tiIn));
+  const g1=dv({cls:'g2 mb2'});g1.appendChild(frow('Category',catSel));g1.appendChild(frow('Date & time held',whenIn));
+  modal.appendChild(g1);
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Location'),locIn));
+  modal.appendChild(dv({cls:'fg mb2'},h('label',{},'What was covered *'),contIn));
+  const g2=dv({cls:'g2 mb2'});g2.appendChild(frow('Hazards discussed',hazIn));g2.appendChild(frow('Controls agreed',ctrlIn));
+  modal.appendChild(g2);
+  modal.appendChild(dv({cls:'fg mb3'},h('label',{},'Follow-up actions'),actIn));
+
+  // Attendee picker
+  modal.appendChild(dv({cls:'fw6 tsm mb2'},'Who attended?'));
+  modal.appendChild(dv({cls:'txs muted mb2'},'Tick everyone who was in the talk. Each person signs for themselves afterwards.'));
+  const attWrap=dv({st:{maxHeight:'220px',overflowY:'auto',border:'1px solid var(--border)',borderRadius:'8px',padding:'8px',marginBottom:'12px'}});
+  const picked={};
+  const selAllRow=dv({cls:'row gap2 mb2'});
+  modal.appendChild(selAllRow);
+  modal.appendChild(attWrap);
+  CDB.getFactoryMembers().then(function(ms){
+    attWrap.innerHTML='';
+    if(!ms.length){attWrap.appendChild(dv({cls:'empty'},'No factory employees found.'));return;}
+    ms.forEach(function(m){
+      const row=dv({cls:'row gap2',st:{alignItems:'center',padding:'5px 6px',borderRadius:'6px'}});
+      const chk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',cursor:'pointer',accentColor:'var(--green)'}});
+      chk.checked=true;picked[m.id]=true;
+      chk.onchange=function(){picked[m.id]=chk.checked;};
+      row.appendChild(chk);
+      row.appendChild(sp({st:{fontSize:'13px'}},m.name));
+      row.appendChild(sp({cls:'txs muted'},m.role||''));
+      attWrap.appendChild(row);
+    });
+    selAllRow.appendChild(btn('Select all','btn-o btn-sm',function(){attWrap.querySelectorAll('input').forEach(function(i){if(!i.checked)i.click();});}));
+    selAllRow.appendChild(btn('Clear all','btn-o btn-sm',function(){attWrap.querySelectorAll('input').forEach(function(i){if(i.checked)i.click();});}));
+  });
+
+  const saveBtn=btn('Create talk','btn-p',async function(){
+    if(!tiIn.value.trim())return alert('Please enter the topic of the talk.');
+    if(!contIn.value.trim())return alert('Please record what was covered.');
+    const ids=Object.keys(picked).filter(function(k){return picked[k];}).map(Number);
+    if(!ids.length)return alert('Please tick at least one attendee.');
+    saveBtn.disabled=true;saveBtn.textContent='Saving...';
+    try{
+      const refNo=await CDB.nextRef('next_toolbox_ref','TBT');
+      const talk=await CDB.createToolboxTalk({
+        ref_no:refNo,
+        title:tiIn.value.trim(),
+        category:catSel.value,
+        held_at:whenIn.value?new Date(whenIn.value).toISOString():new Date().toISOString(),
+        location:locIn.value.trim()||null,
+        presenter_member_id:currentUser?currentUser.id:null,
+        presenter_name:currentUser?currentUser.name:null,
+        content:contIn.value.trim(),
+        hazards:hazIn.value.trim()||null,
+        controls:ctrlIn.value.trim()||null,
+        actions:actIn.value.trim()||null,
+        status:'open',
+        created_by_member_id:currentUser?currentUser.id:null
+      });
+      await CDB.addAttendees(talk.id,ids);
+      overlay.remove();
+      if(onCreated)onCreated(talk.id);
+    }catch(e){saveBtn.disabled=false;saveBtn.textContent='Create talk';alert('Could not create talk: '+(e&&e.message?e.message:e));}
+  });
+  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},btn('Cancel','btn-o',function(){overlay.remove();}),saveBtn));
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
+  setTimeout(function(){tiIn.focus();},50);
+}
+
+// Detail view: the talk plus the sign-on sheet.
+async function openToolboxTalk(c,talkId){
+  c.innerHTML='';
+  const lo=dv({cls:'empty'},'Loading...');c.appendChild(lo);
+  const [talk,attendees,members]=await Promise.all([CDB.getToolboxTalk(talkId),CDB.getAttendees(talkId),CDB.getMembers()]);
+  lo.remove();
+  if(!talk){c.appendChild(dv({cls:'empty'},'Talk not found.'));return;}
+  const mMap={};members.forEach(function(m){mMap[m.id]=m;});
+
+  function refresh(){openToolboxTalk(c,talkId);}
+
+  c.appendChild(dv({cls:'row gap3 mb3',st:{alignItems:'center'}},
+    btn('← Back','btn-o',function(){renderToolboxTalks(c);}),
+    dv({st:{flex:'1'}},
+      dv({cls:'row gap2',st:{alignItems:'baseline'}},
+        sp({st:{fontFamily:'monospace',fontSize:'12px',color:'var(--muted)'}},talk.ref_no),
+        h('h1',{cls:'page-title',st:{fontSize:'19px'}},talk.title)
+      ),
+      dv({cls:'page-sub'},new Date(talk.held_at).toLocaleString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'numeric',minute:'2-digit'})+(talk.location?' · '+talk.location:''))
+    ),
+    btn('⬇ Download record','btn-o',function(){printToolboxTalk(talk,attendees,mMap);})
+  ));
+
+  // Content
+  const detail=dv({cls:'card mb3'});
+  detail.appendChild(dv({cls:'row gap2 mb3',st:{flexWrap:'wrap'}},
+    bdg(talk.category||'General Safety','blue'),
+    bdg('Presented by '+(talk.presenter_name||'—'),'purple'),
+    talk.status==='closed'?bdg('Closed','gray'):bdg('Open','amber')
+  ));
+  [['What was covered',talk.content],['Hazards discussed',talk.hazards],['Controls agreed',talk.controls],['Follow-up actions',talk.actions]].forEach(function(pair){
+    if(!pair[1])return;
+    detail.appendChild(dv({cls:'mb3'},
+      dv({cls:'txs fw6 muted mb1',st:{textTransform:'uppercase',letterSpacing:'0.03em'}},pair[0]),
+      dv({st:{fontSize:'13px',color:'#374151',lineHeight:'1.65',whiteSpace:'pre-wrap'}},pair[1])
+    ));
+  });
+  c.appendChild(detail);
+
+  // Sign-on sheet
+  const signed=attendees.filter(function(a){return a.signed_at;}).length;
+  const sheet=dv({cls:'card'});
+  sheet.appendChild(dv({cls:'row jb mb3'},
+    dv({},dv({cls:'card-title'},'Sign-on sheet'),dv({cls:'card-sub'},signed+' of '+attendees.length+' signed')),
+    isSupervisor()&&btn('+ Add attendee','btn-o btn-sm',function(){showAddAttendee(talk,attendees,refresh);})
+  ));
+
+  attendees.forEach(function(a){
+    const m=mMap[a.team_member_id]||{name:'Unknown'};
+    const isMe=currentUser&&currentUser.id===a.team_member_id;
+    const row=dv({cls:'row jb',st:{alignItems:'center',padding:'10px 12px',borderRadius:'8px',border:'1px solid '+(a.signed_at?'#bbf7d0':'#e5e7eb'),background:a.signed_at?'#f0fdf4':'#fff',marginBottom:'8px'}});
+    const left=dv({cls:'row gap3',st:{alignItems:'center'}});
+    left.appendChild(dv({st:{width:'26px',height:'26px',borderRadius:'50%',background:a.signed_at?'#22c55e':'#e5e7eb',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',flexShrink:'0'}},a.signed_at?'✓':''));
+    const info=dv({});
+    info.appendChild(dv({cls:'fw6',st:{fontSize:'13px'}},m.name+(isMe?' (you)':'')));
+    if(a.signed_at)info.appendChild(dv({cls:'txs muted'},'Signed '+new Date(a.signed_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'})));
+    else if(a.apology_reason)info.appendChild(dv({cls:'txs',st:{color:'#b45309'}},'Apology: '+a.apology_reason));
+    else info.appendChild(dv({cls:'txs muted'},'Not yet signed'));
+    if(a.comments)info.appendChild(dv({cls:'txs muted',st:{fontStyle:'italic'}},'"'+a.comments+'"'));
+    left.appendChild(info);
+    row.appendChild(left);
+
+    const right=dv({cls:'row gap2',st:{alignItems:'center'}});
+    if(a.signature_url){
+      const img=h('img',{src:a.signature_url,st:{maxHeight:'40px',maxWidth:'130px',border:'1px solid var(--border)',borderRadius:'4px',background:'#fff',cursor:'pointer'}});
+      img.onclick=function(){openLightbox(a.signature_url);};
+      right.appendChild(img);
+    }
+    if(!a.signed_at&&isMe)right.appendChild(btn('Sign','btn-p btn-sm',function(){openToolboxSignature(talk,a,refresh);}));
+    if(!a.signed_at&&!isMe&&isSupervisor()){
+      right.appendChild(btn('Apology','btn-o btn-sm',async function(){
+        const why=prompt('Reason '+m.name+' could not attend (e.g. on leave, day off):');
+        if(why===null)return;
+        await CDB.updateAttendee(a.id,{apology_reason:why.trim()||'Not recorded'});refresh();
+      }));
+    }
+    if(isSupervisor()&&!a.signed_at)right.appendChild(btn('Remove','btn-d btn-sm',async function(){
+      if(!confirm('Remove '+m.name+' from this talk?'))return;
+      await CDB.removeAttendee(a.id);refresh();
+    }));
+    row.appendChild(right);
+    sheet.appendChild(row);
+  });
+  if(!attendees.length)sheet.appendChild(dv({cls:'empty'},'No attendees on this talk yet.'));
+
+  if(isSupervisor()){
+    const allSigned=attendees.length>0&&signed===attendees.length;
+    if(talk.status!=='closed'){
+      sheet.appendChild(dv({cls:'mt3'},btn('Close talk','btn-p',async function(){
+        if(!allSigned&&!confirm(signed+' of '+attendees.length+' have signed. Close this talk anyway?\n\nAnyone unsigned will be recorded as not having signed.'))return;
+        await CDB.updateToolboxTalk(talk.id,{status:'closed',closed_at:new Date().toISOString()});refresh();
+      })));
+    } else {
+      sheet.appendChild(dv({cls:'mt3'},btn('Re-open talk','btn-o btn-sm',async function(){
+        await CDB.updateToolboxTalk(talk.id,{status:'open',closed_at:null});refresh();
+      })));
+    }
+  }
+  c.appendChild(sheet);
+}
+
+function showAddAttendee(talk,existing,onDone){
+  const have={};existing.forEach(function(a){have[a.team_member_id]=true;});
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'420px',maxWidth:'95vw'}});
+  modal.appendChild(dv({cls:'modal-title'},'Add attendees'));
+  const wrap=dv({st:{maxHeight:'320px',overflowY:'auto',border:'1px solid var(--border)',borderRadius:'8px',padding:'8px',marginBottom:'12px'}});
+  const picked={};
+  modal.appendChild(wrap);
+  CDB.getMembers().then(function(ms){
+    wrap.innerHTML='';
+    const avail=ms.filter(function(m){return !have[m.id];});
+    if(!avail.length){wrap.appendChild(dv({cls:'empty'},'Everyone is already on this talk.'));return;}
+    avail.forEach(function(m){
+      const row=dv({cls:'row gap2',st:{alignItems:'center',padding:'5px 6px'}});
+      const chk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',cursor:'pointer',accentColor:'var(--green)'}});
+      chk.onchange=function(){picked[m.id]=chk.checked;};
+      row.appendChild(chk);row.appendChild(sp({st:{fontSize:'13px'}},m.name));
+      wrap.appendChild(row);
+    });
+  });
+  const saveBtn=btn('Add','btn-p',async function(){
+    const ids=Object.keys(picked).filter(function(k){return picked[k];}).map(Number);
+    if(!ids.length)return alert('Please tick at least one person.');
+    saveBtn.disabled=true;
+    try{await CDB.addAttendees(talk.id,ids);overlay.remove();onDone();}
+    catch(e){saveBtn.disabled=false;alert('Could not add: '+e.message);}
+  });
+  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},btn('Cancel','btn-o',function(){overlay.remove();}),saveBtn));
+  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
+}
+
+// The signature pad. Same interaction as the delivery proof-of-delivery pad,
+// so it already works with a finger on a tablet.
+function openToolboxSignature(talk,attendee,onSaved){
+  if(!currentUser){alert('Please sign in first.');return;}
+  if(currentUser.id!==attendee.team_member_id){alert('You can only sign for yourself. Please sign in as your own user.');return;}
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'520px',maxWidth:'95vw'}});
+  modal.appendChild(dv({cls:'modal-title'},'Sign: '+talk.title));
+  modal.appendChild(dv({st:{padding:'10px 12px',background:'#f8faf7',borderRadius:'8px',fontSize:'12px',color:'#374151',lineHeight:'1.6',marginBottom:'12px'}},
+    'I, '+currentUser.name+', confirm I attended this toolbox talk on '+new Date(talk.held_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})+', that the content was explained to me, that I understood it, and that I had the opportunity to ask questions.'
+  ));
+
+  modal.appendChild(h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Signature *'));
+  const canvas=h('canvas',{cls:'sig-canvas',width:'460',height:'200'});
+  modal.appendChild(canvas);
+  modal.appendChild(dv({cls:'txs muted',st:{marginTop:'4px',marginBottom:'10px'}},'Sign with your finger on a phone or tablet, or click and drag with a mouse.'));
+
+  const cmtIn=h('textarea',{rows:'2',placeholder:'Questions or comments (optional)'});
+  modal.appendChild(dv({cls:'fg mb3'},h('label',{},'Comments'),cmtIn));
+
+  const ctx=canvas.getContext('2d');
+  ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f172a';
+  let drawing=false,hasInk=false;
+  function pos(e){
+    const r=canvas.getBoundingClientRect();
+    return{x:(e.clientX-r.left)*(canvas.width/r.width),y:(e.clientY-r.top)*(canvas.height/r.height)};
+  }
+  canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId);drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();});
+  canvas.addEventListener('pointermove',function(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasInk=true;e.preventDefault();});
+  canvas.addEventListener('pointerup',function(e){if(!drawing)return;drawing=false;try{canvas.releasePointerCapture(e.pointerId);}catch(_){}});
+  canvas.addEventListener('pointercancel',function(){drawing=false;});
+
+  const clearBtn=btn('Clear','btn-o btn-sm',function(){ctx.clearRect(0,0,canvas.width,canvas.height);hasInk=false;});
+  const saveBtn=btn('Sign and submit','btn-p',function(){
+    if(!hasInk){alert('Please sign on the pad above.');return;}
+    saveBtn.disabled=true;saveBtn.textContent='Saving...';
+    canvas.toBlob(async function(blob){
+      try{
+        const url=await CDB.uploadToolboxSignature(blob,talk.id,currentUser.id);
+        await CDB.updateAttendee(attendee.id,{signed_at:new Date().toISOString(),signature_url:url,comments:cmtIn.value.trim()||null});
+        overlay.remove();
+        if(onSaved)await onSaved();
+      }catch(err){
+        saveBtn.disabled=false;saveBtn.textContent='Sign and submit';
+        alert('Sign-off failed: '+(err&&err.message?err.message:err));
+      }
+    },'image/png');
+  });
+  modal.appendChild(dv({cls:'row gap2 mt3'},clearBtn,dv({st:{flex:'1'}}),btn('Cancel','btn-o',function(){overlay.remove();}),saveBtn));
+  overlay.appendChild(modal);document.body.appendChild(overlay);
+}
+
+// Printable / PDF record of the talk and its signatures.
+function printToolboxTalk(talk,attendees,mMap){
+  const esc=function(s){return String(s==null?'':s).replace(/[&<>]/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[ch];});};
+  const rows=attendees.map(function(a){
+    const m=mMap[a.team_member_id]||{name:'Unknown'};
+    return '<tr>'+
+      '<td>'+esc(m.name)+'</td>'+
+      '<td>'+esc(m.role||'')+'</td>'+
+      '<td>'+(a.signature_url?'<img src="'+esc(a.signature_url)+'" style="max-height:44px;max-width:150px">':(a.apology_reason?'<i>Apology: '+esc(a.apology_reason)+'</i>':'<i>Not signed</i>'))+'</td>'+
+      '<td>'+(a.signed_at?new Date(a.signed_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}):'—')+'</td>'+
+      '<td>'+esc(a.comments||'')+'</td>'+
+    '</tr>';
+  }).join('');
+  const section=function(label,val){return val?'<div class="sec"><div class="lbl">'+esc(label)+'</div><div class="val">'+esc(val).replace(/\n/g,'<br>')+'</div></div>':'';};
+  const w=window.open('','_blank');
+  if(!w){alert('Please allow pop-ups to download the record.');return;}
+  w.document.write('<!doctype html><html><head><title>'+esc(talk.ref_no)+' — '+esc(talk.title)+'</title><style>'+
+    'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:32px;font-size:13px}'+
+    'h1{font-size:20px;margin:0 0 2px}.ref{font-family:monospace;color:#666;font-size:12px}'+
+    '.meta{color:#555;margin-bottom:18px}'+
+    '.sec{margin-bottom:14px}.lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#666;font-weight:700;margin-bottom:3px}'+
+    '.val{line-height:1.6;white-space:pre-wrap}'+
+    'table{width:100%;border-collapse:collapse;margin-top:10px}'+
+    'th{text-align:left;font-size:10px;text-transform:uppercase;color:#666;border-bottom:2px solid #333;padding:6px 8px}'+
+    'td{border-bottom:1px solid #ddd;padding:8px;vertical-align:middle}'+
+    '.foot{margin-top:24px;font-size:10px;color:#777;border-top:1px solid #ddd;padding-top:8px}'+
+    '@media print{body{margin:12mm}}'+
+    '</style></head><body>'+
+    '<div class="ref">'+esc(talk.ref_no)+'</div>'+
+    '<h1>'+esc(talk.title)+'</h1>'+
+    '<div class="meta">'+esc(talk.category||'General Safety')+' &middot; '+
+      new Date(talk.held_at).toLocaleString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'numeric',minute:'2-digit'})+
+      (talk.location?' &middot; '+esc(talk.location):'')+
+      '<br>Presented by '+esc(talk.presenter_name||'—')+'</div>'+
+    section('What was covered',talk.content)+
+    section('Hazards discussed',talk.hazards)+
+    section('Controls agreed',talk.controls)+
+    section('Follow-up actions',talk.actions)+
+    '<div class="sec"><div class="lbl">Attendance and sign-on</div>'+
+    '<table><thead><tr><th>Name</th><th>Role</th><th>Signature</th><th>Signed at</th><th>Comments</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="foot">WindowMakers Factory Portal &middot; record generated '+new Date().toLocaleString('en-AU')+
+      ' &middot; '+attendees.filter(function(a){return a.signed_at;}).length+' of '+attendees.length+' attendees signed</div>'+
+    '</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},400);
 }
 
 // ── SIGN-OFF LOG ──────────────────────────────────────────────────────
@@ -3388,9 +3945,12 @@ async function renderLog(c){
   c.appendChild(dv({cls:'row jb mb3'},
     dv({},dv({cls:'fw6',st:{fontSize:'14px'}},'Training Records & Sign-off Log'),dv({cls:'txs muted mt1'},'Search by employee to view and download their full training record')),
     isManager()&&btn('Export All CSV','btn-o btn-sm',async function(){
-      const [so,mem,sw]=await Promise.all([CDB.getSignoffs(),CDB.getMembers(),CDB.getSWPs()]);
+      // Same population as the compliance tab, so the two exports agree.
+      const [so,mem,sw,asg]=await Promise.all([CDB.getSignoffs(),CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getAllAssignments()]);
       const lk={};so.forEach(function(s){const k=s.team_member_id+'_'+s.swp_id;if(!lk[k]||new Date(s.created_at)>new Date(lk[k].created_at))lk[k]=s;});
-      exportCSV(mem,sw,lk);
+      const byMember={};asg.forEach(function(a){(byMember[a.team_member_id]=byMember[a.team_member_id]||[]).push(a);});
+      const swpsFor={};mem.forEach(function(m){swpsFor[m.id]=filterApplicable(sw,byMember[m.id]);});
+      exportCSV(mem,sw,lk,swpsFor);
     })
   ));
 
@@ -3585,14 +4145,16 @@ function printMemberRecord(member,swps,lk,allSOs){
   setTimeout(function(){w.print();},500);
 }
 // ── EXPORT CSV ────────────────────────────────────────────────────────
-function exportCSV(members,swps,lk){
-  const rows=[['Employee','SWP','Status','Self Signed','Self Initials','Assessor','Assessor Signed','Expires']];
+function exportCSV(members,swps,lk,swpsFor){
+  const rows=[['Employee','SWP','Applies','Status','Self Signed','Self Initials','Assessor','Assessor Signed','Expires']];
   members.forEach(function(m){
+    const applicableIds=swpsFor&&swpsFor[m.id]?new Set(swpsFor[m.id].map(function(s){return s.id;})):null;
     swps.forEach(function(s){
+      const applies=applicableIds?applicableIds.has(s.id):true;
       const so=lk[m.id+'_'+s.id];
       const st=compStatus(so);
       rows.push([
-        m.name,s.title,statusLabel(st),
+        m.name,s.title,applies?'Yes':'No (n/a)',applies?statusLabel(st):'Not applicable',
         so&&so.self_signed_at?new Date(so.self_signed_at).toLocaleDateString('en-AU'):'',
         so&&so.self_signed_initials||'',
         so&&so.assessor_name||'',
@@ -4269,7 +4831,7 @@ async function pgAdmin(c){
     else if(adminTab==='archived'){await renderArchivedMembers(tabContent);}
     else{
       const card2=dv({cls:'card'});
-      card2.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'Optional SWP Assignments'),dv({cls:'card-sub'},'Tick to assign optional SWPs to specific team members')));
+      card2.appendChild(dv({cls:'card-hdr'},dv({cls:'card-title'},'Which SWPs apply to whom'),dv({cls:'card-sub'},'Untick an SWP for anyone who does not use that equipment — it is then excluded from their compliance score')));
       await renderSWPAssignments(card2);
       tabContent.appendChild(card2);
     }
@@ -4518,42 +5080,68 @@ function showArchivedRecord(member,swps,lk){
 
 // ── SWP ASSIGNMENTS ADMIN ────────────────────────────────────────────
 async function renderSWPAssignments(c){
-  const [members,swps,allAssignments]=await Promise.all([CDB.getMembers(),CDB.getSWPs(),CDB.getAllAssignments()]);
-  const optionalSwps=swps.filter(function(s){return s.is_optional;});
-  if(!optionalSwps.length){c.appendChild(dv({cls:'empty'},'No optional SWPs configured. Mark an SWP as optional in the database to manage assignments here.'));return;}
-  // Build assignment lookup: memberId -> Set of swpIds
-  const asgn={};allAssignments.forEach(function(a){if(!asgn[a.team_member_id])asgn[a.team_member_id]=new Set();asgn[a.team_member_id].add(a.swp_id);});
+  if(!isManager()){c.appendChild(dv({cls:'empty'},'Only a manager or admin can change which SWPs apply to each employee.'));return;}
+  const lo=dv({cls:'empty'},'Loading...');c.appendChild(lo);
+  const [members,swps,allAssignments]=await Promise.all([CDB.getFactoryMembers(),CDB.getSWPs(),CDB.getAllAssignments()]);
+  lo.remove();
+  if(!swps.length){c.appendChild(dv({cls:'empty'},'No active SWPs configured.'));return;}
+  // memberId -> { swpId: assignmentRow }
+  const asgn={};allAssignments.forEach(function(a){(asgn[a.team_member_id]=asgn[a.team_member_id]||{})[a.swp_id]=a;});
+
+  c.appendChild(dv({cls:'txs muted mb3'},'A ticked box means the SWP applies to that employee and counts toward their compliance. Unticking it marks the SWP not applicable — it disappears from their sign-off list and is removed from both the numerator and the denominator, so it will not drag their percentage down. Optional SWPs start unticked; all others start ticked.'));
+
+  const wrap=dv({st:{overflowX:'auto'}});
   const tbl=document.createElement('table');tbl.style.cssText='width:100%;border-collapse:collapse;font-size:13px';
   const thead=document.createElement('thead');const hrow=document.createElement('tr');
-  const headers=['Team Member'].concat(optionalSwps.map(function(s){return s.title;}));
+  const headers=['Team Member'].concat(swps.map(function(s){return s.title+(s.is_optional?' (optional)':'');})).concat(['Applies']);
   headers.forEach(function(hh,hi){
     const th=document.createElement('th');th.textContent=hh;
-    th.style.cssText='text-align:'+(hi===0?'left':'center')+';padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);'+(hi>0?'max-width:120px;':'');
+    th.style.cssText='text-align:'+(hi===0?'left':'center')+';padding:8px 10px;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);'+(hi>0&&hi<=swps.length?'max-width:110px;vertical-align:bottom;':'');
     hrow.appendChild(th);
   });
   thead.appendChild(hrow);tbl.appendChild(thead);
   const tbody=document.createElement('tbody');
   members.forEach(function(m){
     const row=document.createElement('tr');row.style.borderBottom='1px solid #f3f4f6';
-    const nameTd=document.createElement('td');nameTd.style.cssText='padding:8px 12px;font-weight:600;font-size:12.5px';
+    const nameTd=document.createElement('td');nameTd.style.cssText='padding:8px 10px;font-weight:600;font-size:12.5px;white-space:nowrap';
     nameTd.textContent=m.name;row.appendChild(nameTd);
-    optionalSwps.forEach(function(swp){
-      const td=document.createElement('td');td.style.cssText='padding:8px 12px;text-align:center';
-      const isAssigned=asgn[m.id]&&asgn[m.id].has(swp.id);
+    const countTd=document.createElement('td');
+    countTd.style.cssText='padding:8px 10px;text-align:center;font-size:12px;color:var(--muted);white-space:nowrap';
+    function recount(){
+      const n=swps.filter(function(s){return swpApplies(s,(asgn[m.id]||{})[s.id]);}).length;
+      countTd.textContent=n+' of '+swps.length;
+    }
+    swps.forEach(function(swp){
+      const td=document.createElement('td');td.style.cssText='padding:8px 10px;text-align:center';
       const chk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',cursor:'pointer',accentColor:'var(--green)'}});
-      chk.checked=isAssigned;
+      chk.checked=swpApplies(swp,(asgn[m.id]||{})[swp.id]);
+      chk.title=swp.title+' — '+m.name;
       chk.onchange=async function(){
+        const want=chk.checked;
         chk.disabled=true;
-        if(chk.checked){await CDB.assignSWP(m.id,swp.id);}else{await CDB.unassignSWP(m.id,swp.id);}
+        let reason=null;
+        if(!want){
+          reason=prompt('Why does "'+swp.title+'" not apply to '+m.name+'?\n(e.g. does not operate this machine)','Does not operate this equipment');
+          if(reason===null){chk.checked=true;chk.disabled=false;return;}
+        }
+        try{
+          const saved=await CDB.setSWPApplies(m.id,swp.id,want,reason);
+          (asgn[m.id]=asgn[m.id]||{})[swp.id]=saved||{swp_id:swp.id,team_member_id:m.id,applies:want};
+          td.style.background=want?'#f0fdf4':'#fef2f2';setTimeout(function(){td.style.background='';},800);
+          recount();
+        }catch(e){
+          chk.checked=!want;
+          alert('Could not save: '+(e&&e.message?e.message:e));
+        }
         chk.disabled=false;
-        // Flash green
-        td.style.background='#f0fdf4';setTimeout(function(){td.style.background='';},800);
       };
       td.appendChild(chk);row.appendChild(td);
     });
+    recount();
+    row.appendChild(countTd);
     tbody.appendChild(row);
   });
-  tbl.appendChild(tbody);c.appendChild(tbl);
+  tbl.appendChild(tbody);wrap.appendChild(tbl);c.appendChild(wrap);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────
