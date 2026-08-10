@@ -1,0 +1,8 @@
+# Normalise line endings so Windows checkouts don't show the whole file as
+# modified. Without this, git reported 4581 insertions / 4581 deletions on
+# index.html when nothing had actually changed.
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.xlsx binary
