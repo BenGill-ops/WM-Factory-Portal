@@ -109,6 +109,15 @@ textarea{resize:vertical}
 .del-photo-delete{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.65);color:#fff;border:0;width:18px;height:18px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;visibility:hidden}
 .del-photo-thumb:hover .del-photo-delete{visibility:visible}
 .sig-canvas{border:2px solid var(--border);border-radius:8px;touch-action:none;cursor:crosshair;background:#fff;display:block;width:100%;max-width:460px;height:200px}
+.dropzone{border:2px dashed #cbd5e1;border-radius:10px;padding:18px 14px;text-align:center;background:#fafafa;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:12px}
+.dropzone:hover{border-color:var(--green);background:#f8faf7}
+.dropzone.dragover{border-color:var(--green);background:#f0fdf4}
+.dropzone.busy{opacity:.65;cursor:progress}
+.dropzone .dz-title{font-weight:600;font-size:13px;color:#374151;margin-bottom:2px}
+.dropzone .dz-sub{font-size:11.5px;color:var(--muted)}
+.dz-file{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:8px;margin-bottom:10px;font-size:12.5px}
+.dz-file a{color:#15803d;font-weight:600;text-decoration:none}
+.dz-file a:hover{text-decoration:underline}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px}
 .lightbox img{max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
 /* === My Day driver page === */
@@ -406,6 +415,13 @@ const CDB={
   },
   async removeAttendee(id){const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async updateAttendee(id,data){const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  async uploadTalkDocument(file){
+    const safe=(file.name||'document').replace(/[^A-Za-z0-9._-]/g,'_').slice(-80);
+    const path='toolbox/docs/'+Date.now()+'-'+safe;
+    const r=await fetch(SB+'/storage/v1/object/safety-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'application/octet-stream','x-upsert':'true'},body:file});
+    if(!r.ok){const e=await r.text();throw new Error('Upload failed: '+e);}
+    return SB+'/storage/v1/object/public/safety-photos/'+path;
+  },
   async uploadToolboxSignature(blob,talkId,memberId){
     const path='toolbox/'+talkId+'-'+memberId+'-'+Date.now()+'.png';
     const r=await fetch(SB+'/storage/v1/object/safety-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':'image/png','x-upsert':'true'},body:blob});
@@ -3543,12 +3559,305 @@ function showSafetyAlertForm(c,onDone){
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)discard();};document.body.appendChild(overlay);
 }
 
+// ── TOOLBOX TALK DOCUMENT IMPORT ──────────────────────────────────────
+// Drop a .docx or .pdf toolbox talk on the form and it prefills the fields.
+//
+// The WindowMakers template puts its section headings in single-cell tables
+// ("Why we're having this talk", "What changes on the tools", ...) with the
+// body text flowing between them, and carries Date / Time / Presenter /
+// Location / Topic in a header table. That is what the matcher below targets,
+// with a loose fallback so a supplier bulletin in some other layout still
+// lands its text in "What was covered" rather than being dropped.
+//
+// Everything is parsed in the browser. Nothing is sent anywhere except the
+// original file, which is stored against the talk as the source document.
+
+const DOC_LIBS={jszip:'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+                pdfjs:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+                pdfw:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'};
+const _loaded={};
+function loadScriptOnce(src){
+  if(_loaded[src])return _loaded[src];
+  _loaded[src]=new Promise(function(res,rej){
+    const s=document.createElement('script');s.src=src;
+    s.onload=function(){res();};s.onerror=function(){rej(new Error('Could not load '+src));};
+    document.head.appendChild(s);
+  });
+  return _loaded[src];
+}
+
+// Headings we recognise, in priority order. First match wins.
+const DOC_FIELD_KEYS=[
+  {field:'actions', keys:['issues raised','action arising','actions arising','follow up','follow-up','agreed action','actions','next steps','to do']},
+  {field:'controls',keys:['what changes on the tools','control','safe work','precaution','how we work','what we do about it','safety measure','the rules','what changes']},
+  {field:'hazards', keys:['hazard','risk','what could go wrong','danger','what to watch']}
+];
+// Headings that are structural rather than content — skip them entirely.
+// Note: the discussion questions are NOT skipped; they are part of what was
+// covered and belong in the record.
+const DOC_SKIP_KEYS=['attendance record','attendance','sign off','sign-off','signature','name print','presenter name'];
+// Values that are obviously column labels, not real answers.
+const DOC_STOP_VALUES=['signature','date','time','name','print','position','initials',''];
+
+function deSpaceHeading(t){
+  // "T O O L B O X   T A L K" -> "TOOLBOX TALK".
+  // Single spaces separate letters, runs of 2+ separate words, so split on the
+  // wide gaps first or the words run together.
+  const s=String(t).trim();
+  if(!s)return s;
+  const words=s.split(/\s{2,}/);
+  // Every token must be a single character. Allow one-character words like "&"
+  // so "W O R K   H E A L T H   &   S A F E T Y" still resolves.
+  const isSpaced=words.every(function(w){
+    return w.trim().split(/\s+/).every(function(c){return c.length===1;});
+  });
+  if(!isSpaced)return s;
+  const letters=s.replace(/\s+/g,'').length;
+  if(letters<4)return s;
+  return words.map(function(w){return w.trim().split(/\s+/).join('');}).join(' ');
+}
+function classifyHeading(text){
+  const t=deSpaceHeading(text).toLowerCase().replace(/[^a-z0-9\s—-]/g,' ').replace(/\s+/g,' ').trim();
+  if(!t)return null;
+  for(const s of DOC_SKIP_KEYS){if(t.indexOf(s)>=0)return 'skip';}
+  for(const g of DOC_FIELD_KEYS){for(const k of g.keys){if(t.indexOf(k)>=0)return g.field;}}
+  return 'content';
+}
+function looksLikeHeading(text){
+  const t=text.trim();
+  if(!t||t.length>90)return false;
+  if(/[.!?]$/.test(t))return false;
+  return true;
+}
+
+// --- .docx -------------------------------------------------------------
+const W_NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+async function parseDocx(file){
+  await loadScriptOnce(DOC_LIBS.jszip);
+  const zip=await JSZip.loadAsync(file);
+  const entry=zip.file('word/document.xml');
+  if(!entry)throw new Error('That does not look like a Word document.');
+  const xml=await entry.async('string');
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  if(doc.getElementsByTagName('parsererror').length)throw new Error('Could not read the Word document.');
+  const bodies=doc.getElementsByTagNameNS(W_NS,'body');
+  if(!bodies.length)throw new Error('Could not read the Word document.');
+
+  function paraText(p){
+    let out='';
+    const kids=p.getElementsByTagNameNS(W_NS,'*');
+    for(let i=0;i<kids.length;i++){
+      const n=kids[i];
+      if(n.localName==='t')out+=n.textContent;
+      else if(n.localName==='tab')out+='\t';
+      else if(n.localName==='br')out+='\n';
+    }
+    return out.replace(/ /g,' ').trim();
+  }
+  // Walk the body in document order so headings and their following text stay paired.
+  const blocks=[];
+  const body=bodies[0];
+  for(let i=0;i<body.childNodes.length;i++){
+    const node=body.childNodes[i];
+    if(node.nodeType!==1)continue;
+    if(node.localName==='p'){
+      const t=paraText(node);
+      if(t)blocks.push({type:'p',text:t});
+    } else if(node.localName==='tbl'){
+      const rows=[];
+      const trs=node.getElementsByTagNameNS(W_NS,'tr');
+      for(let r=0;r<trs.length;r++){
+        if(trs[r].parentNode!==node)continue;   // ignore nested tables
+        const cells=[];const tcs=trs[r].getElementsByTagNameNS(W_NS,'tc');
+        for(let cix=0;cix<tcs.length;cix++){
+          if(tcs[cix].parentNode!==trs[r])continue;
+          const ps=tcs[cix].getElementsByTagNameNS(W_NS,'p');
+          let txt=[];for(let q=0;q<ps.length;q++){const v=paraText(ps[q]);if(v)txt.push(v);}
+          cells.push(txt.join('\n'));
+        }
+        // Merged cells repeat their text; collapse consecutive duplicates.
+        const dedup=cells.filter(function(v,ix){return ix===0||v!==cells[ix-1];});
+        rows.push(dedup);
+      }
+      blocks.push({type:'tbl',rows:rows});
+    }
+  }
+  return blocksToFields(blocks);
+}
+
+// --- .pdf --------------------------------------------------------------
+async function parsePdf(file){
+  await loadScriptOnce(DOC_LIBS.pdfjs);
+  if(window.pdfjsLib&&window.pdfjsLib.GlobalWorkerOptions)window.pdfjsLib.GlobalWorkerOptions.workerSrc=DOC_LIBS.pdfw;
+  const buf=await file.arrayBuffer();
+  const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+  const blocks=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const tc=await page.getTextContent();
+    // Group text items into lines by their vertical position.
+    const lines={};
+    tc.items.forEach(function(it){
+      const y=Math.round(it.transform[5]);
+      (lines[y]=lines[y]||[]).push(it.str);
+    });
+    Object.keys(lines).map(Number).sort(function(a,b){return b-a;}).forEach(function(y){
+      const t=lines[y].join(' ').replace(/\s+/g,' ').trim();
+      if(t)blocks.push({type:'p',text:t});
+    });
+  }
+  return blocksToFields(blocks);
+}
+
+// --- shared: blocks -> form fields -------------------------------------
+function blocksToFields(blocks){
+  const out={title:'',content:[],hazards:[],controls:[],actions:[],presenter:'',location:'',date:'',time:''};
+  let current='content';
+  let sawBanner=false,bannerLineUsed=false;
+
+  // Pass 1: header key/value pairs (Date, Time, Presenter, Location, Topic).
+  // Only the tables BEFORE the first section heading count — otherwise the
+  // sign-off grid at the end ("Presenter name | Signature | Date") is read as
+  // a presenter called "Signature".
+  for(let bi=0;bi<blocks.length;bi++){
+    const b=blocks[bi];
+    if(b.type!=='tbl')continue;
+    const single=b.rows.length&&b.rows.every(function(r){return r.length===1;});
+    if(single&&looksLikeHeading((b.rows[0][0]||'')))break;   // reached the first section heading
+    b.rows.forEach(function(cells){
+      for(let i=0;i+1<cells.length;i+=2){
+        const k=(cells[i]||'').toLowerCase().replace(/[^a-z\s/]/g,' ').replace(/\s+/g,' ').trim();
+        const v=(cells[i+1]||'').trim();
+        if(!k||!v)continue;
+        if(DOC_STOP_VALUES.indexOf(v.toLowerCase())>=0)continue;
+        if(!out.date&&/^date/.test(k))out.date=v;
+        else if(!out.time&&/^time/.test(k))out.time=v;
+        else if(!out.presenter&&/^(presenter|facilitator|delivered by|led by)/.test(k))out.presenter=v;
+        else if(!out.location&&/^(location|site|area)/.test(k))out.location=v;
+        else if(!out.title&&/^(topic|subject|talk)/.test(k))out.title=v;
+      }
+    });
+  }
+
+  // Pass 2: walk in order, routing text under the heading that precedes it
+  blocks.forEach(function(b){
+    if(b.type==='tbl'){
+      // A single-cell table is how this template marks a section heading.
+      const flat=b.rows.filter(function(r){return r.length===1&&r[0].trim();});
+      if(b.rows.length&&flat.length===b.rows.length&&flat.length<=2){
+        const head=flat[0][0];
+        if(looksLikeHeading(head)){
+          const cls=classifyHeading(head);
+          if(cls==='skip'){current='skip';return;}
+          current=cls==='content'?'content':cls;
+          // Keep the heading as a label. Tagged as an object so the prune
+          // step below can tell a real heading from a body line that merely
+          // happens to end in a colon.
+          if(current==='content')out.content.push({__h:deSpaceHeading(head).trim()});
+          // Any second row is content belonging to this heading
+          if(flat.length>1&&flat[1][0].trim())out[current==='skip'?'content':current].push(flat[1][0].trim());
+          return;
+        }
+      }
+      return;   // other tables (attendance grids etc) carry no talk content
+    }
+    const t=b.text.trim();
+    if(!t)return;
+    const bare=deSpaceHeading(t);
+    if(!sawBanner&&/^toolbox\s*talk$/i.test(bare.replace(/\s+/g,' ').trim())){sawBanner=true;return;}
+    // The line straight after the banner is the document's own topic line.
+    // Use it as the title if we haven't got one; either way it is not body text.
+    if(sawBanner&&!bannerLineUsed&&looksLikeHeading(t)){
+      bannerLineUsed=true;
+      if(!out.title)out.title=t;
+      return;
+    }
+    // Don't repeat the topic as the first line of the body
+    if(out.title&&t.toLowerCase()===out.title.toLowerCase())return;
+    if(current==='skip')return;
+    // A short, punctuation-free line may be a heading even outside a table
+    if(looksLikeHeading(t)){
+      const cls=classifyHeading(t);
+      if(cls==='skip'){current='skip';return;}
+      if(cls!=='content'){current=cls;return;}
+    }
+    out[current].push(t);
+  });
+
+  // A heading with nothing under it is noise (blank templates are full of
+  // them). Drop any heading not followed by real body text.
+  const isLabel=function(v){return v&&typeof v==='object';};
+  out.content=out.content
+    .filter(function(v,i,arr){
+      if(!isLabel(v))return true;
+      const next=arr[i+1];
+      return next!==undefined&&!isLabel(next);
+    })
+    .map(function(v){return isLabel(v)?v.__h+':':deSpaceHeading(v);});
+  const join=function(a){return a.join('\n').replace(/\n{3,}/g,'\n\n').trim();};
+  return{
+    title:out.title.trim(),
+    content:join(out.content),
+    hazards:join(out.hazards),
+    controls:join(out.controls),
+    actions:join(out.actions),
+    presenter:out.presenter.trim(),
+    location:out.location.trim(),
+    date:out.date.trim(),
+    time:out.time.trim()
+  };
+}
+
+async function parseTalkDocument(file){
+  const name=(file.name||'').toLowerCase();
+  if(name.endsWith('.docx'))return await parseDocx(file);
+  if(name.endsWith('.pdf'))return await parsePdf(file);
+  if(name.endsWith('.doc'))throw new Error('Old .doc files are not supported — save it as .docx or PDF first.');
+  throw new Error('Please drop a Word (.docx) or PDF file.');
+}
+
+// Try to turn "12/08/2026" or "12 August 2026" into a datetime-local value.
+function parseDocDateTime(dateStr,timeStr){
+  if(!dateStr)return '';
+  let d=null;
+  const dmy=dateStr.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(dmy){
+    let y=parseInt(dmy[3],10);if(y<100)y+=2000;
+    d=new Date(y,parseInt(dmy[2],10)-1,parseInt(dmy[1],10));   // AU order: day first
+  } else {
+    const p=Date.parse(dateStr);
+    if(!isNaN(p))d=new Date(p);
+  }
+  if(!d||isNaN(d.getTime()))return '';
+  let hh=0,mm=0;
+  const tm=(timeStr||'').match(/(\d{1,2})[:.](\d{2})\s*(am|pm)?/i);
+  if(tm){
+    hh=parseInt(tm[1],10);mm=parseInt(tm[2],10);
+    const ap=(tm[3]||'').toLowerCase();
+    if(ap==='pm'&&hh<12)hh+=12;
+    if(ap==='am'&&hh===12)hh=0;
+  }
+  d.setHours(hh,mm,0,0);
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+
 // ── TOOLBOX TALKS ─────────────────────────────────────────────────────
 // A toolbox talk is a record that a safety conversation happened and who was
 // party to it. The evidence is a drawn signature per attendee, captured on a
 // phone or tablet on the floor. Everyone signs for themselves — the database
 // rejects a signature saved against anyone but the signed-in user.
 const TBT_CATEGORIES=['General Safety','Machine Safety','Manual Handling','Hazardous Materials','Electrical','Fire & Emergency','Housekeeping','Slip/Trip/Fall','Quality','Incident Review','Other'];
+
+// attachment_urls is json: [{url,name}]. Tolerate a bare url array too.
+function parseAttachments(raw){
+  if(!raw)return[];
+  try{
+    const v=JSON.parse(raw);
+    if(!Array.isArray(v))return[];
+    return v.map(function(a){return typeof a==='string'?{url:a,name:'Attached document'}:a;})
+            .filter(function(a){return a&&a.url;});
+  }catch(e){return[];}
+}
 
 async function renderToolboxTalks(c){
   c.innerHTML='';   // may be returning from the detail view
@@ -3642,6 +3951,95 @@ function showToolboxTalkForm(onCreated){
   const ctrlIn=h('textarea',{rows:'2',placeholder:'Controls agreed (optional)'});
   const actIn=h('textarea',{rows:'2',placeholder:'Follow-up actions (optional)'});
 
+  // ── Drop the talk document in to prefill ────────────────────────────
+  let docUrl=null,docName=null,docSaved=false;
+  const dzFileRow=dv({st:{display:'none'}});
+  const dz=dv({cls:'dropzone'});
+  dz.appendChild(dv({cls:'dz-title'},'Drop the toolbox talk document here'));
+  dz.appendChild(dv({cls:'dz-sub'},'Word (.docx) or PDF — it fills in the fields below and is attached to the record. Or click to browse.'));
+  const dzInput=h('input',{type:'file',st:{display:'none'}});
+  dzInput.accept='.docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  function setDzFile(name,url){
+    dzFileRow.innerHTML='';
+    dzFileRow.style.display='';
+    dzFileRow.className='dz-file';
+    dzFileRow.appendChild(sp({},'📎'));
+    dzFileRow.appendChild(url?h('a',{href:url,target:'_blank'},name):sp({},name));
+    const rm=btn('Remove','btn-o btn-sm',function(){
+      if(docUrl&&!docSaved)CDB.deleteSafetyFile(docUrl);
+      docUrl=null;docName=null;dzFileRow.style.display='none';dz.style.display='';
+    });
+    rm.style.marginLeft='auto';
+    dzFileRow.appendChild(rm);
+    dz.style.display='none';
+  }
+
+  async function handleDroppedFile(file){
+    if(!file)return;
+    dz.classList.remove('dragover');dz.classList.add('busy');
+    const t=dz.querySelector('.dz-title'),s=dz.querySelector('.dz-sub');
+    t.textContent='Reading '+file.name+'…';s.textContent='';
+    let parsed=null,parseErr=null;
+    try{parsed=await parseTalkDocument(file);}catch(e){parseErr=e;}
+    // Store the original either way — the attachment is worth having even if
+    // the text extraction was no good.
+    try{
+      s.textContent='Uploading…';
+      docUrl=await CDB.uploadTalkDocument(file);docName=file.name;
+    }catch(e){
+      dz.classList.remove('busy');
+      t.textContent='Drop the toolbox talk document here';
+      s.textContent='Upload failed: '+e.message;
+      return;
+    }
+    dz.classList.remove('busy');
+    t.textContent='Drop the toolbox talk document here';
+    s.textContent='Word (.docx) or PDF — it fills in the fields below and is attached to the record. Or click to browse.';
+    setDzFile(file.name,docUrl);
+
+    if(parseErr||!parsed){
+      alert('Attached the file, but could not read any text from it'+(parseErr?': '+parseErr.message:'.')+'\n\nFill the fields in by hand.');
+      return;
+    }
+    // Only fill blanks — never overwrite something already typed.
+    if(parsed.title&&!tiIn.value.trim())tiIn.value=parsed.title;
+    if(parsed.location&&!locIn.value.trim())locIn.value=parsed.location;
+    if(parsed.content&&!contIn.value.trim())contIn.value=parsed.content;
+    if(parsed.hazards&&!hazIn.value.trim())hazIn.value=parsed.hazards;
+    if(parsed.controls&&!ctrlIn.value.trim())ctrlIn.value=parsed.controls;
+    if(parsed.actions&&!actIn.value.trim())actIn.value=parsed.actions;
+    const dt=parseDocDateTime(parsed.date,parsed.time);
+    if(dt)whenIn.value=dt;
+    // Guess a category from the topic
+    if(parsed.title){
+      const lt=parsed.title.toLowerCase();
+      const guess=TBT_CATEGORIES.find(function(c){
+        const w=c.toLowerCase().split(/[\s&\/]+/)[0];
+        return w.length>3&&lt.indexOf(w)>=0;
+      });
+      if(guess)catSel.value=guess;
+      else if(/incident|near miss|report/.test(lt))catSel.value='Incident Review';
+      else if(/lift|manual handling|back/.test(lt))catSel.value='Manual Handling';
+    }
+    const got=['title','content','hazards','controls','actions'].filter(function(k){return parsed[k];});
+    if(!got.length)alert('Attached the file, but no text could be matched to the fields. Please fill them in by hand.');
+    else if(parsed.presenter)dzFileRow.appendChild(sp({cls:'txs muted',st:{marginLeft:'8px'}},'· doc lists presenter: '+parsed.presenter));
+  }
+
+  dz.onclick=function(){dzInput.click();};
+  dzInput.onchange=function(){handleDroppedFile(dzInput.files[0]);dzInput.value='';};
+  ['dragenter','dragover'].forEach(function(ev){dz.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();dz.classList.add('dragover');});});
+  ['dragleave','drop'].forEach(function(ev){dz.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();if(ev==='dragleave')dz.classList.remove('dragover');});});
+  dz.addEventListener('drop',function(e){
+    const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+    handleDroppedFile(f);
+  });
+  // Stop a stray drop elsewhere in the modal from navigating away from the app
+  modal.addEventListener('dragover',function(e){e.preventDefault();});
+  modal.addEventListener('drop',function(e){e.preventDefault();});
+  modal.appendChild(dz);modal.appendChild(dzFileRow);modal.appendChild(dzInput);
+
   modal.appendChild(dv({cls:'fg mb2'},h('label',{},'Topic *'),tiIn));
   const g1=dv({cls:'g2 mb2'});g1.appendChild(frow('Category',catSel));g1.appendChild(frow('Date & time held',whenIn));
   modal.appendChild(g1);
@@ -3696,16 +4094,20 @@ function showToolboxTalkForm(onCreated){
         hazards:hazIn.value.trim()||null,
         controls:ctrlIn.value.trim()||null,
         actions:actIn.value.trim()||null,
+        attachment_urls:docUrl?JSON.stringify([{url:docUrl,name:docName}]):null,
         status:'open',
         created_by_member_id:currentUser?currentUser.id:null
       });
       await CDB.addAttendees(talk.id,ids);
+      docSaved=true;
       overlay.remove();
       if(onCreated)onCreated(talk.id);
     }catch(e){saveBtn.disabled=false;saveBtn.textContent='Create talk';alert('Could not create talk: '+(e&&e.message?e.message:e));}
   });
-  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},btn('Cancel','btn-o',function(){overlay.remove();}),saveBtn));
-  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
+  // Abandoning the form must not strand the uploaded document in storage.
+  function discardTalk(){if(docUrl&&!docSaved)CDB.deleteSafetyFile(docUrl);overlay.remove();}
+  modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},btn('Cancel','btn-o',discardTalk),saveBtn));
+  overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)discardTalk();};document.body.appendChild(overlay);
   setTimeout(function(){tiIn.focus();},50);
 }
 
@@ -3739,6 +4141,19 @@ async function openToolboxTalk(c,talkId){
     bdg('Presented by '+(talk.presenter_name||'—'),'purple'),
     talk.status==='closed'?bdg('Closed','gray'):bdg('Open','amber')
   ));
+  // Source document, if one was imported
+  const atts=parseAttachments(talk.attachment_urls);
+  if(atts.length){
+    const box=dv({cls:'mb3',st:{padding:'10px 12px',background:'#f8faf7',border:'1px solid var(--border)',borderRadius:'8px'}});
+    box.appendChild(dv({cls:'txs fw6 muted mb1',st:{textTransform:'uppercase',letterSpacing:'0.03em'}},'Source document'));
+    atts.forEach(function(a){
+      box.appendChild(dv({cls:'row gap2',st:{alignItems:'center'}},
+        sp({},'📎'),
+        h('a',{href:a.url,target:'_blank',st:{color:'var(--green)',fontWeight:'600',fontSize:'13px',textDecoration:'none'}},a.name||'Attached document')
+      ));
+    });
+    detail.appendChild(box);
+  }
   [['What was covered',talk.content],['Hazards discussed',talk.hazards],['Controls agreed',talk.controls],['Follow-up actions',talk.actions]].forEach(function(pair){
     if(!pair[1])return;
     detail.appendChild(dv({cls:'mb3'},
@@ -3927,6 +4342,12 @@ function printToolboxTalk(talk,attendees,mMap){
       new Date(talk.held_at).toLocaleString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'numeric',minute:'2-digit'})+
       (talk.location?' &middot; '+esc(talk.location):'')+
       '<br>Presented by '+esc(talk.presenter_name||'—')+'</div>'+
+    (function(){
+      const a=parseAttachments(talk.attachment_urls);
+      if(!a.length)return '';
+      return '<div class="sec"><div class="lbl">Source document</div><div class="val">'+
+        a.map(function(x){return esc(x.name||'Attached document')+' — '+esc(x.url);}).join('<br>')+'</div></div>';
+    })()+
     section('What was covered',talk.content)+
     section('Hazards discussed',talk.hazards)+
     section('Controls agreed',talk.controls)+
