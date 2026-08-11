@@ -415,6 +415,11 @@ const CDB={
   },
   async removeAttendee(id){const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
   async updateAttendee(id,data){const r=await fetch(SB+'/rest/v1/toolbox_talk_attendees?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
+  // The database decides signed_mode and who witnessed it — the client never
+  // sets those, so a witnessed signature cannot be passed off as a self-sign.
+  async signAttendance(attendeeId,signatureUrl,comments){
+    return this.updateAttendee(attendeeId,{signed_at:new Date().toISOString(),signature_url:signatureUrl,comments:comments||null});
+  },
   async uploadTalkDocument(file){
     const safe=(file.name||'document').replace(/[^A-Za-z0-9._-]/g,'_').slice(-80);
     const path='toolbox/docs/'+Date.now()+'-'+safe;
@@ -446,7 +451,11 @@ const CDB={
   async createSafetyAlert(data){const r=await fetch(SB+'/rest/v1/safety_alerts',{method:'POST',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
   async updateSafetyAlert(id,data){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify(data)});const d=await wr(r);return Array.isArray(d)?d[0]:d;},
   async deleteSafetyAlert(id){const r=await fetch(SB+'/rest/v1/safety_alerts?id=eq.'+id,{method:'DELETE',headers:SH({'Prefer':''})});await wr(r);},
-  async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return m.exclude_from_compliance!==true;});}catch(e){return[];}},
+  async getFactoryMembers(){try{const d=await this.getMembers();return d.filter(function(m){return m.exclude_from_compliance!==true&&m.is_shared_login!==true;});}catch(e){return[];}},
+  // Everyone who is an actual person — used for attendance rolls and sign-off
+  // lists. Shared/role accounts (Directors) are excluded, because a signature
+  // from an account several people share cannot be attributed to anyone.
+  async getPeople(){try{const d=await this.getMembers();return d.filter(function(m){return m.is_shared_login!==true;});}catch(e){return[];}},
   async getAssessors(){try{const r=await fetch(SB+'/rest/v1/team_members?is_active=eq.true&is_assessor=eq.true&order=name',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   async getSWPs(){try{const r=await fetch(SB+'/rest/v1/safe_work_practices?is_active=eq.true&order=sort_order',{headers:SH()});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}},
   // Applicability rules: an explicit swp_assignments row wins (applies true/false);
@@ -4057,9 +4066,11 @@ function showToolboxTalkForm(onCreated){
   const selAllRow=dv({cls:'row gap2 mb2'});
   modal.appendChild(selAllRow);
   modal.appendChild(attWrap);
-  CDB.getFactoryMembers().then(function(ms){
+  // Everyone on the roll by default — office and management included, since
+  // they attend talks too. Shared logins are the only exclusion.
+  CDB.getPeople().then(function(ms){
     attWrap.innerHTML='';
-    if(!ms.length){attWrap.appendChild(dv({cls:'empty'},'No factory employees found.'));return;}
+    if(!ms.length){attWrap.appendChild(dv({cls:'empty'},'No team members found.'));return;}
     ms.forEach(function(m){
       const row=dv({cls:'row gap2',st:{alignItems:'center',padding:'5px 6px',borderRadius:'6px'}});
       const chk=h('input',{type:'checkbox',st:{width:'16px',height:'16px',cursor:'pointer',accentColor:'var(--green)'}});
@@ -4166,9 +4177,13 @@ async function openToolboxTalk(c,talkId){
   // Sign-on sheet
   const signed=attendees.filter(function(a){return a.signed_at;}).length;
   const sheet=dv({cls:'card'});
+  const outstanding=attendees.length-signed;
   sheet.appendChild(dv({cls:'row jb mb3'},
     dv({},dv({cls:'card-title'},'Sign-on sheet'),dv({cls:'card-sub'},signed+' of '+attendees.length+' signed')),
-    isSupervisor()&&btn('+ Add attendee','btn-o btn-sm',function(){showAddAttendee(talk,attendees,refresh);})
+    isSupervisor()&&dv({cls:'row gap2'},
+      outstanding>0&&talk.status!=='closed'&&btn('📋 Pass the tablet around','btn-p btn-sm',function(){openRollCall(talk,attendees,mMap,refresh);}),
+      btn('+ Add attendee','btn-o btn-sm',function(){showAddAttendee(talk,attendees,refresh);})
+    )
   ));
 
   attendees.forEach(function(a){
@@ -4179,7 +4194,12 @@ async function openToolboxTalk(c,talkId){
     left.appendChild(dv({st:{width:'26px',height:'26px',borderRadius:'50%',background:a.signed_at?'#22c55e':'#e5e7eb',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',flexShrink:'0'}},a.signed_at?'✓':''));
     const info=dv({});
     info.appendChild(dv({cls:'fw6',st:{fontSize:'13px'}},m.name+(isMe?' (you)':'')));
-    if(a.signed_at)info.appendChild(dv({cls:'txs muted'},'Signed '+new Date(a.signed_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'})));
+    if(a.signed_at){
+      info.appendChild(dv({cls:'txs muted'},'Signed '+new Date(a.signed_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'})));
+      // Be explicit about how the signature was captured.
+      if(a.signed_mode==='witnessed')info.appendChild(sp({st:{fontSize:'10px',fontWeight:'700',color:'#1e40af',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'4px',padding:'1px 5px',display:'inline-block',marginTop:'2px'}},'Witnessed by '+(a.witnessed_by_name||'a supervisor')));
+      else info.appendChild(sp({st:{fontSize:'10px',fontWeight:'700',color:'#15803d',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'4px',padding:'1px 5px',display:'inline-block',marginTop:'2px'}},'Signed in as themselves'));
+    }
     else if(a.apology_reason)info.appendChild(dv({cls:'txs',st:{color:'#b45309'}},'Apology: '+a.apology_reason));
     else info.appendChild(dv({cls:'txs muted'},'Not yet signed'));
     if(a.comments)info.appendChild(dv({cls:'txs muted',st:{fontStyle:'italic'}},'"'+a.comments+'"'));
@@ -4193,6 +4213,7 @@ async function openToolboxTalk(c,talkId){
       right.appendChild(img);
     }
     if(!a.signed_at&&isMe)right.appendChild(btn('Sign','btn-p btn-sm',function(){openToolboxSignature(talk,a,refresh);}));
+    if(!a.signed_at&&!isMe&&isSupervisor())right.appendChild(btn('Sign here','btn-o btn-sm',function(){openToolboxSignature(talk,a,refresh,m.name);}));
     if(!a.signed_at&&!isMe&&isSupervisor()){
       right.appendChild(btn('Apology','btn-o btn-sm',async function(){
         const why=prompt('Reason '+m.name+' could not attend (e.g. on leave, day off):');
@@ -4233,7 +4254,7 @@ function showAddAttendee(talk,existing,onDone){
   const wrap=dv({st:{maxHeight:'320px',overflowY:'auto',border:'1px solid var(--border)',borderRadius:'8px',padding:'8px',marginBottom:'12px'}});
   const picked={};
   modal.appendChild(wrap);
-  CDB.getMembers().then(function(ms){
+  CDB.getPeople().then(function(ms){
     wrap.innerHTML='';
     const avail=ms.filter(function(m){return !have[m.id];});
     if(!avail.length){wrap.appendChild(dv({cls:'empty'},'Everyone is already on this talk.'));return;}
@@ -4256,16 +4277,84 @@ function showAddAttendee(talk,existing,onDone){
   overlay.appendChild(modal);overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};document.body.appendChild(overlay);
 }
 
+// ── PASS-THE-TABLET SIGN-ON ───────────────────────────────────────────
+// One supervisor stays logged in and hands the tablet round the room. Each
+// person taps their own name and signs. This is the electronic equivalent of
+// a paper sign-on sheet being passed around, and it is recorded as such:
+// the database stamps these as 'witnessed' and names the supervisor whose
+// device it was. Individual login remains available and produces a stronger
+// 'self' signature.
+function openRollCall(talk,attendees,mMap,onDone){
+  if(!isSupervisor()){alert('Only a supervisor can run the pass-around sign-on.');return;}
+  const overlay=dv({cls:'modal-overlay'});
+  const modal=dv({cls:'modal',st:{width:'560px',maxWidth:'96vw'}});
+  let list=attendees.slice();
+
+  function render(){
+    modal.innerHTML='';
+    const outstanding=list.filter(function(a){return !a.signed_at;});
+    const done=list.filter(function(a){return a.signed_at;});
+    modal.appendChild(dv({cls:'modal-title'},'Pass the tablet around'));
+    modal.appendChild(dv({cls:'txs muted mb3'},
+      'Hand the tablet to each person. They tap their own name and sign. '+
+      done.length+' of '+list.length+' signed.'
+    ));
+    modal.appendChild(dv({st:{padding:'8px 12px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'8px',fontSize:'11.5px',color:'#1e40af',marginBottom:'12px'}},
+      'Running on '+currentUser.name+'’s login. These signatures are recorded as witnessed by '+currentUser.name+'. Anyone who would rather sign under their own login can do that instead.'
+    ));
+
+    if(!outstanding.length){
+      modal.appendChild(dv({cls:'empty'},'Everyone has signed.'));
+    } else {
+      modal.appendChild(dv({cls:'fw6 tsm mb2'},'Tap your name'));
+      const grid=dv({st:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'10px',marginBottom:'14px'}});
+      outstanding.forEach(function(a){
+        const m=mMap[a.team_member_id]||{name:'Unknown'};
+        const b=h('button',{st:{padding:'16px 14px',fontSize:'16px',fontWeight:'700',borderRadius:'10px',border:'2px solid var(--border)',background:'#fff',cursor:'pointer',textAlign:'left',lineHeight:'1.3'}},m.name);
+        b.onmouseenter=function(){b.style.borderColor='var(--green)';b.style.background='#f8faf7';};
+        b.onmouseleave=function(){b.style.borderColor='var(--border)';b.style.background='#fff';};
+        b.onclick=function(){
+          openToolboxSignature(talk,a,async function(){
+            list=await CDB.getAttendees(talk.id);
+            render();
+          },m.name);
+        };
+        grid.appendChild(b);
+      });
+      modal.appendChild(grid);
+    }
+
+    if(done.length){
+      modal.appendChild(dv({cls:'txs muted mb2'},'Signed: '+done.map(function(a){return (mMap[a.team_member_id]||{}).name||'?';}).join(', ')));
+    }
+    modal.appendChild(dv({cls:'row gap2',st:{justifyContent:'flex-end'}},
+      btn('Done','btn-p',function(){overlay.remove();if(onDone)onDone();})
+    ));
+  }
+
+  render();
+  overlay.appendChild(modal);
+  overlay.onclick=function(e){if(e.target===overlay){overlay.remove();if(onDone)onDone();}};
+  document.body.appendChild(overlay);
+}
+
 // The signature pad. Same interaction as the delivery proof-of-delivery pad,
 // so it already works with a finger on a tablet.
-function openToolboxSignature(talk,attendee,onSaved){
+function openToolboxSignature(talk,attendee,onSaved,signerName){
   if(!currentUser){alert('Please sign in first.');return;}
-  if(currentUser.id!==attendee.team_member_id){alert('You can only sign for yourself. Please sign in as your own user.');return;}
+  const witnessed=currentUser.id!==attendee.team_member_id;
+  if(witnessed&&!isSupervisor()){alert('You can only sign for yourself. Please sign in as your own user.');return;}
+  const who=signerName||(witnessed?'this person':currentUser.name);
   const overlay=dv({cls:'modal-overlay'});
   const modal=dv({cls:'modal',st:{width:'520px',maxWidth:'95vw'}});
   modal.appendChild(dv({cls:'modal-title'},'Sign: '+talk.title));
+  if(witnessed){
+    modal.appendChild(dv({st:{padding:'8px 12px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'8px',fontSize:'12px',color:'#1e40af',marginBottom:'10px'}},
+      'Signing on '+currentUser.name+'’s device. The record will show this signature was witnessed by '+currentUser.name+' rather than signed by '+who+' personally.'
+    ));
+  }
   modal.appendChild(dv({st:{padding:'10px 12px',background:'#f8faf7',borderRadius:'8px',fontSize:'12px',color:'#374151',lineHeight:'1.6',marginBottom:'12px'}},
-    'I, '+currentUser.name+', confirm I attended this toolbox talk on '+new Date(talk.held_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})+', that the content was explained to me, that I understood it, and that I had the opportunity to ask questions.'
+    'I, '+who+', confirm I attended this toolbox talk on '+new Date(talk.held_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})+', that the content was explained to me, that I understood it, and that I had the opportunity to ask questions.'
   ));
 
   modal.appendChild(h('label',{cls:'txs',st:{display:'block',marginBottom:'4px',color:'var(--muted)'}},'Signature *'));
@@ -4294,8 +4383,8 @@ function openToolboxSignature(talk,attendee,onSaved){
     saveBtn.disabled=true;saveBtn.textContent='Saving...';
     canvas.toBlob(async function(blob){
       try{
-        const url=await CDB.uploadToolboxSignature(blob,talk.id,currentUser.id);
-        await CDB.updateAttendee(attendee.id,{signed_at:new Date().toISOString(),signature_url:url,comments:cmtIn.value.trim()||null});
+        const url=await CDB.uploadToolboxSignature(blob,talk.id,attendee.team_member_id);
+        await CDB.signAttendance(attendee.id,url,cmtIn.value.trim());
         overlay.remove();
         if(onSaved)await onSaved();
       }catch(err){
@@ -4313,11 +4402,15 @@ function printToolboxTalk(talk,attendees,mMap){
   const esc=function(s){return String(s==null?'':s).replace(/[&<>]/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[ch];});};
   const rows=attendees.map(function(a){
     const m=mMap[a.team_member_id]||{name:'Unknown'};
+    const how=!a.signed_at?'—'
+      :a.signed_mode==='witnessed'?'Witnessed by '+esc(a.witnessed_by_name||'a supervisor')
+      :'Signed in as themselves';
     return '<tr>'+
       '<td>'+esc(m.name)+'</td>'+
       '<td>'+esc(m.role||'')+'</td>'+
       '<td>'+(a.signature_url?'<img src="'+esc(a.signature_url)+'" style="max-height:44px;max-width:150px">':(a.apology_reason?'<i>Apology: '+esc(a.apology_reason)+'</i>':'<i>Not signed</i>'))+'</td>'+
       '<td>'+(a.signed_at?new Date(a.signed_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}):'—')+'</td>'+
+      '<td style="font-size:10px">'+how+'</td>'+
       '<td>'+esc(a.comments||'')+'</td>'+
     '</tr>';
   }).join('');
@@ -4353,7 +4446,7 @@ function printToolboxTalk(talk,attendees,mMap){
     section('Controls agreed',talk.controls)+
     section('Follow-up actions',talk.actions)+
     '<div class="sec"><div class="lbl">Attendance and sign-on</div>'+
-    '<table><thead><tr><th>Name</th><th>Role</th><th>Signature</th><th>Signed at</th><th>Comments</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<table><thead><tr><th>Name</th><th>Role</th><th>Signature</th><th>Signed at</th><th>How captured</th><th>Comments</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div class="foot">WindowMakers Factory Portal &middot; record generated '+new Date().toLocaleString('en-AU')+
       ' &middot; '+attendees.filter(function(a){return a.signed_at;}).length+' of '+attendees.length+' attendees signed</div>'+
     '</body></html>');
