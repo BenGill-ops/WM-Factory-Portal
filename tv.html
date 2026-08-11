@@ -240,7 +240,10 @@ setInterval(setStatus,5000);
 /* ===================== SAFETY (from the portal's Safety tab) ===================== */
 async function loadSafety(){
   try{
-    const rows = await sbGet("safety_alerts?select=id,ref_no,title,category,priority,dept,location,is_pinned,is_archived,raised_by,created_at&order=created_at.desc");
+    // Reads the narrow tv_safety_alerts view rather than the base table:
+    // active alerts only, and no description or photo URLs. The TV runs with
+    // no login, so the less it can reach the better.
+    const rows = await sbGet("tv_safety_alerts?select=id,ref_no,title,category,priority,dept,location,is_pinned,raised_by,created_at&order=created_at.desc");
     renderSafety(rows||[]);
   }catch(e){
     document.getElementById("safetyList").innerHTML='<div class="skel">Safety data unavailable.</div>';
@@ -377,23 +380,15 @@ function renderProduction(rows){
 }
 
 /* ===================== SWP COMPLIANCE (mirrors Safety > SWP Compliance) ===================== */
-function compStatus(so){
-  if(!so||!so.self_signed_at) return 'unsigned';
-  if(!so.assessor_signed_at) return 'self-only';
-  const days=(new Date(so.expires_at)-new Date())/86400000;
-  if(days<0) return 'overdue'; if(days<60) return 'due-soon'; return 'current';
-}
+// The percentage is now computed in the database (view: tv_swp_compliance) and
+// arrives as a single aggregate row. The TV no longer pulls individual training
+// records, and the view honours the per-employee applicability rules and counts
+// "due soon" as compliant — the old code here counted only 'current', which
+// under-reported the same way the portal did.
 async function loadCompliance(){
-  const [membersRaw,swps,signoffs]=await Promise.all([
-    sbGet("team_members?is_active=eq.true&select=id,exclude_from_compliance"),
-    sbGet("safe_work_practices?is_active=eq.true&select=id"),
-    sbGet("signoffs?select=team_member_id,swp_id,self_signed_at,assessor_signed_at,expires_at,created_at")
-  ]);
-  const members=(membersRaw||[]).filter(m=>m.exclude_from_compliance!==true);
-  const lk={}; (signoffs||[]).forEach(s=>{const key=s.team_member_id+'_'+s.swp_id; if(!lk[key]||new Date(s.created_at)>new Date(lk[key].created_at)) lk[key]=s;});
-  let cur=0; members.forEach(m=>(swps||[]).forEach(s=>{ if(compStatus(lk[m.id+'_'+s.id])==='current') cur++; }));
-  const total=members.length*((swps||[]).length);
-  renderCompliance(total>0?Math.round(cur/total*100):0);
+  const rows = await sbGet("tv_swp_compliance?select=pct,compliant,total");
+  const row = (rows && rows[0]) || null;
+  renderCompliance(row ? row.pct : null);
 }
 function renderCompliance(pct){
   const box=document.getElementById("swpBox"); if(!box) return;
