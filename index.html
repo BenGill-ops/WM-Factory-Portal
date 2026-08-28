@@ -3136,6 +3136,18 @@ function openDelForm(d,dateStr,c){
         } else if(data.error){
           xeroMsg.textContent='Error: '+data.message;
           xeroMsg.style.color='#dc2626';
+        } else if(data.multiple){
+          // Several invoices match (e.g. 1617dep + 1617bal, or a quote-number search) — pick one
+          xeroMsg.textContent='Found '+data.matches.length+' invoices for "'+jn+'" — tap the one for this job'+(data.suggested?' (★ '+data.suggested+' is the balance invoice)':'')+':';
+          xeroMsg.style.color='#374151';
+          const mlist=dv({st:{display:'flex',flexDirection:'column',gap:'4px',marginTop:'6px'}});
+          data.matches.forEach(function(m){
+            const b=h('button',{cls:'btn btn-o btn-sm',st:Object.assign({justifyContent:'flex-start',textAlign:'left',fontWeight:m.isBalance?'700':'500'},m.isBalance?{borderColor:'#15803d',color:'#15803d'}:{}),
+              onclick:function(){jobIn.value=m.invoiceNumber;searchBtn.click();}},
+              (m.isBalance?'★ ':'')+m.invoiceNumber+' — '+(m.customer||'')+(m.total?' — $'+Number(m.total).toFixed(2):'')+' · '+m.status+(m.isPaid?' · PAID':' · NOT PAID')+(m.reference?' · ref '+m.reference:''));
+            mlist.appendChild(b);
+          });
+          xeroMsg.appendChild(mlist);
         } else {
           // Auto-fill fields
           if(data.customer)custIn.value=data.customer;
@@ -3148,14 +3160,15 @@ function openDelForm(d,dateStr,c){
             paidByIn.disabled=true;
             xeroPayBadge.style.display='flex';
           } else {
+            paidChk.checked=false;
             paidChk.disabled=false;
             paidByIn.disabled=false;
             xeroPayBadge.style.display='none';
           }
           // Store xero data on form
           modal._xeroData=data;
-          xeroMsg.textContent='✓ Found: '+data.customer+(data.total?' — $'+data.total.toFixed(2):'')+' ('+data.status+')';
-          xeroMsg.style.color='#15803d';
+          xeroMsg.textContent='✓ Found: '+(data.invoiceNumber?data.invoiceNumber+' — ':'')+data.customer+(data.total?' — $'+data.total.toFixed(2):'')+' ('+data.status+')'+(data.note?' — '+data.note:'');
+          xeroMsg.style.color=data.isDeposit&&!data.isPaid?'#b45309':'#15803d';
         }
       } catch(e){
         xeroMsg.textContent='Could not reach Xero lookup service';
