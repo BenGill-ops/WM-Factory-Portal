@@ -100,7 +100,7 @@ header h1{font-size:17px}
           <input type="file" id="file" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain">
         </div>
         <div class="row"><label class="hint" for="colour">Frame colour</label><input type="text" id="colour" style="flex:1;min-width:200px" placeholder="Read from the report, or type it in"></div>
-        <p class="hint" id="pasteMsg" role="status">From a report, only the stainless steel mesh lines are brought in. Sizes are screen sizes.</p>
+        <p class="hint" id="pasteMsg" role="status">Only Invisi-Gard screens are brought in: Barrier Screen with Stainless Steel Mesh. Sizes are screen sizes.</p>
         <div class="scroll"><table id="partsT">
           <thead><tr><th>Label</th><th>Type</th><th class="num">Height</th><th class="num">Width</th><th class="num">Qty</th><th class="num">Midrail</th><th></th></tr></thead>
           <tbody></tbody></table></div>
@@ -391,11 +391,12 @@ async function loadReport(file){
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const {job,rows}=parseReport(await pdfText(new Uint8Array(await file.arrayBuffer())));
     if(!rows.length){msg.textContent='No screen lines found in that PDF. It needs to be the Flyscreens and Flydoors report, printed to PDF (not a scan).';return}
-    const ss=rows.filter(r=>/stainless/i.test(r.mesh));
-    if(!ss.length){msg.textContent=`Read ${rows.length} screen lines${job?' for job '+job:''}, but none use stainless steel mesh.`;return}
+    // Invisi-Gard = Barrier Screen AND Stainless Steel Mesh. A Flyscreen with stainless mesh is an ordinary flyscreen.
+    const ss=rows.filter(r=>/stainless/i.test(r.mesh)&&/barrier/i.test(r.screen));
+    if(!ss.length){msg.textContent=`Read ${rows.length} screen lines${job?' for job '+job:''}, but none are Barrier Screen with stainless steel mesh.`;return}
     state.parts=ss.map(r=>({label:`#${r.item} ${r.frame}`,type:guessType(r.frame,r.h),colour:r.finish,h:r.h,w:r.w,qty:r.qty}));state.job=job||'';$('#job').value=state.job;state.colour=[...new Set(ss.map(r=>r.finish).filter(Boolean))].join(' / ');$('#colour').value=state.colour;state.example=false;renderParts();schedule();
     const n=ss.reduce((a,r)=>a+r.qty,0);
-    msg.textContent=`${job?'Job '+job+': ':''}brought in ${n} stainless steel screens from ${ss.length} lines. Left out ${rows.length-ss.length} lines with other mesh.`;
+    msg.textContent=`${job?'Job '+job+': ':''}brought in ${n} Invisi-Gard screens (Barrier Screen with stainless steel mesh) from ${ss.length} lines. Left out ${rows.length-ss.length} other lines.`;
   }catch(err){msg.textContent='Could not read that PDF. Paste the screen sizes below instead.'}
 }
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;
@@ -566,7 +567,7 @@ async function vqGet(){
   try{
     const num=/^\d+$/.test(q);
     const filter=num?`or=(quote_num.eq.${q},job_num.eq.${q})`:`job_num=eq.${encodeURIComponent(q)}`;
-    let rows=await db('vquote_screens?'+filter+'&order=quote_num,pos,height_mm,width_mm&limit=1000')||[];
+    let rows=await db('vquote_screens?'+filter+'&screen_type=ilike.*barrier*&mesh=ilike.*stainless*&order=quote_num,pos,height_mm,width_mm&limit=1000')||[];
     if(!rows.length){jobMsg(`No Invisi-Gard screens found in vQuote for ${q}. A quote shows up about 15 minutes after it is saved in vQuote, and only quotes changed in the last 180 days are included.`);return}
     // A number can be one quote's number and another quote's job number: prefer the quote number, then ask if still unclear
     if(num&&rows.some(r=>String(r.quote_num)===q))rows=rows.filter(r=>String(r.quote_num)===q);
