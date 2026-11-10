@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<!-- Invisi-Gard mesh cut optimiser. Shown inside index.html (Supplier Ordering > Invisi-Gard mesh) in an iframe. -->
+<title>Invisi-Gard Cut Optimiser</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: workshop bench. Inputs (stock rack, cut list, settings) in a left column, cutting plan on the right; stacks on a phone. */
+:root{
+  --bg:#f0f0f0; --surface:#ffffff; --sunk:#e9ebe6; --line:#e5e7eb;
+  --fg:#1a1a1a; --muted:#6b7280; --accent:#4a9a0f; --accent-fg:#ffffff;
+  --piece:#dcf0c9; --piece-line:#3a7a0a; --warn:#a4470b; --warn-bg:#fbe9da;
+  --display:"DM Sans",system-ui,sans-serif;
+  --body:"DM Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1320px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+header h1{font-family:var(--display);font-weight:600;font-size:24px;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.cols{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+h2{font-family:var(--display);font-weight:600;font-size:15px;margin:0}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:12.5px;margin:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:0 4px 4px}
+td{padding:2px 4px 2px 0}
+td.num,th.num{text-align:right}
+input[type=number],input[type=text],textarea{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 7px;font:inherit}
+input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums;min-width:62px}
+input[type=text]{min-width:170px}
+select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 4px;font:inherit}
+textarea{font-family:var(--mono);font-size:12.5px;min-height:84px;resize:vertical}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-weight:500;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+button.x{padding:3px 8px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.settings label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.check{display:flex;gap:8px;align-items:center;font-size:13px}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:var(--warn-bg);color:var(--warn);padding:2px 7px;border-radius:3px;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.stat{background:var(--surface);padding:12px 14px}
+.stat b{display:block;font-family:var(--display);font-size:26px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.warnbox{background:var(--warn-bg);color:var(--warn);border-radius:6px;padding:10px 12px;font-weight:500}
+.sheet-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.sheet-head .dim{font-family:var(--mono);font-size:16px;font-weight:500}
+.sheet-head .meta{color:var(--muted);font-size:13px}
+.times{background:var(--accent);color:var(--accent-fg);border-radius:3px;padding:1px 7px;font-family:var(--mono);font-size:13px;margin-left:6px}
+svg.plan{width:100%;height:auto;display:block;color:var(--piece-line)}
+svg .sheet{fill:var(--sunk);stroke:var(--muted);stroke-width:1.5;vector-effect:non-scaling-stroke}
+svg .pc{fill:var(--piece);stroke:var(--piece-line);stroke-width:1.2;vector-effect:non-scaling-stroke}
+svg .mesh{stroke:currentColor;stroke-width:.6;vector-effect:non-scaling-stroke;opacity:.28;fill:none}
+svg .off{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+svg text{font-family:var(--mono);text-anchor:middle}
+svg .t1{fill:var(--fg);font-weight:500}
+svg .t2{fill:var(--muted)}
+.plan-table td,.plan-table th{padding:3px 10px 3px 0;font-variant-numeric:tabular-nums}
+.plan-table td.m{font-family:var(--mono)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.sw{display:inline-block;width:14px;height:10px;vertical-align:-1px;margin-right:5px;border:1px solid var(--piece-line);background:var(--piece)}
+.sw.o{background:none;border:1px dashed var(--muted)}
+.empty{color:var(--muted);padding:28px 8px;text-align:center}
+body{margin:0}
+.wrap{padding:0 0 24px;max-width:none}
+header h1{font-size:17px}
+.panel{border-radius:12px}
+@media print{.cols{grid-template-columns:minmax(0,1fr)}.cols>.stack:first-child,header,#copy,#print{display:none}.panel{break-inside:avoid}body{background:#fff}}
+</style>
+
+</head><body>
+<div class="wrap">
+  <header>
+    <h1>Invisi-Gard Cut Optimiser</h1>
+    <p>Nests mesh panels onto stock sheets with straight edge-to-edge cuts, picks the sheet sizes that waste the least, and lists the offcuts worth keeping. All sizes in mm, height before width.</p>
+  </header>
+
+  <div class="cols">
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-head"><h2>Screens</h2><span class="tag" id="exTag">Example screens</span></div>
+        <div class="row">
+          <label class="hint" for="file">Upload a Flyscreens and Flydoors report (PDF), or a CSV</label>
+          <input type="file" id="file" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain">
+        </div>
+        <p class="hint" id="pasteMsg" role="status">From a report, only the stainless steel mesh lines are brought in. Sizes are screen sizes.</p>
+        <div class="scroll"><table id="partsT">
+          <thead><tr><th>Label</th><th>Type</th><th class="num">Height</th><th class="num">Width</th><th class="num">Qty</th><th class="num">Midrail</th><th></th></tr></thead>
+          <tbody></tbody></table></div>
+        <div class="row"><button id="addPart">Add screen</button><button id="clearParts">Clear list</button></div>
+        <p class="hint">Midrail: leave on auto to follow the rule in Screen to mesh rules. Enter a height to put a midrail at that spot on that screen, or 0 for no midrail.</p>
+        <label class="hint" for="paste">Paste rows from Excel or vQuote. One panel per line: label, height, width, qty.</label>
+        <textarea id="paste" placeholder="W-1.04&#9;2040&#9;880&#9;2&#10;Laundry door, 2035, 790, 1&#10;1160 x 1410"></textarea>
+        <div class="row">
+          <button class="primary" id="pasteAdd">Add to list</button><button id="pasteReplace">Replace list</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Stock sheets</h2><span class="hint">Untick a size you don't carry</span></div>
+        <div class="scroll"><table id="stockT">
+          <thead><tr><th>Use</th><th class="num">Length</th><th class="num">Width</th><th class="num">On hand</th><th class="num">Cost $</th><th></th></tr></thead>
+          <tbody></tbody></table></div>
+        <div class="row"><button id="addStock">Add sheet size</button></div>
+        <p class="hint">Leave "On hand" blank for no limit. Enter a cost on every size to optimise on dollars; otherwise it optimises on mesh area.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Cutting settings</h2>
+        <div class="settings">
+          <label for="gap">Gap between panels (blade width)<input type="number" id="gap" min="0" step="1"></label>
+          <label for="trim">Trim off each sheet edge<input type="number" id="trim" min="0" step="1"></label>
+          <label for="minOff">Smallest offcut worth keeping<input type="number" id="minOff" min="0" step="10"></label>
+        </div>
+        <label class="check" for="rot"><input type="checkbox" id="rot"> Panels may be turned 90° on the sheet</label>
+      </section>
+
+      <section class="panel">
+        <h2>Screen to mesh rules</h2>
+        <p class="hint">Mesh is cut smaller than the screen, by the same amount off the height and the width. A door over both midrail limits gets a midrail, which splits its mesh into a top and a bottom panel. Set a limit to 0 to switch midrails off.</p>
+        <div class="settings">
+          <label for="doorD">Door mesh = screen size minus<input type="number" id="doorD" min="0" step="1"></label>
+          <label for="winD">Window mesh = screen size minus<input type="number" id="winD" min="0" step="1"></label>
+          <label for="mrH">Door midrail when screen is taller than<input type="number" id="mrH" min="0" step="10"></label>
+          <label for="mrW">and wider than<input type="number" id="mrW" min="0" step="10"></label>
+          <label for="mrAt">Standard midrail centre, up from outside of bottom frame<input type="number" id="mrAt" min="0" step="10"></label>
+          <label for="mrGap">Mesh height taken up by the midrail<input type="number" id="mrGap" min="0" step="1"></label>
+        </div>
+      </section>
+    </div>
+
+    <div class="stack" id="out"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+//CORE
+// Reads the text of a vQuote "FLYSCREENS AND FLYDOORS" report into screen rows.
+function parseReport(text){
+  const num=s=>parseFloat(s.replace(/,/g,''));
+  const itemRe=/^\s*(\d+)\s+[\d,]+\s*mm\s*x\s*[\d,]+\s*mm\s+(.*?)\s+([\d,]+)\s*mm\s*x\s*([\d,]+)\s*mm\s+(\d+)\b/;
+  const field=(blk,name)=>{const m=blk.match(new RegExp(name+':[ \\t]*([^\\n]*?)(?:[ \\t]{2,}|\\n|$)'));return m?m[1].trim():''};
+  const rows=[];let cur=null;
+  for(const line of text.split(/\r?\n/)){
+    const m=line.match(itemRe);
+    if(m){cur={item:m[1],frame:m[2].trim(),h:num(m[3]),w:num(m[4]),qty:+m[5],blk:''};rows.push(cur)}
+    else if(cur)cur.blk+=line+'\n';
+  }
+  for(const r of rows){r.screen=field(r.blk,'Screen');r.mesh=field(r.blk,'Mesh');r.midrail=field(r.blk,'Flydoor Midrail');delete r.blk}
+  const job=(text.match(/Job Ref:\s*(\S+)/)||[])[1]||'';
+  return {job,rows};
+}
+const SORTS=[
+  (a,b)=>b.w*b.h-a.w*a.h,
+  (a,b)=>Math.max(b.w,b.h)-Math.max(a.w,a.h)||b.w*b.h-a.w*a.h,
+  (a,b)=>Math.min(b.w,b.h)-Math.min(a.w,a.h)||b.w*b.h-a.w*a.h,
+  (a,b)=>(b.w+b.h)-(a.w+a.h)
+];
+function packOnce(L,W,items,o,split){
+  const t=o.trim,k=o.gap;
+  let free=[{x:t,y:t,w:L-2*t,h:W-2*t}];const placed=[],rest=[];let area=0;
+  for(const it of items){
+    let best=null,bs=Infinity;
+    for(let i=0;i<free.length;i++){const f=free[i];
+      const tryO=(pw,ph)=>{if(pw<=f.w+1e-6&&ph<=f.h+1e-6){const s=Math.min(f.w-pw,f.h-ph)*1e5+Math.max(f.w-pw,f.h-ph);if(s<bs){bs=s;best={i,pw,ph}}}};
+      tryO(it.w,it.h);if(o.rot&&it.w!==it.h)tryO(it.h,it.w);
+    }
+    if(!best){rest.push(it);continue}
+    const f=free[best.i],pw=best.pw,ph=best.ph;free.splice(best.i,1);
+    placed.push({it,x:f.x,y:f.y,w:pw,h:ph});area+=pw*ph;
+    const rw=f.w-pw-k,rh=f.h-ph-k;
+    const A=[{x:f.x+pw+k,y:f.y,w:rw,h:ph},{x:f.x,y:f.y+ph+k,w:f.w,h:rh}];
+    const B=[{x:f.x+pw+k,y:f.y,w:rw,h:f.h},{x:f.x,y:f.y+ph+k,w:pw,h:rh}];
+    const ar=r=>Math.max(0,r.w)*Math.max(0,r.h);
+    let useA;
+    if(split===0)useA=rw<=rh;else if(split===1)useA=rw>rh;
+    else useA=Math.max(ar(A[0]),ar(A[1]))>=Math.max(ar(B[0]),ar(B[1]));
+    for(const r of (useA?A:B))if(r.w>1&&r.h>1)free.push(r);
+  }
+  return {placed,rest,free,area};
+}
+function packSheet(L,W,items,o){
+  let best=null;
+  for(const s of SORTS){const sorted=items.slice().sort(s);
+    for(let sp=0;sp<3;sp++){const r=packOnce(L,W,sorted,o,sp);
+      r.maxFree=r.free.reduce((m,f)=>Math.max(m,f.w*f.h),0);
+      if(!best||r.area>best.area+1e-6||(Math.abs(r.area-best.area)<1e-6&&r.maxFree>best.maxFree))best=r;}}
+  return best;
+}
+function solve(stocks,pieces,o){
+  const useCost=stocks.length>0&&stocks.every(s=>s.cost>0);
+  const price=s=>useCost?s.cost:s.l*s.w;
+  const run=allowed=>{
+    let rem=pieces.slice();const left=new Map(allowed.map(s=>[s,s.qty>0?s.qty:Infinity]));const sheets=[];let total=0;
+    while(rem.length){
+      let pick=null,full=null;
+      for(const s of allowed){if(left.get(s)<=0)continue;
+        const r=packSheet(s.l,s.w,rem,o);if(!r.placed.length)continue;r.stock=s;
+        if(!r.rest.length){if(!full||price(s)<price(full.stock))full=r}
+        else{r.score=r.area/price(s);if(!pick||r.score>pick.score)pick=r}}
+      const r=full||pick;if(!r)break;
+      sheets.push(r);total+=price(r.stock);rem=r.rest;left.set(r.stock,left.get(r.stock)-1);
+    }
+    return {sheets,unplaced:rem,total};
+  };
+  const tries=[run(stocks),...(stocks.length>1?stocks.map(s=>run([s])):[])];
+  tries.sort((a,b)=>a.unplaced.length-b.unplaced.length||a.total-b.total||a.sheets.length-b.sheets.length);
+  const res=tries[0];res.useCost=useCost;return res;
+}
+//UI
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY='wm-mesh-optimiser-v1';
+const guessType=(label,h)=>/door|sgd|\bD-?\d/i.test(label)?'door':/window|louvre|awning|\bW-?\d/i.test(label)?'window':(h>=1900?'door':'window');
+const packNote=n=>{const p=Math.floor(n/5),l=n%5;return [p?`${p} pack${p>1?'s':''}`:'',l?`${l} loose`:''].filter(Boolean).join(' + ')+(l>=3?` · ${5-l} more fills a pack`:'')};
+let state={
+  example:true,
+  parts:[
+    {label:'Sliding door screen',h:2040,w:880,qty:2},
+    {label:'Entry door screen',h:1990,w:760,qty:1},
+    {label:'Awning window screen',h:1110,w:1360,qty:3},
+    {label:'Slider window screen',h:960,w:820,qty:4},
+    {label:'Bathroom screen',h:520,w:560,qty:2}
+  ],
+  stocks:[[2000,750],[2000,900],[2000,1200],[2000,1500],[2400,900],[2400,1200],[2400,1500],[3000,1500]].map(([l,w])=>({l,w,qty:'',cost:'',on:true})),
+  opt:{gap:0,trim:0,minOff:300,rot:true,doorD:110,winD:60,mrH:2400,mrW:1200,mrAt:1020,mrGap:24}
+};
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.parts&&s.stocks&&s.opt)state=s}catch(e){}
+if(state.opt.mrGap===110)state.opt.mrGap=24;
+state.parts.forEach(p=>{if(!p.type)p.type=guessType(p.label,p.h)});
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
+
+function renderParts(){
+  $('#exTag').hidden=!state.example;
+  $('#partsT tbody').innerHTML=state.parts.map((p,i)=>`<tr>
+    <td><input type="text" id="p-label-${i}" data-i="${i}" data-k="label" value="${esc(p.label)}" aria-label="Label"></td>
+    <td><select id="p-type-${i}" data-i="${i}" data-k="type" aria-label="Door or window"><option value="door"${p.type!=='window'?' selected':''}>Door</option><option value="window"${p.type==='window'?' selected':''}>Window</option></select></td>
+    <td><input type="number" id="p-h-${i}" data-i="${i}" data-k="h" value="${p.h}" min="1" aria-label="Height"></td>
+    <td><input type="number" id="p-w-${i}" data-i="${i}" data-k="w" value="${p.w}" min="1" aria-label="Width"></td>
+    <td><input type="number" id="p-qty-${i}" data-i="${i}" data-k="qty" value="${p.qty}" min="1" aria-label="Quantity"></td>
+    <td><input type="number" id="p-mr-${i}" data-i="${i}" data-k="mr" value="${p.mr??''}" min="0" step="10" placeholder="auto" aria-label="Midrail height"></td>
+    <td><button class="x" data-del="${i}" aria-label="Remove panel">×</button></td></tr>`).join('');
+}
+function renderStocks(){
+  $('#stockT tbody').innerHTML=state.stocks.map((s,i)=>`<tr>
+    <td><input type="checkbox" id="s-on-${i}" data-i="${i}" data-k="on" ${s.on?'checked':''} aria-label="Use this size"></td>
+    <td><input type="number" id="s-l-${i}" data-i="${i}" data-k="l" value="${s.l}" min="1" aria-label="Length"></td>
+    <td><input type="number" id="s-w-${i}" data-i="${i}" data-k="w" value="${s.w}" min="1" aria-label="Width"></td>
+    <td><input type="number" id="s-qty-${i}" data-i="${i}" data-k="qty" value="${s.qty}" min="0" placeholder="any" aria-label="On hand"></td>
+    <td><input type="number" id="s-cost-${i}" data-i="${i}" data-k="cost" value="${s.cost}" min="0" step="0.01" placeholder="–" aria-label="Cost"></td>
+    <td><button class="x" data-del="${i}" aria-label="Remove sheet size">×</button></td></tr>`).join('');
+}
+function bindTable(sel,arr,rerender){
+  const t=$(sel);
+  t.addEventListener('input',e=>{const el=e.target,i=el.dataset.i,k=el.dataset.k;if(i==null)return;
+    arr()[i][k]=el.type==='checkbox'?el.checked:(el.type==='number'?(el.value===''?'':+el.value):el.value);
+    if(sel==='#partsT'){state.example=false;$('#exTag').hidden=true}
+    schedule()});
+  t.addEventListener('click',e=>{const d=e.target.dataset.del;if(d==null)return;arr().splice(+d,1);
+    if(sel==='#partsT')state.example=false;rerender();schedule()});
+}
+bindTable('#partsT',()=>state.parts,renderParts);
+bindTable('#stockT',()=>state.stocks,renderStocks);
+$('#addPart').onclick=()=>{if(state.example){state.parts=[];state.example=false}state.parts.push({label:'',type:'door',h:'',w:'',qty:1});renderParts();schedule();
+  const el=$(`#p-label-${state.parts.length-1}`);if(el)el.focus()};
+$('#clearParts').onclick=()=>{state.job='';state.parts=[];state.example=false;renderParts();schedule()};
+$('#addStock').onclick=()=>{state.stocks.push({l:'',w:'',qty:'',cost:'',on:true});renderStocks();schedule()};
+for(const k of ['gap','trim','minOff','doorD','winD','mrH','mrW','mrAt','mrGap']){const el=$('#'+k);el.value=state.opt[k];el.oninput=()=>{state.opt[k]=Math.max(0,+el.value||0);schedule()}}
+$('#rot').checked=state.opt.rot;$('#rot').onchange=e=>{state.opt.rot=e.target.checked;schedule()};
+
+function parseRows(text){
+  const out=[];
+  for(const line of text.split(/\r?\n/)){
+    if(!line.trim())continue;
+    let cells=line.split(/[\t,;]+/).map(c=>c.trim()).filter(Boolean);
+    if(cells.length<2)cells=line.trim().split(/\s+/);
+    let label='';const nums=[];
+    for(const c of cells){
+      const parts=c.split(/\s*[x×*]\s*/i);
+      if(parts.every(p=>/^\d+(\.\d+)?(mm)?$/i.test(p)))parts.forEach(p=>nums.push(parseFloat(p)));
+      else if(!label&&!nums.length)label=c; else if(!nums.length)label+=' '+c;
+    }
+    if(nums.length>=2&&nums[0]>0&&nums[1]>0)out.push({label,type:guessType(label,nums[0]),h:nums[0],w:nums[1],qty:Math.max(1,Math.round(nums[2]||1))});
+  }
+  return out;
+}
+function addRows(text,replace){
+  const rows=parseRows(text);
+  if(!rows.length){$('#pasteMsg').textContent='No panels found. Each line needs a height and a width.';return}
+  if(replace||state.example)state.parts=[];
+  state.example=false;state.parts.push(...rows);renderParts();schedule();
+  $('#pasteMsg').textContent=`Added ${rows.length} line${rows.length>1?'s':''}.`;$('#paste').value='';
+}
+$('#pasteAdd').onclick=()=>addRows($('#paste').value,false);
+$('#pasteReplace').onclick=()=>addRows($('#paste').value,true);
+async function pdfText(buf){
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;let out='';
+  for(let n=1;n<=pdf.numPages;n++){
+    const tc=await (await pdf.getPage(n)).getTextContent();
+    const lines=[];
+    for(const it of tc.items){if(!it.str.trim())continue;const x=it.transform[4],y=it.transform[5];
+      let ln=lines.find(l=>Math.abs(l.y-y)<3);if(!ln){ln={y,items:[]};lines.push(ln)}ln.items.push({x,end:x+it.width,str:it.str})}
+    lines.sort((a,b)=>b.y-a.y);
+    for(const ln of lines){ln.items.sort((a,b)=>a.x-b.x);let s='',end=null;
+      for(const it of ln.items){if(end!==null)s+=it.x-end>14?'    ':(it.x-end>0.5?' ':'');s+=it.str;end=it.end}
+      out+=s+'\n'}
+  }
+  return out;
+}
+async function loadReport(file){
+  const msg=$('#pasteMsg');
+  try{
+    if(!window.pdfjsLib)throw new Error('nolib');
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const {job,rows}=parseReport(await pdfText(new Uint8Array(await file.arrayBuffer())));
+    if(!rows.length){msg.textContent='No screen lines found in that PDF. It needs to be the Flyscreens and Flydoors report, printed to PDF (not a scan).';return}
+    const ss=rows.filter(r=>/stainless/i.test(r.mesh));
+    if(!ss.length){msg.textContent=`Read ${rows.length} screen lines${job?' for job '+job:''}, but none use stainless steel mesh.`;return}
+    state.parts=ss.map(r=>({label:`#${r.item} ${r.frame}`,type:guessType(r.frame,r.h),h:r.h,w:r.w,qty:r.qty}));state.job=job||'';state.example=false;renderParts();schedule();
+    const n=ss.reduce((a,r)=>a+r.qty,0);
+    msg.textContent=`${job?'Job '+job+': ':''}brought in ${n} stainless steel screens from ${ss.length} lines. Left out ${rows.length-ss.length} lines with other mesh.`;
+  }catch(err){msg.textContent='Could not read that PDF. Paste the screen sizes below instead.'}
+}
+$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;
+  if(/\.pdf$/i.test(f.name)||f.type==='application/pdf')loadReport(f);
+  else{const r=new FileReader();r.onload=()=>addRows(String(r.result),false);r.readAsText(f)}
+  e.target.value=''};
+
+let timer;function schedule(){save();clearTimeout(timer);timer=setTimeout(compute,180)}
+const m2=a=>(a/1e6).toFixed(2);
+let planText='';
+function compute(){
+  const out=$('#out');
+  const stocks=state.stocks.filter(s=>s.on&&s.l>0&&s.w>0).map(s=>({l:Math.max(s.l,s.w),w:Math.min(s.l,s.w),qty:+s.qty||0,cost:+s.cost||0}));
+  const pieces=[];let count=0;const o=state.opt,railed=[];
+  state.parts.forEach((p,pi)=>{if(!(p.h>0&&p.w>0))return;const q=Math.max(1,Math.round(+p.qty||1));
+    const label=p.label||`Screen ${pi+1}`;
+    const d=p.type==='window'?o.winD:o.doorD;const mh=+p.h-d,mw=+p.w-d;if(mh<=0||mw<=0)return;
+    const own=p.mr!==''&&p.mr!=null,at=own?+p.mr:o.mrAt;
+    const rail=own?at>0:(p.type!=='window'&&o.mrH>0&&o.mrW>0&&at>0&&p.h>o.mrH&&p.w>o.mrW);
+    let cuts=[[mh,'']];
+    if(rail){const bot=at-d/2-o.mrGap/2,top=+p.h-at-d/2-o.mrGap/2;
+      if(bot>0&&top>0){cuts=[[top,' (top)'],[bot,' (bottom)']];railed.push(`${q} × ${label}, screen ${p.h} × ${p.w}, midrail at ${at}: top mesh ${top} × ${mw}, bottom mesh ${bot} × ${mw}`)}}
+    count+=q*cuts.length;
+    if(count<=3000)for(let i=0;i<q;i++)cuts.forEach(([ch,sfx],ci)=>pieces.push({p:pi+'_'+ci,label:label+sfx,w:ch,h:mw,H:ch,W:mw}))});
+  if(!pieces.length){out.innerHTML='<section class="panel"><p class="empty">Add panels to the cut list and the cutting plan appears here.</p></section>';return}
+  if(!stocks.length){out.innerHTML='<section class="panel"><p class="empty">Tick at least one stock sheet size.</p></section>';return}
+  if(count>3000){out.innerHTML='<section class="panel"><div class="warnbox">That is more than 3,000 panels. Split the job into smaller runs.</div></section>';return}
+  const res=solve(stocks,pieces,state.opt);
+  // group identical layouts
+  const groups=[];const seen=new Map();
+  for(const sh of res.sheets){
+    const sig=sh.stock.l+'x'+sh.stock.w+'|'+sh.placed.map(p=>[p.x,p.y,p.w,p.h,p.it.p].join(',')).sort().join(';');
+    if(seen.has(sig))seen.get(sig).n++;else{const g={sh,n:1};seen.set(sig,g);groups.push(g)}
+  }
+  const sheetArea=res.sheets.reduce((a,s)=>a+s.stock.l*s.stock.w,0);
+  const used=res.sheets.reduce((a,s)=>a+s.area,0);
+  const yieldPct=sheetArea?used/sheetArea*100:0;
+  const bySize=new Map();res.sheets.forEach(s=>{const k=`${s.stock.l} × ${s.stock.w}`;bySize.set(k,(bySize.get(k)||0)+1)});
+  const cost=res.useCost?res.sheets.reduce((a,s)=>a+s.stock.cost,0):null;
+  let html=`<div class="stats">
+    <div class="stat"><b>${res.sheets.length}</b><span>sheet${res.sheets.length===1?'':'s'} to cut</span></div>
+    <div class="stat"><b>${yieldPct.toFixed(1)}%</b><span>of the mesh ends up in panels</span></div>
+    <div class="stat"><b>${m2(sheetArea-used)} m²</b><span>left over, of ${m2(sheetArea)} m² pulled</span></div>
+    ${cost!=null?`<div class="stat"><b>$${cost.toFixed(2)}</b><span>sheet cost</span></div>`:''}
+  </div>`;
+  if(res.unplaced.length){
+    const u=new Map();res.unplaced.forEach(x=>{const k=`${x.label} (${x.H} × ${x.W})`;u.set(k,(u.get(k)||0)+1)});
+    html+=`<div class="warnbox">Not placed: ${[...u].map(([k,n])=>`${n} × ${esc(k)}`).join(', ')}. No ticked sheet is big enough, or the sheets on hand ran out. Check the mesh deductions and midrail limits.</div>`;
+  }
+  if(railed.length)html+=`<section class="panel"><h2>Screens getting a midrail</h2><p class="hint" style="color:var(--fg)">${railed.map(esc).join('<br>')}</p><p class="hint">Each is cut as a top and a bottom mesh panel, marked on the layouts.</p></section>`;
+  html+=`<section class="panel"><div class="panel-head"><h2>Sheets to order${state.job?' · Job '+esc(state.job):''}</h2><span class="row"><button id="print">Print</button><button id="copy">Copy cutting plan</button></span></div>
+    <div class="scroll"><table class="plan-table"><thead><tr><th>Sheet size</th><th class="num">Qty</th><th>Packs of 5</th></tr></thead><tbody>
+    ${[...bySize].map(([k,n])=>`<tr><td class="m">${k}</td><td class="num m">${n}</td><td>${packNote(n)}</td></tr>`).join('')}</tbody></table></div>
+    <textarea id="copyBox" readonly hidden aria-label="Cutting plan text"></textarea>
+    <div class="legend"><span><i class="sw"></i>Mesh panel, cut size height × width</span><span><i class="sw o"></i>Offcut worth keeping</span></div></section>`;
+  const lines=[`INVISI-GARD CUTTING PLAN${state.job?' - JOB '+state.job:''}`,`${res.sheets.length} sheets, yield ${yieldPct.toFixed(1)}%`,''];
+  groups.forEach((g,gi)=>{
+    const s=g.sh.stock,L=s.l,W=s.w;
+    const offs=g.sh.free.filter(f=>Math.min(f.w,f.h)>=Math.max(1,state.opt.minOff));
+    const agg=new Map();g.sh.placed.forEach(p=>{const k=p.it.p;if(!agg.has(k))agg.set(k,{it:p.it,n:0});agg.get(k).n++});
+    const pad=L*0.012,u=L/70;
+    let svg=`<svg class="plan" viewBox="${-pad} ${-pad} ${L+2*pad} ${W+2*pad}" role="img" aria-label="Layout ${gi+1}: ${g.sh.placed.length} panels on a ${L} by ${W} sheet">
+      <defs><pattern id="mesh${gi}" width="${u}" height="${u}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path class="mesh" d="M0 0H${u}M0 0V${u}"/></pattern></defs>
+      <rect class="sheet" x="0" y="0" width="${L}" height="${W}"/>`;
+    for(const f of offs){const fs=Math.min(f.w/8,f.h/1.8,L/36);
+      svg+=`<rect class="off" x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}"/>`;
+      if(fs>=L/90)svg+=`<text class="t2" x="${f.x+f.w/2}" y="${f.y+f.h/2+fs*.35}" font-size="${fs}">${Math.round(Math.max(f.w,f.h))} × ${Math.round(Math.min(f.w,f.h))}</text>`}
+    for(const p of g.sh.placed){
+      const fs=Math.min(p.w/7.5,p.h/2.8,L/28),cx=p.x+p.w/2,cy=p.y+p.h/2;
+      svg+=`<rect class="pc" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}"/><rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="url(#mesh${gi})"/>`;
+      if(fs>=L/90){const max=Math.max(3,Math.floor(p.w/(fs*.62)));let lb=p.it.label;if(lb.length>max)lb=lb.slice(0,max-1)+'…';
+        svg+=`<text class="t1" x="${cx}" y="${cy-fs*.15}" font-size="${fs}">${esc(lb)}</text><text class="t2" x="${cx}" y="${cy+fs*1.05}" font-size="${fs*.85}">${p.it.H} × ${p.it.W}</text>`}
+    }
+    svg+='</svg>';
+    const y=g.sh.area/(L*W)*100;
+    const offTxt=offs.length?offs.map(f=>`${Math.round(Math.max(f.w,f.h))} × ${Math.round(Math.min(f.w,f.h))}`).join(', '):'none';
+    html+=`<section class="panel"><div class="sheet-head"><span class="dim">${L} × ${W}${g.n>1?`<span class="times">cut ${g.n}</span>`:''}</span>
+      <span class="meta">Layout ${gi+1} of ${groups.length} · ${y.toFixed(0)}% used</span></div>${svg}
+      <div class="scroll"><table class="plan-table"><thead><tr><th>Panel</th><th>Height × Width</th><th class="num">Per sheet</th></tr></thead><tbody>
+      ${[...agg.values()].map(a=>`<tr><td>${esc(a.it.label)}</td><td class="m">${a.it.H} × ${a.it.W}</td><td class="num m">${a.n}</td></tr>`).join('')}</tbody></table></div>
+      <p class="hint">Offcuts to keep: <span style="font-family:var(--mono)">${offTxt}</span></p></section>`;
+    lines.push(`Layout ${gi+1}: sheet ${L} x ${W}${g.n>1?`  (cut ${g.n} sheets like this)`:''}`);
+    agg.forEach(a=>lines.push(`  ${a.n} x ${a.it.label}  ${a.it.H} x ${a.it.W}`));
+    lines.push(`  Offcuts to keep: ${offTxt.replace(/×/g,'x')}`,'');
+  });
+  planText=lines.join('\n');out.innerHTML=html;
+  $('#print').onclick=()=>window.print();
+  $('#copy').onclick=async e=>{const b=e.currentTarget;
+    try{await navigator.clipboard.writeText(planText);b.textContent='Copied';setTimeout(()=>b.textContent='Copy cutting plan',1500)}
+    catch(err){const box=$('#copyBox');box.hidden=false;box.value=planText;box.focus();box.select()}};
+}
+renderParts();renderStocks();compute();
+</script>
+</body></html>
