@@ -5137,7 +5137,7 @@ async function pgDefect(c){
   var tabBar=dv({cls:'tab-bar'});var activeTab='new';var tc=dv({id:'deftc'});
   c.appendChild(tabBar);c.appendChild(tc);
   function renderTabs(){tabBar.innerHTML='';[{id:'new',label:'Log a defect'},{id:'list',label:isManager()?'Defect log':'My defects'}].forEach(function(t){tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;renderTabs();renderTab();}},t.label));});}
-  async function renderTab(){tc.innerHTML='';if(activeTab==='new')await renderForm(tc);else await renderList(tc);}
+  async function renderTab(){tc.innerHTML='';if(!currentUser){tc.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before logging a defect, so we know who reported it.')));return;}if(activeTab==='new')await renderForm(tc);else await renderList(tc);}
 
   async function renderForm(w){
     var members=await API.getMembers();
