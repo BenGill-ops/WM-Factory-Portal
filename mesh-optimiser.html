@@ -87,7 +87,7 @@ header h1{font-size:17px}
     <div class="stack">
       <section class="panel">
         <h2>Job</h2>
-        <div class="row"><label class="hint" for="job">Job number</label><input type="text" id="job" style="flex:1;min-width:120px" placeholder="e.g. 1393"><button class="primary" id="saveJob">Save job</button></div>
+        <div class="row"><label class="hint" for="job">Job number</label><input type="text" id="job" style="flex:1;min-width:120px" placeholder="e.g. 1393"><button class="primary" id="saveJob">Save job</button><button id="newJob">New job</button></div>
         <div class="row"><label class="hint" for="savedList">Open a saved job</label><select id="savedList" style="flex:1;min-width:160px"><option value="">Loading…</option></select><button id="openJob">Open</button></div>
         <p class="hint" id="jobMsg" role="status"></p>
       </section>
@@ -402,7 +402,8 @@ $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;
   else{const r=new FileReader();r.onload=()=>addRows(String(r.result),false);r.readAsText(f)}
   e.target.value=''};
 
-let timer;function schedule(){save();clearTimeout(timer);timer=setTimeout(compute,180)}
+let dirty=false,newOk=false;
+let timer;function schedule(){dirty=true;newOk=false;save();clearTimeout(timer);timer=setTimeout(compute,180)}
 const m2=a=>(a/1e6).toFixed(2);
 let planText='',lastResult=null;
 function compute(){
@@ -420,7 +421,7 @@ function compute(){
       if(bot>0&&top>0){cuts=[[top,' (top)'],[bot,' (bottom)']];for(let i=0;i<q;i++)rails.push({len:+p.w-o.mrCut,colour:p.colour||state.colour||''});railed.push(`${q} × ${label}, screen ${p.h} × ${p.w}, midrail at ${at}: top mesh ${top} × ${mw}, bottom mesh ${bot} × ${mw}`)}}
     count+=q*cuts.length;
     if(count<=3000)for(let i=0;i<q;i++)cuts.forEach(([ch,sfx],ci)=>pieces.push({p:pi+'_'+ci,label:label+sfx,w:ch,h:mw,H:ch,W:mw}))});
-  if(!pieces.length){out.innerHTML='<section class="panel"><p class="empty">Add panels to the cut list and the cutting plan appears here.</p></section>';return}
+  if(!pieces.length){out.innerHTML='<section class="panel"><p class="empty">Enter a screen height and width, or upload a screen report, and the cutting plan appears here.</p></section>';return}
   if(!stocks.length){out.innerHTML='<section class="panel"><p class="empty">Tick at least one stock sheet size.</p></section>';return}
   if(count>3000){out.innerHTML='<section class="panel"><div class="warnbox">That is more than 3,000 panels. Split the job into smaller runs.</div></section>';return}
   const res=solve(stocks,pieces,state.opt);
@@ -528,7 +529,7 @@ async function saveJob(){
     await db('mesh_jobs?on_conflict=job_number',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({job_number:num,colour:state.colour||null,total:lastResult.total,sheets:lastResult.sheets,saved_by:who()||null,updated_at:new Date().toISOString(),
         data:{parts:state.parts,colour:state.colour||'',opt:state.opt,plan:planText}})});
-    replaceOk=num;jobMsg(`Saved job ${num}.`);refreshSaved();
+    replaceOk=num;dirty=false;jobMsg(`Saved job ${num}.`);refreshSaved();
   }catch(e){jobMsg(dbErr(e))}
 }
 async function openJob(){
@@ -540,10 +541,20 @@ async function openJob(){
     $('#job').value=num;$('#colour').value=state.colour;$('#pasteMsg').textContent='';renderParts();save();compute();
     let m=`Opened job ${num}, saved ${fmtDate(j.updated_at)}${j.saved_by?' by '+j.saved_by:''}. Worked out again with today's prices and rules.`;
     if(j.total!=null&&lastResult&&lastResult.total!=null&&Math.abs(j.total-lastResult.total)>0.005)m+=` The total when saved was ${money(j.total)}; it is now ${money(lastResult.total)}.`;
-    jobMsg(m);
+    dirty=false;jobMsg(m);
   }catch(e){jobMsg(dbErr(e))}
 }
 $('#job').value=state.job||'';$('#job').oninput=e=>{state.job=e.target.value;replaceOk='';schedule()};
+// Start a blank job for typing in a screen or two by hand. Asks for a second press if the current job has unsaved changes.
+function newJob(){
+  const hasWork=!state.example&&state.parts.some(p=>p.h>0&&p.w>0);
+  if(hasWork&&dirty&&!newOk){newOk=true;jobMsg('This job has changes that are not saved. Press New job again to clear it, or Save job first.');return}
+  state.job='';state.colour='';state.example=false;state.parts=[{label:'',type:'door',h:'',w:'',qty:1}];replaceOk='';
+  $('#job').value='';$('#colour').value='';$('#savedList').value='';$('#paste').value='';$('#pasteMsg').textContent='';
+  renderParts();save();compute();dirty=false;newOk=false;
+  jobMsg('New job. Enter the job number and colour, then type the screen sizes into the Screens table.');$('#job').focus();
+}
+$('#newJob').onclick=newJob;
 $('#saveJob').onclick=saveJob;$('#openJob').onclick=openJob;
 renderParts();renderStocks();compute();refreshSaved();
 </script>
