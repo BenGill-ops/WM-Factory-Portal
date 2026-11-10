@@ -5140,7 +5140,7 @@ async function pgDefect(c){
   async function renderTab(){tc.innerHTML='';if(!currentUser){tc.appendChild(dv({cls:'card'},dv({cls:'page-sub'},'Please sign in (top right) before logging a defect, so we know who reported it.')));return;}if(activeTab==='new')await renderForm(tc);else await renderList(tc);}
 
   async function renderForm(w){
-    var members=await API.getMembers();
+    var members=await CDB.getMembers();
     var jobs=[];try{jobs=await fetch(SB+'/rest/v1/production_jobs?select=job_number,customer&order=job_number.desc&limit=400',{headers:SH()}).then(function(r){return r.json();});}catch(e){jobs=[];}
     if(!Array.isArray(jobs))jobs=[];
 
