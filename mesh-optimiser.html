@@ -209,12 +209,16 @@ function solve(stocks,pieces,o){
   const useCost=stocks.length>0&&stocks.every(s=>s.p0>0);
   const area=s=>s.l*s.w;
   const fns=useCost?[s=>s.p0,s=>s.p1>0?s.p1:s.p0,area]:[area];
+  // The same sheet + remaining-pieces question comes up many times across the combinations below, so remember the answers.
+  pieces.forEach((p,i)=>p._i=i);const memo=new Map();
+  const packMemo=(s,rem)=>{const k=s.l+'x'+s.w+'|'+rem.map(p=>p._i).join(',');let r=memo.get(k);
+    if(!r){r=packSheet(s.l,s.w,rem,o);r.stock=s;memo.set(k,r)}return r};
   const run=(allowed,price)=>{
     let rem=pieces.slice();const sheets=[];
     while(rem.length){
       let pick=null,full=null;
       for(const s of allowed){
-        const r=packSheet(s.l,s.w,rem,o);if(!r.placed.length)continue;r.stock=s;
+        const r=packMemo(s,rem);if(!r.placed.length)continue;
         if(!r.rest.length){if(!full||price(s)<price(full.stock))full=r}
         else{r.score=r.area/price(s);if(!pick||r.score>pick.score)pick=r}}
       const r=full||pick;if(!r)break;
@@ -226,10 +230,15 @@ function solve(stocks,pieces,o){
   const better=(a,b)=>(a.unplaced.length-b.unplaced.length||a.total-b.total||a.sheets.length-b.sheets.length)<0;
   const bestOf=set=>{let b=null;for(const f of fns){const t=score(run(set,f));if(!b||better(t,b))b=t}return b};
   let best=bestOf(stocks);
-  if(stocks.length>1)stocks.forEach(s=>{const t=score(run([s],fns[0]));if(better(t,best))best=t});
-  // Filling one sheet at a time can miss a cheaper mix, so try dropping sheet sizes one by one and keep any change that lowers the order cost.
+  // Filling one sheet at a time can miss a cheaper mix of sizes, so also try every combination of one, two or three
+  // sheet sizes (within a time limit), then try dropping sizes one by one from the full list.
+  const t0=Date.now(),inTime=()=>Date.now()-t0<1500,n=stocks.length;
+  const consider=set=>{const t=bestOf(set);if(better(t,best))best=t};
+  for(let i=0;i<n&&n>1;i++)consider([stocks[i]]);
+  for(let i=0;i<n&&inTime();i++)for(let j=i+1;j<n&&inTime();j++)consider([stocks[i],stocks[j]]);
+  for(let i=0;i<n&&inTime();i++)for(let j=i+1;j<n&&inTime();j++)for(let k=j+1;k<n&&inTime();k++)consider([stocks[i],stocks[j],stocks[k]]);
   let set=stocks,improved=true;
-  while(improved&&set.length>1){improved=false;let keep=null;
+  while(improved&&set.length>1&&inTime()){improved=false;let keep=null;
     for(const s of set){const sub=set.filter(x=>x!==s),t=bestOf(sub);if(better(t,best)){best=t;keep=sub;improved=true}}
     if(improved)set=keep}
   best.useCost=useCost;return best;
@@ -237,7 +246,7 @@ function solve(stocks,pieces,o){
 //UI
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const KEY='wm-mesh-optimiser-v2';
+const KEY='wm-mesh-optimiser-v3';
 const guessType=(label,h)=>/door|sgd|\bD-?\d/i.test(label)?'door':/window|louvre|awning|\bW-?\d/i.test(label)?'window':(h>=1900?'door':'window');
 const packNote=(n,k)=>{if(!(k>1))return `${n} loose`;const p=Math.floor(n/k),l=n%k;return [p?`${p} pack${p>1?'s':''} of ${k}`:'',l?`${l} loose`:''].filter(Boolean).join(' + ')};
 let state={
@@ -253,8 +262,7 @@ let state={
   stocks:[
     [2000,750,270.76,5,255.68,10,240.42,1],[2000,900,324.96,5,306.71,10,288.44,1],[2000,1200,433.17,5,408.88,10,384.58,1],[2000,1500,541.40,2,511.06,8,480.65,1],
     [2400,900,389.94,5,368.14,10,346.20,1],[2400,1200,519.84,3,490.68,9,461.54,1],[2400,1500,649.74,2,613.30,8,576.91,1],[3000,1500,812.17,2,766.62,8,721.08,1],
-    [2400,750,324.96,5,306.71,10,288.44,0],[3000,750,406.20,5,383.41,10,360.60,0],[3000,900,487.38,3,460.03,9,432.74,0],[3000,1200,649.74,3,613.30,9,576.91,0],
-    [1200,750,153.50,5,136.62,10,129.20,0],[1500,750,191.82,5,170.83,10,161.54,0],[1200,900,184.10,5,164.16,10,154.93,0],[1500,900,230.14,5,205.03,10,193.69,0],[1200,1200,245.47,5,218.67,10,206.52,0]
+    [2400,750,324.96,5,306.71,10,288.44,1],[3000,750,406.20,5,383.41,10,360.60,1],[3000,900,487.38,3,460.03,9,432.74,1],[3000,1200,649.74,3,613.30,9,576.91,1]
   ].map(([l,w,p0,pack,p1,q2,p2,on])=>({l,w,p0,pack,p1,q2,p2,on:!!on})),
   opt:{gap:0,trim:0,minOff:300,rot:true,doorD:110,winD:60,mrH:2400,mrW:1200,mrAt:1020,mrGap:24}
 };
