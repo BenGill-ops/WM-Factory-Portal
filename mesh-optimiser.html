@@ -89,6 +89,7 @@ header h1{font-size:17px}
         <h2>Job</h2>
         <div class="row"><label class="hint" for="job">Job number</label><input type="text" id="job" style="flex:1;min-width:120px" placeholder="e.g. 1393"><button class="primary" id="saveJob">Save job</button><button id="newJob">New job</button></div>
         <div class="row"><label class="hint" for="savedList">Open a saved job</label><select id="savedList" style="flex:1;min-width:160px"><option value="">Loading…</option></select><button id="openJob">Open</button></div>
+        <div class="row"><label class="hint" for="vqFind">Get screens from vQuote</label><input type="text" id="vqFind" style="flex:1;min-width:120px" placeholder="Quote or job number" inputmode="numeric"><button id="vqGet">Get screens</button></div>
         <p class="hint" id="jobMsg" role="status"></p>
       </section>
 
@@ -554,6 +555,37 @@ function newJob(){
   renderParts();save();compute();dirty=false;newOk=false;
   jobMsg('New job. Enter the job number and colour, then type the screen sizes into the Screens table.');$('#job').focus();
 }
+// Pull a quote's Invisi-Gard screens from the vQuote copy in the portal database (table vquote_screens,
+// refreshed every 15 minutes by the office sync). Accepts a quote number or a job number.
+let vqOk='';
+async function vqGet(){
+  const q=$('#vqFind').value.trim();
+  if(!q){jobMsg('Type a quote number or job number first.');$('#vqFind').focus();return}
+  const hasWork=!state.example&&state.parts.some(p=>p.h>0&&p.w>0);
+  if(hasWork&&dirty&&vqOk!==q){vqOk=q;jobMsg('This job has changes that are not saved. Press Get screens again to replace it, or Save job first.');return}
+  try{
+    const num=/^\d+$/.test(q);
+    const filter=num?`or=(quote_num.eq.${q},job_num.eq.${q})`:`job_num=eq.${encodeURIComponent(q)}`;
+    let rows=await db('vquote_screens?'+filter+'&order=quote_num,pos,height_mm,width_mm&limit=1000')||[];
+    if(!rows.length){jobMsg(`No Invisi-Gard screens found in vQuote for ${q}. A quote shows up about 15 minutes after it is saved in vQuote, and only quotes changed in the last 180 days are included.`);return}
+    // A number can be one quote's number and another quote's job number: prefer the quote number, then ask if still unclear
+    if(num&&rows.some(r=>String(r.quote_num)===q))rows=rows.filter(r=>String(r.quote_num)===q);
+    const quotes=[...new Set(rows.map(r=>r.quote_num))];
+    if(quotes.length>1){jobMsg(`Job ${q} is on more than one quote: ${quotes.join(', ')}. Type the quote number instead.`);return}
+    const by=new Map();
+    for(const r of rows){const k=[r.pos,r.item_descr,r.kind,r.height_mm,r.width_mm,r.finish].join('|');
+      if(by.has(k))by.get(k).qty+=r.qty||1;
+      else by.set(k,{label:`#${r.pos??''} ${r.item_descr||''}`.trim(),type:r.kind==='window'?'window':'door',colour:r.finish||'',h:r.height_mm,w:r.width_mm,qty:r.qty||1})}
+    const r0=rows[0];
+    state.parts=[...by.values()];state.job=r0.job_num||('Q'+r0.quote_num);state.example=false;replaceOk='';vqOk='';
+    state.colour=[...new Set(rows.map(r=>r.finish).filter(Boolean))].join(' / ');
+    $('#job').value=state.job;$('#colour').value=state.colour;$('#pasteMsg').textContent='';renderParts();save();compute();dirty=true;
+    const n=state.parts.reduce((a,p)=>a+p.qty,0);
+    const t=new Date(r0.synced_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'});
+    jobMsg(`Quote ${r0.quote_num}${r0.job_num?' · job '+r0.job_num:''}${r0.quote_title?' · '+r0.quote_title:''}: brought in ${n} Invisi-Gard screen${n>1?'s':''} from vQuote (copied ${fmtDate(r0.synced_at)} ${t}).`);
+  }catch(e){jobMsg(dbErr(e))}
+}
+$('#vqGet').onclick=vqGet;$('#vqFind').addEventListener('keydown',e=>{if(e.key==='Enter')vqGet()});
 $('#newJob').onclick=newJob;
 $('#saveJob').onclick=saveJob;$('#openJob').onclick=openJob;
 renderParts();renderStocks();compute();refreshSaved();
