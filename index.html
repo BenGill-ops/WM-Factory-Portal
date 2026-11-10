@@ -619,7 +619,7 @@ let safety=[{id:1,refNo:'SA-001',title:'Unguarded machinery - Fab Bay 3',categor
 let prod=[{id:1,name:'Operations',completed:42,target:50,status:'On Track'},{id:2,name:'Fabrication',completed:38,target:40,status:'Ahead'},{id:3,name:'Glass',completed:12,target:30,status:'Behind'},{id:4,name:'Aluminium',completed:25,target:25,status:'On Track'},{id:5,name:'Dispatch',completed:18,target:20,status:'On Track'},{id:6,name:'Installation',completed:0,target:10,status:'Stopped'}];
 let lean=[{id:1,title:'Reduce offcut waste',dept:'Aluminium',priority:'High',status:'In Progress',submittedBy:'Jake T.',description:'Optimise cut patterns.',createdAt:new Date(Date.now()-259200000).toISOString()},{id:2,title:'5S glass storage',dept:'Glass',priority:'Medium',status:'Submitted',submittedBy:'Sarah M.',description:'Implement 5S.',createdAt:new Date(Date.now()-432000000).toISOString()},{id:3,title:'Digital job cards',dept:'Operations',priority:'Critical',status:'Under Review',submittedBy:'Tom W.',description:'Replace paper job cards.',createdAt:new Date(Date.now()-604800000).toISOString()},{id:4,title:'Improved dispatch packing',dept:'Dispatch',priority:'Medium',status:'Completed',submittedBy:'Lisa K.',description:'Redesign packing station.',createdAt:new Date(Date.now()-1209600000).toISOString()}];
 let sops=[{id:1,title:'Glass cutting safety procedure',category:'Safety',dept:'Glass',version:'2.1',status:'Active',createdAt:new Date(Date.now()-2592000000).toISOString()},{id:2,title:'Forklift operation checklist',category:'Operations',dept:'Dispatch',version:'1.4',status:'Active',createdAt:new Date(Date.now()-5184000000).toISOString()},{id:3,title:'Chemical handling acid wash',category:'Safety',dept:'Fabrication',version:'3.0',status:'Active',createdAt:new Date(Date.now()-7776000000).toISOString()},{id:4,title:'New employee onboarding',category:'HR',dept:'Admin',version:'1.0',status:'Draft',createdAt:new Date(Date.now()-432000000).toISOString()}];
-const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'goodsin',label:'Goods In',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'},{id:'ncr',label:'NCR Reports',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'},{id:'ordering',label:'Supplier Ordering',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'}];
+const PAGES=[{id:'dashboard',label:'Dashboard',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'},{id:'messages',label:'Messages & Updates',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},{id:'safety',label:'Safety',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'},{id:'lean',label:'Lean Improvements',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'},{id:'production',label:'Production Status',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'},{id:'delivery',label:'Deliveries',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'},{id:'goodsin',label:'Goods In',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'},{id:'ncr',label:'NCR Reports',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'},{id:'defect',label:'Defect Reports',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'},{id:'sop',label:'SOP Library',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},{id:'qrcodes',label:'QR Codes',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><line x1="21" y1="21" x2="21" y2="21"/></svg>'},{id:'ordering',label:'Supplier Ordering',icon:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'}];
 const ORDERS=['Delivery 1','Delivery 2','Delivery 3','Delivery 4'];
 const SEQS=['Deliver 1st','Deliver 2nd','Deliver 3rd','Deliver 4th'];
 const VEHICLES=['Truck','Truck and Trailer','Hilux','Other'];
@@ -711,7 +711,7 @@ function renderTop(){
 function go(p){page=p;selDay=null;document.body.classList.remove('nav-open');renderNav();renderTop();renderPage();}
 function renderPage(){
   const c=document.getElementById('content');c.innerHTML='';
-  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,goodsin:pgGoodsIn,ncr:pgNCR,sop:pgSOP,qrcodes:pgQR,ordering:pgOrdering,admin:pgAdmin};
+  const pages={dashboard:pgDash,messages:pgMsgs,safety:pgSafe,lean:pgLean,production:pgProd,delivery:pgDel,goodsin:pgGoodsIn,ncr:pgNCR,defect:pgDefect,sop:pgSOP,qrcodes:pgQR,ordering:pgOrdering,admin:pgAdmin};
   if(pages[page])pages[page](c);else pgDash(c);
 }
 async function loadLoginDropdown(){
@@ -3303,6 +3303,7 @@ function pgQR(c){
     {id:'delivery',label:'Deliveries',url:'https://wm-factory-portal.pages.dev/#delivery'},
     {id:'safety',label:'Safety & Compliance',url:'https://wm-factory-portal.pages.dev/#safety'},
     {id:'sop',label:'SOP Library',url:'https://wm-factory-portal.pages.dev/#sop'},
+    {id:'defect',label:'Defect Reports',url:'https://wm-factory-portal.pages.dev/#defect'},
     {id:'lean',label:'Lean Improvements',url:'https://wm-factory-portal.pages.dev/#lean'},
     {id:'production',label:'Production Status',url:'https://wm-factory-portal.pages.dev/#production'},
   ];
@@ -5106,6 +5107,195 @@ function renderMeshOptimiser(wrap){
   f.onload=function(){try{const d=f.contentDocument;const fit=function(){f.style.height=(d.body.offsetHeight+8)+'px';};fit();new ResizeObserver(fit).observe(d.body);}catch(e){}};
   wrap.appendChild(f);
 }
+
+/* ===== Defect Reports ===== */
+function defFmtDT(iso){try{return new Date(iso).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+var DEF_TYPES=['Components - wrong parts fitted','Drainage not punched','Couplings not seated','Reveals - wrong timber size','Drilling - frame damaged','Screens - not square','Measurement / setout','Other'];
+var DEF_STAGES=['At the bench','Next stage','Before loading','On site','By the client'];
+
+async function defUploadPhoto(file){
+  var safe=(file.name||'photo.jpg').replace(/[^A-Za-z0-9._-]/g,'_').slice(-60);
+  var path='defects/'+Date.now()+'-'+Math.floor(Math.random()*9999)+'-'+safe;
+  var r=await fetch(SB+'/storage/v1/object/ncr-photos/'+path,{method:'POST',headers:{'apikey':ANON,'Authorization':'Bearer '+authToken(),'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
+  if(!r.ok){var e=await r.text();throw new Error('Photo upload failed: '+e);}
+  return SB+'/storage/v1/object/public/ncr-photos/'+path;
+}
+async function defNextNo(){
+  try{
+    var ex=await fetch(SB+'/rest/v1/defect_reports?select=defect_no&order=created_at.desc&limit=300',{headers:SH()}).then(function(r){return r.json();});
+    var yr=new Date().getFullYear();var pre='DEF-'+yr+'-';var max=0;
+    (Array.isArray(ex)?ex:[]).forEach(function(n){if((n.defect_no||'').indexOf(pre)===0){var v=parseInt(n.defect_no.slice(pre.length),10);if(v>max)max=v;}});
+    return pre+String(max+1).padStart(3,'0');
+  }catch(e){return 'DEF-'+new Date().getFullYear()+'-'+Date.now().toString().slice(-3);}
+}
+
+async function pgDefect(c){
+  c.appendChild(dv({cls:'row jb mb3'},
+    dv({},h('h1',{cls:'page-title'},'Defect Reports'),dv({cls:'page-sub'},'Every fabricator, every defect, including your own')),
+    false
+  ));
+  var tabBar=dv({cls:'tab-bar'});var activeTab='new';var tc=dv({id:'deftc'});
+  c.appendChild(tabBar);c.appendChild(tc);
+  function renderTabs(){tabBar.innerHTML='';[{id:'new',label:'Log a defect'},{id:'list',label:isManager()?'Defect log':'My defects'}].forEach(function(t){tabBar.appendChild(h('button',{cls:'tab-btn'+(activeTab===t.id?' active':''),onclick:function(){activeTab=t.id;renderTabs();renderTab();}},t.label));});}
+  async function renderTab(){tc.innerHTML='';if(activeTab==='new')await renderForm(tc);else await renderList(tc);}
+
+  async function renderForm(w){
+    var members=await API.getMembers();
+    var jobs=[];try{jobs=await fetch(SB+'/rest/v1/production_jobs?select=job_number,customer&order=job_number.desc&limit=400',{headers:SH()}).then(function(r){return r.json();});}catch(e){jobs=[];}
+    if(!Array.isArray(jobs))jobs=[];
+
+    var card=dv({cls:'card'});
+    card.appendChild(dv({cls:'card-hdr'},dv({},dv({cls:'card-title'},'New defect report'),dv({cls:'card-sub'},'Takes about a minute. Finding it before it leaves the factory is the system working, not a black mark.'))));
+
+    var now=new Date();var tzoff=now.getTimezoneOffset()*60000;
+    var foundAt=h('input',{type:'datetime-local',value:new Date(now-tzoff).toISOString().slice(0,16)});
+
+    var jobIn=inp('','e.g. 1579');jobIn.setAttribute('list','defjoblist');
+    var dl=h('datalist',{id:'defjoblist'});
+    jobs.forEach(function(j){if(j.job_number)dl.appendChild(h('option',{value:j.job_number},(j.customer||'')));});
+    var custIn=inp('','Client name');
+    jobIn.oninput=function(){var m=jobs.filter(function(j){return String(j.job_number)===jobIn.value;})[0];if(m&&m.customer&&!custIn.value)custIn.value=m.customer;};
+
+    var workSel=h('select',{});workSel.appendChild(h('option',{value:''},'- select -'));
+    members.forEach(function(m){if(!m.is_shared_login)workSel.appendChild(h('option',{value:m.id},m.name));});
+    var foundSel=h('select',{});foundSel.appendChild(h('option',{value:''},'- select -'));
+    members.forEach(function(m){if(!m.is_shared_login)foundSel.appendChild(h('option',{value:m.id,selected:(currentUser&&currentUser.id===m.id)?'true':null},m.name));});
+
+    var stageSel=h('select',{});DEF_STAGES.forEach(function(s){stageSel.appendChild(h('option',{value:s},s));});
+    var typeSel=h('select',{});DEF_TYPES.forEach(function(s){typeSel.appendChild(h('option',{value:s},s));});
+    var descTa=h('textarea',{rows:'3',placeholder:'What was found. A plain description, not an opinion about anyone.'});
+    var unitsIn=inp('1','','number');
+    var repCb=h('input',{type:'checkbox'});repCb.style.width='16px';repCb.style.height='16px';
+    var repCount=inp('','How many','number');repCount.style.display='none';
+    repCb.onchange=function(){repCount.style.display=repCb.checked?'':'none';};
+    var reworkIn=inp('','Minutes','number');
+    var costIn=inp('','$','number');
+    var clientCb=h('input',{type:'checkbox'});clientCb.style.width='16px';clientCb.style.height='16px';
+    var selfCb=h('input',{type:'checkbox'});selfCb.style.width='16px';selfCb.style.height='16px';
+    var prevTa=h('textarea',{rows:'2',placeholder:'Anything that would have caught it earlier'});
+
+    var photos=[];
+    var photoIn=h('input',{type:'file',accept:'image/*',multiple:'true'});photoIn.setAttribute('capture','environment');
+    var prev=dv({cls:'row gap2',st:{flexWrap:'wrap',marginTop:'6px'}});
+    function drawPrev(){prev.innerHTML='';photos.forEach(function(p,pi){var box=dv({st:{position:'relative',width:'66px',height:'66px',borderRadius:'8px',overflow:'hidden',border:'1px solid var(--border)'}});box.appendChild(h('img',{src:p.url,st:{width:'100%',height:'100%',objectFit:'cover'}}));box.appendChild(h('button',{cls:'btn',st:{position:'absolute',top:'2px',right:'2px',padding:'0',width:'18px',height:'18px',borderRadius:'50%',background:'rgba(0,0,0,0.6)',color:'#fff',fontSize:'12px',lineHeight:'1'},onclick:function(){photos.splice(pi,1);drawPrev();}},'x'));prev.appendChild(box);});}
+    photoIn.onchange=function(e){Array.from(e.target.files).forEach(function(f){if(!(f.type||'').startsWith('image/'))return;var rd=new FileReader();rd.onload=function(ev){photos.push({file:f,url:ev.target.result});drawPrev();};rd.readAsDataURL(f);});photoIn.value='';};
+
+    var g1=dv({cls:'g2 mb2'});g1.appendChild(frow('When was it found',foundAt));g1.appendChild(frow('Where was it found',stageSel));
+    var g2=dv({cls:'g2 mb2'});g2.appendChild(frow('Job number',jobIn));g2.appendChild(frow('Client',custIn));
+    var g3=dv({cls:'g2 mb2'});g3.appendChild(frow('Who did the work',workSel));g3.appendChild(frow('Who found it',foundSel));
+    var g4=dv({cls:'g2 mb2'});g4.appendChild(frow('Defect type',typeSel));g4.appendChild(frow('Units affected',unitsIn));
+    var g5=dv({cls:'g2 mb2'});g5.appendChild(frow('Rework time (minutes)',reworkIn));g5.appendChild(frow('Materials cost',costIn));
+
+    card.appendChild(dl);
+    card.appendChild(g1);card.appendChild(g2);card.appendChild(g3);card.appendChild(g4);
+    card.appendChild(dv({cls:'mb2'},h('label',{},'What was found'),descTa));
+    card.appendChild(g5);
+    card.appendChild(dv({cls:'mb2',st:{display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap'}},repCb,sp({st:{fontSize:'13px'}},'Same error repeated across the job'),repCount));
+    card.appendChild(dv({cls:'mb2',st:{display:'flex',gap:'10px',alignItems:'center'}},clientCb,sp({st:{fontSize:'13px'}},'It reached the client or went to site')));
+    card.appendChild(dv({cls:'mb2',st:{display:'flex',gap:'10px',alignItems:'center'}},selfCb,sp({st:{fontSize:'13px'}},'Reported by the person who did the work, on the day')));
+    card.appendChild(dv({cls:'mb2'},h('label',{},'What would have caught it earlier'),prevTa));
+    card.appendChild(dv({cls:'mb3'},h('label',{},'Photos'),photoIn,prev));
+
+    var msg=dv({cls:'txs',st:{marginTop:'8px'}});
+    var saveBtn=btn('Submit defect report','btn-p',async function(){
+      if(!workSel.value){msg.textContent='Please select who did the work.';msg.style.color='#dc2626';return;}
+      if(!descTa.value.trim()){msg.textContent='Please describe what was found.';msg.style.color='#dc2626';return;}
+      saveBtn.disabled=true;saveBtn.textContent='Saving...';msg.textContent='';
+      try{
+        var urls=[];
+        for(var i=0;i<photos.length;i++){urls.push(await defUploadPhoto(photos[i].file));}
+        var no=await defNextNo();
+        var wm=members.filter(function(m){return String(m.id)===workSel.value;})[0];
+        var fm=members.filter(function(m){return String(m.id)===foundSel.value;})[0];
+        var row={
+          defect_no:no,
+          found_at:foundAt.value?new Date(foundAt.value).toISOString():new Date().toISOString(),
+          job_number:jobIn.value||null,customer:custIn.value||null,
+          stage:stageSel.value,defect_type:typeSel.value,description:descTa.value.trim(),
+          units_affected:parseInt(unitsIn.value,10)||1,
+          repeated_across_job:!!repCb.checked,repeat_count:repCb.checked?(parseInt(repCount.value,10)||null):null,
+          rework_minutes:parseInt(reworkIn.value,10)||null,
+          materials_cost:costIn.value?parseFloat(costIn.value):null,
+          reached_client:!!clientCb.checked,self_reported:!!selfCb.checked,
+          prevention:prevTa.value||null,photos:urls,status:'Open',
+          work_by_id:parseInt(workSel.value,10),work_by_name:wm?wm.name:null,
+          found_by_id:foundSel.value?parseInt(foundSel.value,10):null,found_by_name:fm?fm.name:null,
+          created_by_id:currentUser?currentUser.id:null,created_by_name:currentUser?currentUser.name:null
+        };
+        var r=await fetch(SB+'/rest/v1/defect_reports',{method:'POST',headers:SH(),body:JSON.stringify(row)});
+        if(!r.ok){var t=await r.text();throw new Error(t);}
+        msg.style.color='#15803d';msg.textContent='Saved as '+no+'. Thanks, that is logged.';
+        setTimeout(function(){activeTab='list';renderTabs();renderTab();},900);
+      }catch(err){msg.style.color='#dc2626';msg.textContent='Could not save: '+(err.message||err);saveBtn.disabled=false;saveBtn.textContent='Submit defect report';}
+    });
+    card.appendChild(dv({cls:'row gap2'},saveBtn));
+    card.appendChild(msg);
+    w.appendChild(card);
+  }
+
+  async function renderList(w){
+    var rows=[];
+    try{rows=await fetch(SB+'/rest/v1/defect_reports?select=*&order=found_at.desc&limit=500',{headers:SH()}).then(function(r){return r.json();});}catch(e){rows=[];}
+    if(!Array.isArray(rows))rows=[];
+    if(!rows.length){w.appendChild(dv({cls:'card'},dv({cls:'muted',st:{fontSize:'13px'}},isManager()?'No defects logged yet.':'You have no defect reports.')));return;}
+
+    if(isManager()){
+      var since=new Date();since.setDate(since.getDate()-30);
+      var last30=rows.filter(function(r){return new Date(r.found_at)>=since;});
+      var mins=0,client=0,selfRep=0;
+      last30.forEach(function(r){mins+=(r.rework_minutes||0);if(r.reached_client)client++;if(r.self_reported)selfRep++;});
+      var stat=dv({cls:'g4 mb3'});
+      function tile(lbl,val,sub){return dv({cls:'card'},dv({cls:'card-sub'},lbl),dv({st:{fontSize:'22px',fontWeight:'700',marginTop:'2px'}},val),sub?dv({cls:'card-sub'},sub):false);}
+      stat.appendChild(tile('Defects, last 30 days',String(last30.length),''));
+      stat.appendChild(tile('Rework time',(mins>=60?(Math.round(mins/6)/10)+' hrs':mins+' min'),'last 30 days'));
+      stat.appendChild(tile('Reached the client',String(client),'last 30 days'));
+      stat.appendChild(tile('Self-reported',last30.length?Math.round(selfRep/last30.length*100)+'%':'-','reported by the maker'));
+      w.appendChild(stat);
+    }
+
+    var list=dv({});
+    rows.forEach(function(r){
+      var open=r.status!=='Closed';
+      var card=dv({cls:'card',st:{marginBottom:'10px',borderLeft:'4px solid '+(r.reached_client?'#dc2626':(open?'#f59e0b':'#22c55e'))}});
+      card.appendChild(dv({cls:'row jb mb2',st:{flexWrap:'wrap',gap:'6px'}},
+        dv({cls:'row gap2',st:{flexWrap:'wrap',alignItems:'center'}},
+          sp({cls:'fw6',st:{fontSize:'13px'}},r.defect_no||'DEF'),
+          bdg(r.status||'Open',open?'amber':'green'),
+          r.reached_client&&bdg('Reached client','red'),
+          r.repeated_across_job&&bdg('Repeated'+(r.repeat_count?' x'+r.repeat_count:''),'orange'),
+          r.self_reported&&bdg('Self-reported','blue')),
+        sp({cls:'txs muted'},defFmtDT(r.found_at))));
+      card.appendChild(dv({st:{fontSize:'14px',fontWeight:'600',marginBottom:'3px'}},r.defect_type||'Defect'));
+      card.appendChild(dv({st:{fontSize:'13px',color:'#374151',lineHeight:'1.5',marginBottom:'6px'}},r.description||''));
+      var meta=[];
+      if(r.job_number)meta.push('Job '+r.job_number+(r.customer?' - '+r.customer:''));
+      if(r.stage)meta.push('Found: '+r.stage);
+      if(isManager()&&r.work_by_name)meta.push('Work by: '+r.work_by_name);
+      if(r.found_by_name)meta.push('Found by: '+r.found_by_name);
+      if(r.units_affected)meta.push(r.units_affected+' unit'+(r.units_affected>1?'s':''));
+      if(r.rework_minutes)meta.push(r.rework_minutes+' min rework');
+      if(r.materials_cost)meta.push('$'+r.materials_cost);
+      card.appendChild(dv({cls:'txs muted',st:{marginBottom:'6px'}},meta.join('  -  ')));
+      if(r.prevention)card.appendChild(dv({cls:'txs',st:{marginBottom:'6px',color:'#374151'}},'Would have caught it: '+r.prevention));
+      var ph=Array.isArray(r.photos)?r.photos:[];
+      if(ph.length){var pr=dv({cls:'row gap2',st:{flexWrap:'wrap',marginBottom:'6px'}});ph.forEach(function(u){pr.appendChild(h('a',{href:u,target:'_blank'},h('img',{src:u,st:{width:'62px',height:'62px',objectFit:'cover',borderRadius:'6px',border:'1px solid var(--border)'}})));});card.appendChild(pr);}
+      if(r.closure_note)card.appendChild(dv({cls:'txs',st:{color:'#15803d'}},'Closed: '+r.closure_note+(r.closed_by_name?' ('+r.closed_by_name+')':'')));
+      if(isManager()&&open){
+        card.appendChild(dv({cls:'row gap2',st:{marginTop:'8px'}},btn('Close out','btn-o btn-sm',async function(){
+          var note=prompt('What was done to resolve it?');if(note===null)return;
+          await fetch(SB+'/rest/v1/defect_reports?id=eq.'+r.id,{method:'PATCH',headers:SH(),body:JSON.stringify({status:'Closed',closed_at:new Date().toISOString(),closed_by_id:currentUser?currentUser.id:null,closed_by_name:currentUser?currentUser.name:null,closure_note:note||null})});
+          renderTab();
+        })));
+      }
+      list.appendChild(card);
+    });
+    w.appendChild(list);
+  }
+
+  renderTabs();await renderTab();
+}
+
+/* ===== end Defect Reports ===== */
 function pgOrdering(c){
   c.appendChild(dv({cls:'row jb mb4'},
     dv({},h('h1',{cls:'page-title'},'Supplier Ordering'),
