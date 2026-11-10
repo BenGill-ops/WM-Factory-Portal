@@ -107,10 +107,10 @@ header h1{font-size:17px}
       <section class="panel">
         <div class="panel-head"><h2>Stock sheets</h2><span class="hint">Untick a size you don't carry</span></div>
         <div class="scroll"><table id="stockT">
-          <thead><tr><th>Use</th><th class="num">Length</th><th class="num">Width</th><th class="num">On hand</th><th class="num">Cost $</th><th></th></tr></thead>
+          <thead><tr><th>Use</th><th class="num">Length</th><th class="num">Width</th><th class="num">Single $</th><th class="num">Pack of</th><th class="num">Pack $ ea</th><th class="num">Bulk qty</th><th class="num">Bulk $ ea</th><th></th></tr></thead>
           <tbody></tbody></table></div>
         <div class="row"><button id="addStock">Add sheet size</button></div>
-        <p class="hint">Leave "On hand" blank for no limit. Enter a cost on every size to optimise on dollars; otherwise it optimises on mesh area.</p>
+        <p class="hint">Prices are per sheet, ex GST, from the Alspec price list dated 12/10/2026. Full packs are charged at the pack price, or the bulk price once the order reaches the bulk quantity; loose sheets at the single price. Sheets are chosen for the lowest order cost.</p>
       </section>
 
       <section class="panel">
@@ -197,32 +197,49 @@ function packSheet(L,W,items,o){
       if(!best||r.area>best.area+1e-6||(Math.abs(r.area-best.area)<1e-6&&r.maxFree>best.maxFree))best=r;}}
   return best;
 }
+// Price of n sheets of one size: full packs at the pack rate (the bulk rate once the packs reach the bulk qty), loose sheets at the single rate.
+function tierCost(s,n){
+  const pk=s.pack>1&&s.p1>0?s.pack:0;if(!pk)return n*s.p0;
+  const inPacks=Math.floor(n/pk)*pk;
+  const rate=(s.q2>0&&s.p2>0&&inPacks>=s.q2)?s.p2:s.p1;
+  return inPacks*rate+(n-inPacks)*s.p0;
+}
+function countBySize(sheets){const m=new Map();sheets.forEach(x=>m.set(x.stock,(m.get(x.stock)||0)+1));return m}
 function solve(stocks,pieces,o){
-  const useCost=stocks.length>0&&stocks.every(s=>s.cost>0);
-  const price=s=>useCost?s.cost:s.l*s.w;
-  const run=allowed=>{
-    let rem=pieces.slice();const left=new Map(allowed.map(s=>[s,s.qty>0?s.qty:Infinity]));const sheets=[];let total=0;
+  const useCost=stocks.length>0&&stocks.every(s=>s.p0>0);
+  const area=s=>s.l*s.w;
+  const fns=useCost?[s=>s.p0,s=>s.p1>0?s.p1:s.p0,area]:[area];
+  const run=(allowed,price)=>{
+    let rem=pieces.slice();const sheets=[];
     while(rem.length){
       let pick=null,full=null;
-      for(const s of allowed){if(left.get(s)<=0)continue;
+      for(const s of allowed){
         const r=packSheet(s.l,s.w,rem,o);if(!r.placed.length)continue;r.stock=s;
         if(!r.rest.length){if(!full||price(s)<price(full.stock))full=r}
         else{r.score=r.area/price(s);if(!pick||r.score>pick.score)pick=r}}
       const r=full||pick;if(!r)break;
-      sheets.push(r);total+=price(r.stock);rem=r.rest;left.set(r.stock,left.get(r.stock)-1);
+      sheets.push(r);rem=r.rest;
     }
-    return {sheets,unplaced:rem,total};
+    return {sheets,unplaced:rem};
   };
-  const tries=[run(stocks),...(stocks.length>1?stocks.map(s=>run([s])):[])];
-  tries.sort((a,b)=>a.unplaced.length-b.unplaced.length||a.total-b.total||a.sheets.length-b.sheets.length);
-  const res=tries[0];res.useCost=useCost;return res;
+  const score=t=>{t.total=0;countBySize(t.sheets).forEach((n,s)=>t.total+=useCost?tierCost(s,n):n*area(s));return t};
+  const better=(a,b)=>(a.unplaced.length-b.unplaced.length||a.total-b.total||a.sheets.length-b.sheets.length)<0;
+  const bestOf=set=>{let b=null;for(const f of fns){const t=score(run(set,f));if(!b||better(t,b))b=t}return b};
+  let best=bestOf(stocks);
+  if(stocks.length>1)stocks.forEach(s=>{const t=score(run([s],fns[0]));if(better(t,best))best=t});
+  // Filling one sheet at a time can miss a cheaper mix, so try dropping sheet sizes one by one and keep any change that lowers the order cost.
+  let set=stocks,improved=true;
+  while(improved&&set.length>1){improved=false;let keep=null;
+    for(const s of set){const sub=set.filter(x=>x!==s),t=bestOf(sub);if(better(t,best)){best=t;keep=sub;improved=true}}
+    if(improved)set=keep}
+  best.useCost=useCost;return best;
 }
 //UI
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const KEY='wm-mesh-optimiser-v1';
+const KEY='wm-mesh-optimiser-v2';
 const guessType=(label,h)=>/door|sgd|\bD-?\d/i.test(label)?'door':/window|louvre|awning|\bW-?\d/i.test(label)?'window':(h>=1900?'door':'window');
-const packNote=n=>{const p=Math.floor(n/5),l=n%5;return [p?`${p} pack${p>1?'s':''}`:'',l?`${l} loose`:''].filter(Boolean).join(' + ')+(l>=3?` · ${5-l} more fills a pack`:'')};
+const packNote=(n,k)=>{if(!(k>1))return `${n} loose`;const p=Math.floor(n/k),l=n%k;return [p?`${p} pack${p>1?'s':''} of ${k}`:'',l?`${l} loose`:''].filter(Boolean).join(' + ')};
 let state={
   example:true,
   parts:[
@@ -232,7 +249,13 @@ let state={
     {label:'Slider window screen',h:960,w:820,qty:4},
     {label:'Bathroom screen',h:520,w:560,qty:2}
   ],
-  stocks:[[2000,750],[2000,900],[2000,1200],[2000,1500],[2400,900],[2400,1200],[2400,1500],[3000,1500]].map(([l,w])=>({l,w,qty:'',cost:'',on:true})),
+  // Alspec HI152 Invisi-Gard mesh, 316 SS, price list 12/10/2026 (ex GST): length, width, single, pack size, pack price ea, bulk qty, bulk price ea, ticked
+  stocks:[
+    [2000,750,270.76,5,255.68,10,240.42,1],[2000,900,324.96,5,306.71,10,288.44,1],[2000,1200,433.17,5,408.88,10,384.58,1],[2000,1500,541.40,2,511.06,8,480.65,1],
+    [2400,900,389.94,5,368.14,10,346.20,1],[2400,1200,519.84,3,490.68,9,461.54,1],[2400,1500,649.74,2,613.30,8,576.91,1],[3000,1500,812.17,2,766.62,8,721.08,1],
+    [2400,750,324.96,5,306.71,10,288.44,0],[3000,750,406.20,5,383.41,10,360.60,0],[3000,900,487.38,3,460.03,9,432.74,0],[3000,1200,649.74,3,613.30,9,576.91,0],
+    [1200,750,153.50,5,136.62,10,129.20,0],[1500,750,191.82,5,170.83,10,161.54,0],[1200,900,184.10,5,164.16,10,154.93,0],[1500,900,230.14,5,205.03,10,193.69,0],[1200,1200,245.47,5,218.67,10,206.52,0]
+  ].map(([l,w,p0,pack,p1,q2,p2,on])=>({l,w,p0,pack,p1,q2,p2,on:!!on})),
   opt:{gap:0,trim:0,minOff:300,rot:true,doorD:110,winD:60,mrH:2400,mrW:1200,mrAt:1020,mrGap:24}
 };
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.parts&&s.stocks&&s.opt)state=s}catch(e){}
@@ -256,8 +279,11 @@ function renderStocks(){
     <td><input type="checkbox" id="s-on-${i}" data-i="${i}" data-k="on" ${s.on?'checked':''} aria-label="Use this size"></td>
     <td><input type="number" id="s-l-${i}" data-i="${i}" data-k="l" value="${s.l}" min="1" aria-label="Length"></td>
     <td><input type="number" id="s-w-${i}" data-i="${i}" data-k="w" value="${s.w}" min="1" aria-label="Width"></td>
-    <td><input type="number" id="s-qty-${i}" data-i="${i}" data-k="qty" value="${s.qty}" min="0" placeholder="any" aria-label="On hand"></td>
-    <td><input type="number" id="s-cost-${i}" data-i="${i}" data-k="cost" value="${s.cost}" min="0" step="0.01" placeholder="–" aria-label="Cost"></td>
+    <td><input type="number" id="s-p0-${i}" data-i="${i}" data-k="p0" value="${s.p0}" min="0" step="0.01" aria-label="Single sheet price"></td>
+    <td><input type="number" id="s-pack-${i}" data-i="${i}" data-k="pack" value="${s.pack}" min="0" step="1" aria-label="Sheets in a pack"></td>
+    <td><input type="number" id="s-p1-${i}" data-i="${i}" data-k="p1" value="${s.p1}" min="0" step="0.01" aria-label="Pack price each"></td>
+    <td><input type="number" id="s-q2-${i}" data-i="${i}" data-k="q2" value="${s.q2}" min="0" step="1" aria-label="Bulk quantity"></td>
+    <td><input type="number" id="s-p2-${i}" data-i="${i}" data-k="p2" value="${s.p2}" min="0" step="0.01" aria-label="Bulk price each"></td>
     <td><button class="x" data-del="${i}" aria-label="Remove sheet size">×</button></td></tr>`).join('');
 }
 function bindTable(sel,arr,rerender){
@@ -274,7 +300,7 @@ bindTable('#stockT',()=>state.stocks,renderStocks);
 $('#addPart').onclick=()=>{if(state.example){state.parts=[];state.example=false}state.parts.push({label:'',type:'door',h:'',w:'',qty:1});renderParts();schedule();
   const el=$(`#p-label-${state.parts.length-1}`);if(el)el.focus()};
 $('#clearParts').onclick=()=>{state.job='';state.parts=[];state.example=false;renderParts();schedule()};
-$('#addStock').onclick=()=>{state.stocks.push({l:'',w:'',qty:'',cost:'',on:true});renderStocks();schedule()};
+$('#addStock').onclick=()=>{state.stocks.push({l:'',w:'',p0:'',pack:'',p1:'',q2:'',p2:'',on:true});renderStocks();schedule()};
 for(const k of ['gap','trim','minOff','doorD','winD','mrH','mrW','mrAt','mrGap']){const el=$('#'+k);el.value=state.opt[k];el.oninput=()=>{state.opt[k]=Math.max(0,+el.value||0);schedule()}}
 $('#rot').checked=state.opt.rot;$('#rot').onchange=e=>{state.opt.rot=e.target.checked;schedule()};
 
@@ -341,7 +367,7 @@ const m2=a=>(a/1e6).toFixed(2);
 let planText='';
 function compute(){
   const out=$('#out');
-  const stocks=state.stocks.filter(s=>s.on&&s.l>0&&s.w>0).map(s=>({l:Math.max(s.l,s.w),w:Math.min(s.l,s.w),qty:+s.qty||0,cost:+s.cost||0}));
+  const stocks=state.stocks.filter(s=>s.on&&s.l>0&&s.w>0).map(s=>({l:Math.max(s.l,s.w),w:Math.min(s.l,s.w),p0:+s.p0||0,pack:Math.round(+s.pack||0),p1:+s.p1||0,q2:+s.q2||0,p2:+s.p2||0}));
   const pieces=[];let count=0;const o=state.opt,railed=[];
   state.parts.forEach((p,pi)=>{if(!(p.h>0&&p.w>0))return;const q=Math.max(1,Math.round(+p.qty||1));
     const label=p.label||`Screen ${pi+1}`;
@@ -366,13 +392,13 @@ function compute(){
   const sheetArea=res.sheets.reduce((a,s)=>a+s.stock.l*s.stock.w,0);
   const used=res.sheets.reduce((a,s)=>a+s.area,0);
   const yieldPct=sheetArea?used/sheetArea*100:0;
-  const bySize=new Map();res.sheets.forEach(s=>{const k=`${s.stock.l} × ${s.stock.w}`;bySize.set(k,(bySize.get(k)||0)+1)});
-  const cost=res.useCost?res.sheets.reduce((a,s)=>a+s.stock.cost,0):null;
+  const bySize=countBySize(res.sheets);
+  const cost=res.useCost?res.total:null;
   let html=`<div class="stats">
     <div class="stat"><b>${res.sheets.length}</b><span>sheet${res.sheets.length===1?'':'s'} to cut</span></div>
     <div class="stat"><b>${yieldPct.toFixed(1)}%</b><span>of the mesh ends up in panels</span></div>
     <div class="stat"><b>${m2(sheetArea-used)} m²</b><span>left over, of ${m2(sheetArea)} m² pulled</span></div>
-    ${cost!=null?`<div class="stat"><b>$${cost.toFixed(2)}</b><span>sheet cost</span></div>`:''}
+    ${cost!=null?`<div class="stat"><b>$${cost.toFixed(2)}</b><span>mesh order, ex GST</span></div>`:''}
   </div>`;
   if(res.unplaced.length){
     const u=new Map();res.unplaced.forEach(x=>{const k=`${x.label} (${x.H} × ${x.W})`;u.set(k,(u.get(k)||0)+1)});
@@ -380,8 +406,8 @@ function compute(){
   }
   if(railed.length)html+=`<section class="panel"><h2>Screens getting a midrail</h2><p class="hint" style="color:var(--fg)">${railed.map(esc).join('<br>')}</p><p class="hint">Each is cut as a top and a bottom mesh panel, marked on the layouts.</p></section>`;
   html+=`<section class="panel"><div class="panel-head"><h2>Sheets to order${state.job?' · Job '+esc(state.job):''}</h2><span class="row"><button id="print">Print</button><button id="copy">Copy cutting plan</button></span></div>
-    <div class="scroll"><table class="plan-table"><thead><tr><th>Sheet size</th><th class="num">Qty</th><th>Packs of 5</th></tr></thead><tbody>
-    ${[...bySize].map(([k,n])=>`<tr><td class="m">${k}</td><td class="num m">${n}</td><td>${packNote(n)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="scroll"><table class="plan-table"><thead><tr><th>Sheet size</th><th class="num">Qty</th><th>Order as</th>${cost!=null?'<th class="num">Cost</th>':''}</tr></thead><tbody>
+    ${[...bySize].map(([s,n])=>`<tr><td class="m">${s.l} × ${s.w}</td><td class="num m">${n}</td><td>${packNote(n,s.pack)}</td>${cost!=null?`<td class="num m">$${tierCost(s,n).toFixed(2)}</td>`:''}</tr>`).join('')}</tbody></table></div>
     <textarea id="copyBox" readonly hidden aria-label="Cutting plan text"></textarea>
     <div class="legend"><span><i class="sw"></i>Mesh panel, cut size height × width</span><span><i class="sw o"></i>Offcut worth keeping</span></div></section>`;
   const lines=[`INVISI-GARD CUTTING PLAN${state.job?' - JOB '+state.job:''}`,`${res.sheets.length} sheets, yield ${yieldPct.toFixed(1)}%`,''];
