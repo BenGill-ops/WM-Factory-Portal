@@ -5099,6 +5099,13 @@ const STOCK={
   async setOrderStatus(id,status){const r=await fetch(SB+'/rest/v1/stock_orders?id=eq.'+id,{method:'PATCH',headers:SH(),body:JSON.stringify({status:status})});return r.ok;}
 };
 let stockSupplier=null;
+const MESH_TAB='__mesh';
+// The optimiser lives in its own file (mesh-optimiser.html) so its styles and scripts can't clash with the portal.
+function renderMeshOptimiser(wrap){
+  const f=h('iframe',{src:'mesh-optimiser.html',title:'Invisi-Gard mesh cut optimiser',st:{width:'100%',border:'0',display:'block',minHeight:'700px'}});
+  f.onload=function(){try{const d=f.contentDocument;const fit=function(){f.style.height=(d.body.offsetHeight+8)+'px';};fit();new ResizeObserver(fit).observe(d.body);}catch(e){}};
+  wrap.appendChild(f);
+}
 function pgOrdering(c){
   c.appendChild(dv({cls:'row jb mb4'},
     dv({},h('h1',{cls:'page-title'},'Supplier Ordering'),
@@ -5118,7 +5125,7 @@ async function renderStockPage(wrap){
   wrap.innerHTML='';
   const sups=await STOCK.suppliers();
   if(!sups.length){wrap.appendChild(dv({cls:'card',st:{padding:'20px'}},'No suppliers set up yet.'));return;}
-  if(!stockSupplier||!sups.some(function(s){return s.name===stockSupplier;}))stockSupplier=(sups.find(function(s){return !s.is_pending;})||sups[0]).name;
+  if(stockSupplier!==MESH_TAB&&(!stockSupplier||!sups.some(function(s){return s.name===stockSupplier;})))stockSupplier=(sups.find(function(s){return !s.is_pending;})||sups[0]).name;
   // Supplier tabs
   const tabs=dv({cls:'row mb4',st:{gap:'8px',flexWrap:'wrap'}});
   sups.forEach(function(s){
@@ -5127,7 +5134,10 @@ async function renderStockPage(wrap){
     if(s.is_pending)b.title='Parts list pending upload';
     tabs.appendChild(b);
   });
+  // Invisi-Gard mesh cut optimiser tab (not a stock-take supplier — works out sheets to order per job)
+  tabs.appendChild(btn('Invisi-Gard mesh',stockSupplier===MESH_TAB?'btn-p':'btn-o',function(){stockSupplier=MESH_TAB;renderStockPage(wrap);}));
   wrap.appendChild(tabs);
+  if(stockSupplier===MESH_TAB){renderMeshOptimiser(wrap);return;}
   const sup=sups.find(function(s){return s.name===stockSupplier;});
   const body=dv({});wrap.appendChild(body);
   if(sup.is_pending){
