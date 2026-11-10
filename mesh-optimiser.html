@@ -86,6 +86,13 @@ header h1{font-size:17px}
   <div class="cols">
     <div class="stack">
       <section class="panel">
+        <h2>Job</h2>
+        <div class="row"><label class="hint" for="job">Job number</label><input type="text" id="job" style="flex:1;min-width:120px" placeholder="e.g. 1393"><button class="primary" id="saveJob">Save job</button></div>
+        <div class="row"><label class="hint" for="savedList">Open a saved job</label><select id="savedList" style="flex:1;min-width:160px"><option value="">Loading…</option></select><button id="openJob">Open</button></div>
+        <p class="hint" id="jobMsg" role="status"></p>
+      </section>
+
+      <section class="panel">
         <div class="panel-head"><h2>Screens</h2><span class="tag" id="exTag">Example screens</span></div>
         <div class="row">
           <label class="hint" for="file">Upload a Flyscreens and Flydoors report (PDF), or a CSV</label>
@@ -330,7 +337,7 @@ bindTable('#partsT',()=>state.parts,renderParts);
 bindTable('#stockT',()=>state.stocks,renderStocks);
 $('#addPart').onclick=()=>{if(state.example){state.parts=[];state.example=false}state.parts.push({label:'',type:'door',h:'',w:'',qty:1});renderParts();schedule();
   const el=$(`#p-label-${state.parts.length-1}`);if(el)el.focus()};
-$('#clearParts').onclick=()=>{state.job='';state.colour='';$('#colour').value='';state.parts=[];state.example=false;renderParts();schedule()};
+$('#clearParts').onclick=()=>{state.job='';$('#job').value='';state.colour='';$('#colour').value='';state.parts=[];state.example=false;renderParts();schedule()};
 $('#addStock').onclick=()=>{state.stocks.push({l:'',w:'',p0:'',pack:'',p1:'',q2:'',p2:'',on:true});renderStocks();schedule()};
 for(const k of ['gap','trim','minOff','doorD','winD','mrH','mrW','mrAt','mrGap','mrCut','mrLen','mrPrice']){const el=$('#'+k);el.value=state.opt[k];el.oninput=()=>{state.opt[k]=Math.max(0,+el.value||0);schedule()}}
 $('#mrFin').value=state.opt.mrFin;$('#mrFin').onchange=e=>{state.opt.mrFin=e.target.value;schedule()};
@@ -385,7 +392,7 @@ async function loadReport(file){
     if(!rows.length){msg.textContent='No screen lines found in that PDF. It needs to be the Flyscreens and Flydoors report, printed to PDF (not a scan).';return}
     const ss=rows.filter(r=>/stainless/i.test(r.mesh));
     if(!ss.length){msg.textContent=`Read ${rows.length} screen lines${job?' for job '+job:''}, but none use stainless steel mesh.`;return}
-    state.parts=ss.map(r=>({label:`#${r.item} ${r.frame}`,type:guessType(r.frame,r.h),colour:r.finish,h:r.h,w:r.w,qty:r.qty}));state.job=job||'';state.colour=[...new Set(ss.map(r=>r.finish).filter(Boolean))].join(' / ');$('#colour').value=state.colour;state.example=false;renderParts();schedule();
+    state.parts=ss.map(r=>({label:`#${r.item} ${r.frame}`,type:guessType(r.frame,r.h),colour:r.finish,h:r.h,w:r.w,qty:r.qty}));state.job=job||'';$('#job').value=state.job;state.colour=[...new Set(ss.map(r=>r.finish).filter(Boolean))].join(' / ');$('#colour').value=state.colour;state.example=false;renderParts();schedule();
     const n=ss.reduce((a,r)=>a+r.qty,0);
     msg.textContent=`${job?'Job '+job+': ':''}brought in ${n} stainless steel screens from ${ss.length} lines. Left out ${rows.length-ss.length} lines with other mesh.`;
   }catch(err){msg.textContent='Could not read that PDF. Paste the screen sizes below instead.'}
@@ -397,8 +404,9 @@ $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;
 
 let timer;function schedule(){save();clearTimeout(timer);timer=setTimeout(compute,180)}
 const m2=a=>(a/1e6).toFixed(2);
-let planText='';
+let planText='',lastResult=null;
 function compute(){
+  lastResult=null;
   const out=$('#out');
   const stocks=state.stocks.filter(s=>s.on&&s.l>0&&s.w>0).map(s=>({l:Math.max(s.l,s.w),w:Math.min(s.l,s.w),p0:+s.p0||0,pack:Math.round(+s.pack||0),p1:+s.p1||0,q2:+s.q2||0,p2:+s.p2||0}));
   const pieces=[];let count=0;const o=state.opt,railed=[],rails=[];
@@ -479,11 +487,64 @@ function compute(){
     lines.push(`  Offcuts to keep: ${offTxt.replace(/×/g,'x')}`,'');
   });
   planText=lines.join('\n');out.innerHTML=html;
+  lastResult={total:cost!=null?cost+railCost:null,sheets:res.sheets.length};
   $('#print').onclick=()=>window.print();
   $('#copy').onclick=async e=>{const b=e.currentTarget;
     try{await navigator.clipboard.writeText(planText);b.textContent='Copied';setTimeout(()=>b.textContent='Copy cutting plan',1500)}
     catch(err){const box=$('#copyBox');box.hidden=false;box.value=planText;box.focus();box.select()}};
 }
-renderParts();renderStocks();compute();
+// ── Saved jobs: kept in the portal database (table mesh_jobs) so any signed-in computer can reopen them ──
+const SB='https://souwlbqovhhmjrfpxunv.supabase.co';
+const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdXdsYnFvdmhobWpyZnB4dW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDMyMjksImV4cCI6MjA5NDAxOTIyOX0.Oo31KVEnbAUwJFwK54TEspRAOI6yLCmFGJxcqcIKhHY';
+const token=()=>{
+  try{if(window.parent!==window&&typeof window.parent.authToken==='function')return window.parent.authToken()}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem('wm_session')||'null');if(s&&s.access_token)return s.access_token}catch(e){}
+  return ANON};
+const who=()=>{try{const u=JSON.parse(localStorage.getItem('wm_user')||'null');return (u&&u.name)||''}catch(e){return ''}};
+async function db(path,opt={}){
+  const r=await fetch(SB+'/rest/v1/'+path,Object.assign({},opt,{headers:Object.assign({apikey:ANON,Authorization:'Bearer '+token(),'Content-Type':'application/json'},opt.headers||{})}));
+  if(!r.ok){const e=new Error('db');e.signin=r.status===401||r.status===403;throw e}
+  return r.status===204?null:r.json().catch(()=>null);
+}
+const fmtDate=d=>new Date(d).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+const money=n=>'$'+Number(n).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const jobMsg=t=>{$('#jobMsg').textContent=t};
+const dbErr=e=>e&&e.signin?'Sign in to the portal to save and open jobs.':'Could not reach the portal database. Check the connection and try again.';
+let savedJobs=[],replaceOk='';
+async function refreshSaved(){
+  const sel=$('#savedList');
+  try{savedJobs=await db('mesh_jobs?select=job_number,colour,total,saved_by,updated_at&order=updated_at.desc&limit=300')||[];
+    sel.innerHTML=`<option value="">${savedJobs.length?savedJobs.length+' saved job'+(savedJobs.length>1?'s':''):'No saved jobs yet'}</option>`+
+      savedJobs.map(j=>`<option value="${esc(j.job_number)}">Job ${esc(j.job_number)} · ${fmtDate(j.updated_at)}${j.total!=null?' · '+money(j.total):''}</option>`).join('');
+  }catch(e){savedJobs=[];sel.innerHTML='<option value="">Not available</option>';jobMsg(dbErr(e))}
+}
+async function saveJob(){
+  const num=(state.job||'').trim();
+  if(!num){jobMsg('Enter a job number first.');$('#job').focus();return}
+  if(state.example||!lastResult){jobMsg('Add the screens for this job before saving.');return}
+  const old=savedJobs.find(j=>j.job_number===num);
+  if(old&&replaceOk!==num){replaceOk=num;jobMsg(`Job ${num} was already saved on ${fmtDate(old.updated_at)}. Press Save job again to replace it.`);return}
+  try{
+    await db('mesh_jobs?on_conflict=job_number',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({job_number:num,colour:state.colour||null,total:lastResult.total,sheets:lastResult.sheets,saved_by:who()||null,updated_at:new Date().toISOString(),
+        data:{parts:state.parts,colour:state.colour||'',opt:state.opt,plan:planText}})});
+    replaceOk=num;jobMsg(`Saved job ${num}.`);refreshSaved();
+  }catch(e){jobMsg(dbErr(e))}
+}
+async function openJob(){
+  const num=$('#savedList').value;if(!num){jobMsg('Pick a saved job from the list first.');return}
+  try{
+    const rows=await db('mesh_jobs?job_number=eq.'+encodeURIComponent(num)+'&select=*');
+    const j=rows&&rows[0];if(!j||!j.data||!Array.isArray(j.data.parts)){jobMsg(`Job ${num} could not be found.`);return}
+    state.parts=j.data.parts;state.colour=j.data.colour||j.colour||'';state.job=num;state.example=false;replaceOk=num;
+    $('#job').value=num;$('#colour').value=state.colour;$('#pasteMsg').textContent='';renderParts();save();compute();
+    let m=`Opened job ${num}, saved ${fmtDate(j.updated_at)}${j.saved_by?' by '+j.saved_by:''}. Worked out again with today's prices and rules.`;
+    if(j.total!=null&&lastResult&&lastResult.total!=null&&Math.abs(j.total-lastResult.total)>0.005)m+=` The total when saved was ${money(j.total)}; it is now ${money(lastResult.total)}.`;
+    jobMsg(m);
+  }catch(e){jobMsg(dbErr(e))}
+}
+$('#job').value=state.job||'';$('#job').oninput=e=>{state.job=e.target.value;replaceOk='';schedule()};
+$('#saveJob').onclick=saveJob;$('#openJob').onclick=openJob;
+renderParts();renderStocks();compute();refreshSaved();
 </script>
 </body></html>
