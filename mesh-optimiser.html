@@ -91,6 +91,7 @@ header h1{font-size:17px}
           <label class="hint" for="file">Upload a Flyscreens and Flydoors report (PDF), or a CSV</label>
           <input type="file" id="file" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain">
         </div>
+        <div class="row"><label class="hint" for="colour">Frame colour</label><input type="text" id="colour" style="flex:1;min-width:200px" placeholder="Read from the report, or type it in"></div>
         <p class="hint" id="pasteMsg" role="status">From a report, only the stainless steel mesh lines are brought in. Sizes are screen sizes.</p>
         <div class="scroll"><table id="partsT">
           <thead><tr><th>Label</th><th>Type</th><th class="num">Height</th><th class="num">Width</th><th class="num">Qty</th><th class="num">Midrail</th><th></th></tr></thead>
@@ -133,6 +134,10 @@ header h1{font-size:17px}
           <label for="mrW">and wider than<input type="number" id="mrW" min="0" step="10"></label>
           <label for="mrAt">Standard midrail centre, up from outside of bottom frame<input type="number" id="mrAt" min="0" step="10"></label>
           <label for="mrGap">Mesh height taken up by the midrail<input type="number" id="mrGap" min="0" step="1"></label>
+          <label for="mrCut">IMR1 midrail cut = screen width minus<input type="number" id="mrCut" min="0" step="1"></label>
+          <label for="mrLen">IMR1 stock length<input type="number" id="mrLen" min="0" step="100"></label>
+          <label for="mrFin">IMR1 price by finish<select id="mrFin"><option value="auto">Auto from frame colour</option><option value="black">Custom Black</option><option value="g1">Group 1 custom colour</option><option value="g2">Group 2 custom colour</option><option value="mill">Mill finish</option></select></label>
+          <label for="mrPrice">IMR1 price per length, if different (0 = price list)<input type="number" id="mrPrice" min="0" step="0.01"></label>
         </div>
       </section>
     </div>
@@ -156,7 +161,7 @@ function parseReport(text){
     if(m){cur={item:m[1],frame:m[2].trim(),h:num(m[3]),w:num(m[4]),qty:+m[5],blk:''};rows.push(cur)}
     else if(cur)cur.blk+=line+'\n';
   }
-  for(const r of rows){r.screen=field(r.blk,'Screen');r.mesh=field(r.blk,'Mesh');r.midrail=field(r.blk,'Flydoor Midrail');delete r.blk}
+  for(const r of rows){r.screen=field(r.blk,'Screen');r.mesh=field(r.blk,'Mesh');r.midrail=field(r.blk,'Flydoor Midrail');r.finish=field(r.blk,'Finish').replace(/\s*Mesh:.*$/,'').replace(/^AWS\s+/,'');delete r.blk}
   const job=(text.match(/Job Ref:\s*(\S+)/)||[])[1]||'';
   return {job,rows};
 }
@@ -243,6 +248,23 @@ function solve(stocks,pieces,o){
     if(improved)set=keep}
   best.useCost=useCost;return best;
 }
+// IMR1 Invisi Midrail x 6 m, Alspec HI151 price list 12/10/2026 (ex GST): [quantity break, price per length]
+const IMR1={black:[[1,149.46],[5,141.55],[10,124.72]],g1:[[1,149.46]],g2:[[1,217.79]],mill:[[1,125.35],[5,118.68],[10,104.41]]};
+const IMR1_NAMES={black:'Custom Black',g1:'Group 1 custom colour',g2:'Group 2 custom colour',mill:'Mill finish'};
+const imr1Finish=(colour,sel)=>sel&&sel!=='auto'&&IMR1[sel]?sel:(/black/i.test(colour)?'black':/mill/i.test(colour)?'mill':'g1');
+// Groups midrail cuts by colour and fits them into stock lengths, longest first, allowing 5 mm per saw cut.
+function midrailOrder(rails,o){
+  const by=new Map();rails.forEach(r=>{if(!by.has(r.colour))by.set(r.colour,[]);by.get(r.colour).push(r.len)});
+  const out=[];
+  by.forEach((lens,colour)=>{
+    lens.sort((a,b)=>b-a);const bars=[];
+    for(const L of lens){let b=bars.find(b=>b.left>=L);if(!b){b={left:o.mrLen,cuts:[]};bars.push(b)}b.cuts.push(L);b.left-=L+5}
+    const fin=imr1Finish(colour,o.mrFin),n=bars.length;let each=o.mrPrice>0?o.mrPrice:0;
+    if(!each)for(const [q,pr] of IMR1[fin])if(n>=q)each=pr;
+    out.push({colour,fin,lens,bars,n,each,cost:n*each,tooLong:lens.some(L=>L>o.mrLen)});
+  });
+  return out;
+}
 //UI
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -264,10 +286,11 @@ let state={
     [2400,900,389.94,5,368.14,10,346.20,1],[2400,1200,519.84,3,490.68,9,461.54,1],[2400,1500,649.74,2,613.30,8,576.91,1],[3000,1500,812.17,2,766.62,8,721.08,1],
     [2400,750,324.96,5,306.71,10,288.44,1],[3000,750,406.20,5,383.41,10,360.60,1],[3000,900,487.38,3,460.03,9,432.74,1],[3000,1200,649.74,3,613.30,9,576.91,1]
   ].map(([l,w,p0,pack,p1,q2,p2,on])=>({l,w,p0,pack,p1,q2,p2,on:!!on})),
-  opt:{gap:0,trim:0,minOff:300,rot:true,doorD:110,winD:60,mrH:2400,mrW:1200,mrAt:1020,mrGap:24}
+  opt:{gap:0,trim:0,minOff:300,rot:true,doorD:110,winD:60,mrH:2400,mrW:1200,mrAt:1020,mrGap:24,mrCut:146,mrLen:6000,mrFin:'auto',mrPrice:0}
 };
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.parts&&s.stocks&&s.opt)state=s}catch(e){}
 if(state.opt.mrGap===110)state.opt.mrGap=24;
+state.opt=Object.assign({mrCut:146,mrLen:6000,mrFin:'auto',mrPrice:0},state.opt);
 state.parts.forEach(p=>{if(!p.type)p.type=guessType(p.label,p.h)});
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 
@@ -307,9 +330,11 @@ bindTable('#partsT',()=>state.parts,renderParts);
 bindTable('#stockT',()=>state.stocks,renderStocks);
 $('#addPart').onclick=()=>{if(state.example){state.parts=[];state.example=false}state.parts.push({label:'',type:'door',h:'',w:'',qty:1});renderParts();schedule();
   const el=$(`#p-label-${state.parts.length-1}`);if(el)el.focus()};
-$('#clearParts').onclick=()=>{state.job='';state.parts=[];state.example=false;renderParts();schedule()};
+$('#clearParts').onclick=()=>{state.job='';state.colour='';$('#colour').value='';state.parts=[];state.example=false;renderParts();schedule()};
 $('#addStock').onclick=()=>{state.stocks.push({l:'',w:'',p0:'',pack:'',p1:'',q2:'',p2:'',on:true});renderStocks();schedule()};
-for(const k of ['gap','trim','minOff','doorD','winD','mrH','mrW','mrAt','mrGap']){const el=$('#'+k);el.value=state.opt[k];el.oninput=()=>{state.opt[k]=Math.max(0,+el.value||0);schedule()}}
+for(const k of ['gap','trim','minOff','doorD','winD','mrH','mrW','mrAt','mrGap','mrCut','mrLen','mrPrice']){const el=$('#'+k);el.value=state.opt[k];el.oninput=()=>{state.opt[k]=Math.max(0,+el.value||0);schedule()}}
+$('#mrFin').value=state.opt.mrFin;$('#mrFin').onchange=e=>{state.opt.mrFin=e.target.value;schedule()};
+$('#colour').value=state.colour||'';$('#colour').oninput=e=>{state.colour=e.target.value;state.parts.forEach(p=>p.colour=state.colour);schedule()};
 $('#rot').checked=state.opt.rot;$('#rot').onchange=e=>{state.opt.rot=e.target.checked;schedule()};
 
 function parseRows(text){
@@ -360,7 +385,7 @@ async function loadReport(file){
     if(!rows.length){msg.textContent='No screen lines found in that PDF. It needs to be the Flyscreens and Flydoors report, printed to PDF (not a scan).';return}
     const ss=rows.filter(r=>/stainless/i.test(r.mesh));
     if(!ss.length){msg.textContent=`Read ${rows.length} screen lines${job?' for job '+job:''}, but none use stainless steel mesh.`;return}
-    state.parts=ss.map(r=>({label:`#${r.item} ${r.frame}`,type:guessType(r.frame,r.h),h:r.h,w:r.w,qty:r.qty}));state.job=job||'';state.example=false;renderParts();schedule();
+    state.parts=ss.map(r=>({label:`#${r.item} ${r.frame}`,type:guessType(r.frame,r.h),colour:r.finish,h:r.h,w:r.w,qty:r.qty}));state.job=job||'';state.colour=[...new Set(ss.map(r=>r.finish).filter(Boolean))].join(' / ');$('#colour').value=state.colour;state.example=false;renderParts();schedule();
     const n=ss.reduce((a,r)=>a+r.qty,0);
     msg.textContent=`${job?'Job '+job+': ':''}brought in ${n} stainless steel screens from ${ss.length} lines. Left out ${rows.length-ss.length} lines with other mesh.`;
   }catch(err){msg.textContent='Could not read that PDF. Paste the screen sizes below instead.'}
@@ -376,7 +401,7 @@ let planText='';
 function compute(){
   const out=$('#out');
   const stocks=state.stocks.filter(s=>s.on&&s.l>0&&s.w>0).map(s=>({l:Math.max(s.l,s.w),w:Math.min(s.l,s.w),p0:+s.p0||0,pack:Math.round(+s.pack||0),p1:+s.p1||0,q2:+s.q2||0,p2:+s.p2||0}));
-  const pieces=[];let count=0;const o=state.opt,railed=[];
+  const pieces=[];let count=0;const o=state.opt,railed=[],rails=[];
   state.parts.forEach((p,pi)=>{if(!(p.h>0&&p.w>0))return;const q=Math.max(1,Math.round(+p.qty||1));
     const label=p.label||`Screen ${pi+1}`;
     const d=p.type==='window'?o.winD:o.doorD;const mh=+p.h-d,mw=+p.w-d;if(mh<=0||mw<=0)return;
@@ -384,7 +409,7 @@ function compute(){
     const rail=own?at>0:(p.type!=='window'&&o.mrH>0&&o.mrW>0&&at>0&&p.h>o.mrH&&p.w>o.mrW);
     let cuts=[[mh,'']];
     if(rail){const bot=at-d/2-o.mrGap/2,top=+p.h-at-d/2-o.mrGap/2;
-      if(bot>0&&top>0){cuts=[[top,' (top)'],[bot,' (bottom)']];railed.push(`${q} × ${label}, screen ${p.h} × ${p.w}, midrail at ${at}: top mesh ${top} × ${mw}, bottom mesh ${bot} × ${mw}`)}}
+      if(bot>0&&top>0){cuts=[[top,' (top)'],[bot,' (bottom)']];for(let i=0;i<q;i++)rails.push({len:+p.w-o.mrCut,colour:p.colour||state.colour||''});railed.push(`${q} × ${label}, screen ${p.h} × ${p.w}, midrail at ${at}: top mesh ${top} × ${mw}, bottom mesh ${bot} × ${mw}`)}}
     count+=q*cuts.length;
     if(count<=3000)for(let i=0;i<q;i++)cuts.forEach(([ch,sfx],ci)=>pieces.push({p:pi+'_'+ci,label:label+sfx,w:ch,h:mw,H:ch,W:mw}))});
   if(!pieces.length){out.innerHTML='<section class="panel"><p class="empty">Add panels to the cut list and the cutting plan appears here.</p></section>';return}
@@ -402,23 +427,28 @@ function compute(){
   const yieldPct=sheetArea?used/sheetArea*100:0;
   const bySize=countBySize(res.sheets);
   const cost=res.useCost?res.total:null;
+  const railOrder=midrailOrder(rails.filter(r=>r.len>0),o),railCost=railOrder.reduce((a,r)=>a+r.cost,0);
   let html=`<div class="stats">
     <div class="stat"><b>${res.sheets.length}</b><span>sheet${res.sheets.length===1?'':'s'} to cut</span></div>
     <div class="stat"><b>${yieldPct.toFixed(1)}%</b><span>of the mesh ends up in panels</span></div>
     <div class="stat"><b>${m2(sheetArea-used)} m²</b><span>left over, of ${m2(sheetArea)} m² pulled</span></div>
-    ${cost!=null?`<div class="stat"><b>$${cost.toFixed(2)}</b><span>mesh order, ex GST</span></div>`:''}
+    ${cost!=null?`<div class="stat"><b>$${(cost+railCost).toFixed(2)}</b><span>order total, ex GST</span></div>`:''}
   </div>`;
   if(res.unplaced.length){
     const u=new Map();res.unplaced.forEach(x=>{const k=`${x.label} (${x.H} × ${x.W})`;u.set(k,(u.get(k)||0)+1)});
     html+=`<div class="warnbox">Not placed: ${[...u].map(([k,n])=>`${n} × ${esc(k)}`).join(', ')}. No ticked sheet is big enough, or the sheets on hand ran out. Check the mesh deductions and midrail limits.</div>`;
   }
-  if(railed.length)html+=`<section class="panel"><h2>Screens getting a midrail</h2><p class="hint" style="color:var(--fg)">${railed.map(esc).join('<br>')}</p><p class="hint">Each is cut as a top and a bottom mesh panel, marked on the layouts.</p></section>`;
-  html+=`<section class="panel"><div class="panel-head"><h2>Sheets to order${state.job?' · Job '+esc(state.job):''}</h2><span class="row"><button id="print">Print</button><button id="copy">Copy cutting plan</button></span></div>
-    <div class="scroll"><table class="plan-table"><thead><tr><th>Sheet size</th><th class="num">Qty</th><th>Order as</th>${cost!=null?'<th class="num">Cost</th>':''}</tr></thead><tbody>
-    ${[...bySize].map(([s,n])=>`<tr><td class="m">${s.l} × ${s.w}</td><td class="num m">${n}</td><td>${packNote(n,s.pack)}</td>${cost!=null?`<td class="num m">$${tierCost(s,n).toFixed(2)}</td>`:''}</tr>`).join('')}</tbody></table></div>
+  if(railed.length)html+=`<section class="panel"><h2>Screens getting a midrail</h2><p class="hint" style="color:var(--fg)">${railed.map(esc).join('<br>')}</p><p class="hint">Each is cut as a top and a bottom mesh panel, marked on the layouts.</p>${railOrder.map(r=>`<p class="hint" style="color:var(--fg)"><b>IMR1 midrail cuts · ${esc(r.colour||'colour not set')}</b><br>${r.bars.map((b,i)=>`Length ${i+1}: <span style="font-family:var(--mono)">${b.cuts.join(', ')}</span> · offcut ${Math.max(0,Math.round(b.left))}`).join('<br>')}${r.tooLong?'<br>A midrail is longer than the stock length.':''}</p>`).join('')}</section>`;
+  html+=`<section class="panel"><div class="panel-head"><h2>To order${state.job?' · Job '+esc(state.job):''}${state.colour?' · '+esc(state.colour):''}</h2><span class="row"><button id="print">Print</button><button id="copy">Copy cutting plan</button></span></div>
+    <div class="scroll"><table class="plan-table"><thead><tr><th>Item</th><th>Colour</th><th class="num">Qty</th><th>Order as</th>${cost!=null?'<th class="num">Cost</th>':''}</tr></thead><tbody>
+    ${[...bySize].map(([s,n])=>`<tr><td>Invisi-Gard mesh <span class="m">${s.l} × ${s.w}</span></td><td>Satin Black</td><td class="num m">${n}</td><td>${packNote(n,s.pack)}</td>${cost!=null?`<td class="num m">$${tierCost(s,n).toFixed(2)}</td>`:''}</tr>`).join('')}${railOrder.map(r=>`<tr><td>IMR1 midrail <span class="m">${o.mrLen/1000} m</span></td><td>${esc(r.colour||'Colour not set')}</td><td class="num m">${r.n}</td><td>${r.lens.length} cut${r.lens.length>1?'s':''}, priced as ${IMR1_NAMES[r.fin]}</td>${cost!=null?`<td class="num m">$${r.cost.toFixed(2)}</td>`:''}</tr>`).join('')}${cost!=null?`<tr><td colspan="4"><b>Total ex GST</b></td><td class="num m"><b>$${(cost+railCost).toFixed(2)}</b></td></tr>`:''}</tbody></table></div>
     <textarea id="copyBox" readonly hidden aria-label="Cutting plan text"></textarea>
     <div class="legend"><span><i class="sw"></i>Mesh panel, cut size height × width</span><span><i class="sw o"></i>Offcut worth keeping</span></div></section>`;
   const lines=[`INVISI-GARD CUTTING PLAN${state.job?' - JOB '+state.job:''}`,`${res.sheets.length} sheets, yield ${yieldPct.toFixed(1)}%`,''];
+  if(state.colour)lines.splice(1,0,`Frame colour: ${state.colour}`);
+  bySize.forEach((n,s)=>lines.push(`Order ${n} x Invisi-Gard mesh ${s.l} x ${s.w}, Satin Black`));
+  railOrder.forEach(r=>{lines.push(`Order ${r.n} x IMR1 midrail ${o.mrLen/1000} m, ${r.colour||'colour not set'}`);r.bars.forEach((b,i)=>lines.push(`  Length ${i+1}: ${b.cuts.join(', ')}`))});
+  lines.push('');
   groups.forEach((g,gi)=>{
     const s=g.sh.stock,L=s.l,W=s.w;
     const offs=g.sh.free.filter(f=>Math.min(f.w,f.h)>=Math.max(1,state.opt.minOff));
