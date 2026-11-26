@@ -77,6 +77,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .tcount{font-size:5.5rem;font-weight:800;line-height:1;margin-top:auto;padding-top:24px}
 .tlabel{font-weight:700;font-size:1.05rem}
 .lhead{font-size:1rem;margin:26px 0 10px;color:var(--muted)}
+.whead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:1.35rem;font-weight:800;margin:28px 0 10px;padding-bottom:8px;border-bottom:3px solid var(--fg)}
+.whead:first-of-type{margin-top:6px}
+.whead.late{border-bottom-color:var(--red)}
+.whead.now{border-bottom-color:var(--green)}
+.whead .wcount{margin-left:auto;font-size:.9rem;font-weight:600;color:var(--muted)}
 .secname{font-weight:800;font-size:1.05rem;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;margin-right:4px}
 .secname small{font-size:.75rem;font-weight:500;color:rgba(255,255,255,.7)}
 
@@ -695,13 +700,32 @@ function jobsHTML(){
   const rows=sectionRows(sec);
   if(S.loading&&!rows.length)return h+'<div class="empty">Loading jobs…</div></div></div>';
   const live=rows.filter(r=>!(r.job&&r.job.status==='Done')),fin=rows.filter(r=>r.job&&r.job.status==='Done');
-  if(sec==='pick'){
-    const todo=live.filter(r=>!rowWaiting(r)),sent=live.filter(rowWaiting);
-    h+=todo.length?'<div class="jobs">'+todo.map(r=>rowCard(sec,r)).join('')+'</div>':'<div class="empty"><b>Nothing to pick</b>A job shows here when it goes into Pre-production in ESP and its metal hasn’t been ordered yet.</div>';
-    if(sent.length)h+='<h2 class="lhead">With the office to order</h2><div class="jobs">'+sent.map(r=>rowCard(sec,r)).join('')+'</div>';
-  }else h+=live.length?'<div class="jobs">'+live.map(r=>rowCard(sec,r)).join('')+'</div>':'<div class="empty"><b>Nothing to cut</b>A job shows here when it goes into Production in ESP.</div>';
+  if(!live.length)h+=sec==='pick'?'<div class="empty"><b>Nothing to pick</b>A job shows here once it is in Pre-production in ESP with the quote signed, sizes confirmed and deposit paid, until its metal is ordered.</div>'
+    :'<div class="empty"><b>Nothing to cut</b>A job shows here when it goes into Production in ESP.</div>';
+  // one block per production week (the Monday of the week the job is due), soonest first
+  weekGroups(sec,live).forEach(g=>{
+    const w=weekLabel(g.k),n=sec==='pick'?g.rows.filter(r=>!rowWaiting(r)).length:g.rows.length;
+    h+='<h2 class="whead'+(w.cls?' '+w.cls:'')+'"><span class="wname">'+esc(w.name)+'</span>'+(w.note?'<span class="tag'+(w.cls==='late'?' red':w.cls==='now'?' green':'')+'">'+esc(w.note)+'</span>':'')+
+      '<span class="wcount num">'+plural(n,'job')+(sec==='pick'?' to pick':' to cut')+(sec==='pick'&&g.rows.length>n?', '+(g.rows.length-n)+' with the office':'')+'</span></h2><div class="jobs">'+g.rows.map(r=>rowCard(sec,r)).join('')+'</div>';
+  });
   if(fin.length)h+='<h2 class="lhead">Finished</h2><div class="jobs">'+fin.map(r=>rowCard(sec,r)).join('')+'</div>';
   return h+'</div></div>';
+}
+// Production week = the Monday of the week the job is due in ESP.
+const dayOf=d=>{const p=String(d).split('-');return new Date(+p[0],+p[1]-1,+p[2])};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const mondayOf=d=>{const x=d instanceof Date?new Date(d.getFullYear(),d.getMonth(),d.getDate()):dayOf(d);x.setDate(x.getDate()-(x.getDay()+6)%7);return iso(x)};
+function weekGroups(sec,rows){
+  const g={};
+  rows.forEach(r=>{const k=r.esp&&r.esp.due_date?mondayOf(r.esp.due_date):'';(g[k]=g[k]||[]).push(r)});
+  const jn=r=>+((r.esp&&r.esp.job_number)||(r.job&&r.job.job_number)||0)||1e9;
+  return Object.keys(g).sort((a,b)=>(a||'9999').localeCompare(b||'9999')).map(k=>({k:k,rows:g[k].sort((a,b)=>(sec==='pick'?rowWaiting(a)-rowWaiting(b):0)||jn(a)-jn(b))}));
+}
+function weekLabel(k){
+  if(!k)return{name:'No production week yet',note:'Not in ESP, or no due date',cls:''};
+  const weeks=Math.round((dayOf(k)-dayOf(mondayOf(new Date())))/604800000);
+  const name='Week of '+dayOf(k).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})+(dayOf(k).getFullYear()!==new Date().getFullYear()?' '+dayOf(k).getFullYear():'');
+  return{name:name,note:weeks<0?(weeks===-1?'Last week':(-weeks)+' weeks ago'):weeks===0?'This week':weeks===1?'Next week':'In '+weeks+' weeks',cls:weeks<0?'late':weeks===0?'now':''};
 }
 const shortDate=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}catch(e){return''}};
 function rowCard(sec,r){
@@ -713,7 +737,7 @@ function rowCard(sec,r){
   if(b&&b.due_date)tags+='<span class="tag">Due '+esc(shortDate(b.due_date))+'</span> ';
   if(!j&&b&&!(b.vq_bars>0))tags+='<span class="tag amber">Sheets not copied from vQuote yet</span> ';
   if(sec==='pick'){
-    if(j&&j.pick_sent_at)tags+=(j.bars_short>0?(j.ordered_at?'<span class="tag green">'+plural(j.bars_short,'bar')+' ordered</span> ':'<span class="tag amber">'+plural(j.bars_short,'bar')+' to order</span> '):'<span class="tag green">All in stock</span> ');
+    if(j&&j.pick_sent_at)tags+='<span class="tag">Sent to the office</span> '+(j.bars_short>0?(j.ordered_at?'<span class="tag green">'+plural(j.bars_short,'bar')+' ordered</span> ':'<span class="tag amber">'+plural(j.bars_short,'bar')+' to order</span> '):'<span class="tag green">All in stock</span> ');
     if(b&&espDone(b.order_std,b.order_claimed))tags+='<span class="tag green">Metal ordered in ESP</span> ';
     if(b&&espDone(b.arrived_std,b.arrived_claimed))tags+='<span class="tag green">Metal arrived</span> ';
     stats=j?'<div><b class="num">'+j.pick_counted+'/'+j.pick_total+'</b><span>lines counted</span></div>':'<div><b>–</b><span>not started</span></div>';
