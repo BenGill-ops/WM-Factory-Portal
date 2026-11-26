@@ -173,3 +173,12 @@ create policy "staff ask for a cutplan" on public.vquote_cutplan_requests for in
 alter table public.saw_jobs add column if not exists source text not null default 'pdf';
 alter table public.saw_jobs add column if not exists item_info jsonb not null default '{}'::jsonb;
 alter table public.saw_jobs add column if not exists vq_synced_at timestamptz;
+
+-- Office ordering sheet (26/11/2026). The Order tab lays the pick sheet out like the paper
+-- Extrusion Bar Summary (ESP order, picked lines struck through).
+--   order_qty    the office's own figure for a line; null = order the shortfall
+--   office_done  the office has dealt with this line in ESP
+alter table public.saw_pick_lines add column if not exists order_qty integer;
+alter table public.saw_pick_lines add column if not exists office_done boolean not null default false;
+alter table public.saw_pick_lines add column if not exists office_by text;
+alter table public.saw_pick_lines add column if not exists office_at timestamptz;
