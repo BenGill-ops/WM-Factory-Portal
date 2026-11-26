@@ -90,6 +90,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .field input,.field textarea,.field select{font:inherit;font-size:1rem;color:var(--fg);padding:12px;border:2px solid var(--line);border-radius:10px;background:#fff;min-height:var(--tap);width:100%}
 .rowx{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
 
+.load{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:18px;align-items:stretch}
+.load .drop{margin-bottom:0}
+@media (max-width:900px){.load{grid-template-columns:minmax(0,1fr)}}
+.vq{background:var(--surface);border-radius:14px;padding:20px;border:2px solid var(--line)}
+.vq b{font-size:1.1rem}
+.vq p{margin:6px 0 14px;color:var(--muted);font-size:.9rem}
+.waits{margin-top:14px;display:grid;gap:8px}
+.wrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg);border-radius:10px;padding:8px 10px 8px 14px;font-size:.9rem}
+.wrow b{font-size:1.1rem}
+.cuts .part{font-size:.78rem;font-weight:700;color:var(--amber);margin-top:2px}
+.wcode{font-weight:800;color:var(--fg);margin-left:6px}
+
 /* ── pick sheet ── */
 .bar2{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .chip{min-height:48px;padding:0 18px;border-radius:999px;background:var(--surface);border:2px solid var(--line);font-weight:700;font-size:.9rem}
@@ -408,7 +420,7 @@ function ask(title,body,okLabel,extraHTML){
 }
 
 // ── state ────────────────────────────────────────────────────────────────────
-const S={view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
+const S={vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
 const pending={};   // line id -> timer, so quick taps on − / + save once
 let lastTouch=0;
 
@@ -418,6 +430,7 @@ async function loadJobs(quiet){
   try{
     S.jobs=await rest('saw_job_summary?order=created_at.desc&limit=200'+(S.showDone?'':'&status=eq.Active'))||[];S.err='';
   }catch(e){S.err=(e.status===401||e.status===403)?'signin':'Could not reach the portal. Check the Wi-Fi.'}
+  await checkWaits();
   S.loading=false;if(S.view==='jobs')render();
 }
 async function openJob(id,quiet){
@@ -428,6 +441,7 @@ async function openJob(id,quiet){
     if(quiet&&(Object.keys(pending).length||Date.now()-lastTouch<8000))return;
     const same=quiet&&JSON.stringify([j&&j[0],pick,bars])===JSON.stringify([S.job,S.pick,S.bars]);
     if(j&&j[0])S.job=j[0];S.pick=pick;S.bars=bars;S.loading=false;S.err='';
+    if(!quiet){S.vq=null;if(isSup()&&S.job.quote_num&&/^\d+$/.test(S.job.quote_num))rest('vquote_cutplans?quote_num=eq.'+S.job.quote_num+'&select=quote_num,quote_vers,bar_count,synced_at').then(r=>{if(r&&r[0]&&S.job&&String(S.job.quote_num)===String(r[0].quote_num)){S.vq=r[0];if(vqNewer())render(true)}}).catch(()=>{})}
     if(!quiet)S.tab=(pick.length&&(!bars.length||S.job.pick_counted<S.job.pick_total||!S.job.pick_sent_at))?'pick':'cut';
     if(!same)render(true);
   }catch(e){if(!quiet){S.loading=false;S.err=(e.status===401||e.status===403)?'signin':'Could not load this job. Check the Wi-Fi.';render()}}
@@ -451,6 +465,9 @@ const itemLabel=it=>{const q=S.job&&S.job.quote_num;const m=/^(\d+)\/(\d+)$/.exe
 // Items on hold: the office switches an item off (say its size isn't confirmed) and its
 // pieces come off the cut sheet until it is switched back on.
 const heldSet=()=>new Set((S.job&&S.job.held_items)||[]);
+const itemDescr=it=>(S.job&&S.job.item_info&&S.job.item_info[it])||'';
+// the window or door number inside the item description, e.g. W101 or D12
+const itemCode=it=>{const m=/\b([WD]\d{1,4}[A-Z]?)\b/.exec(itemDescr(it));return m?m[1]:''};
 const itemNo=it=>{const m=/(\d+)$/.exec(it||'');return m?+m[1]:1e9};
 // todo = cut it; hold = every piece on it is on hold; done = cut;
 // more = cut earlier while some pieces were on hold, and those pieces are now back on.
@@ -514,11 +531,13 @@ function jobsHTML(){
     (inFrame?'<a class="tbtn" href="saw-bench.html" target="_blank" rel="noopener" style="text-decoration:none">Full screen</a>':'<button class="tbtn" data-act="signout">Sign out</button>')+'</div>';
   h+='<div class="main"><div class="pad">';
   if(S.err)h+='<div class="note red">'+esc(S.err)+'</div>';
-  if(isSup())h+=S.imp?impHTML():'<div class="drop" id="drop"><b>Load a job onto the saw bench</b><p>Drop the vQuote Extrusion Bar Summary (pick sheet) and Optimised Cutting Plan PDFs here, both at once.</p>'+
-    '<button class="btn" data-act="choose">Choose PDFs</button><input type="file" id="files" accept="application/pdf,.pdf" multiple hidden></div>';
+  if(isSup())h+=S.imp?impHTML():'<div class="load"><form class="vq" id="vqform"><b>Load a job from vQuote</b><p>Type the quote number. The cut sheet and pick sheet come straight from vQuote.</p>'+
+    '<div class="rowx"><label class="field" style="flex:1;min-width:150px">Quote number<input id="vqnum" inputmode="numeric" autocomplete="off" placeholder="21967"></label><button class="btn pri" type="submit"'+(S.busy?' disabled':'')+'>'+(S.busy?'Looking…':'Find in vQuote')+'</button></div>'+waitsHTML()+'</form>'+
+    '<div class="drop" id="drop"><b>Or drop the PDFs</b><p>The vQuote Extrusion Bar Summary and Optimised Cutting Plan, both at once.</p>'+
+    '<button class="btn" data-act="choose">Choose PDFs</button><input type="file" id="files" accept="application/pdf,.pdf" multiple hidden></div></div>';
   if(isSup())h+='<div class="bar2"><button class="chip'+(S.showDone?'':' on')+'" data-act="showdone" data-v="0">On the bench</button><button class="chip'+(S.showDone?' on':'')+'" data-act="showdone" data-v="1">Include finished</button></div>';
   if(S.loading&&!S.jobs.length)h+='<div class="empty">Loading jobs…</div>';
-  else if(!S.jobs.length)h+='<div class="empty"><b>No jobs on the saw bench</b>'+(isSup()?'Drop a job’s two vQuote PDFs above to put it here.':'Jobs appear here when the office loads the cut sheets.')+'</div>';
+  else if(!S.jobs.length)h+='<div class="empty"><b>No jobs on the saw bench</b>'+(isSup()?'Type a quote number above to put a job here.':'Jobs appear here when the office loads the cut sheets.')+'</div>';
   else h+='<div class="jobs">'+S.jobs.map(jobCard).join('')+'</div>';
   return h+'</div></div>';
 }
@@ -539,19 +558,23 @@ function impHTML(){
   const m=S.imp,q=m.meta;
   const tile=(has,name,body)=>has?'<div class="f"><b>'+name+'</b><span>'+body+'</span></div>':'<div class="f miss"><b>'+name+'</b><span>Not added yet. Drop it here or choose it.</span></div>';
   let h='<div class="imp" id="drop"><h2>Quote '+esc(q.quote_num||'?')+(q.quote_version?' ver '+esc(q.quote_version):'')+' — '+esc(q.title||q.customer||'')+'</h2>';
+  const vqs=m.src==='vquote';
   h+='<div class="files">'+
-    tile(m.pick,'Pick sheet',m.pick?plural(m.pick.length,'line')+', '+plural(m.pick.reduce((a,p)=>a+p.qty_needed,0),'bar')+' to pick':'')+
-    tile(m.bars,'Cutting plan',m.bars?plural(m.bars.length,'bar')+', '+plural(m.bars.reduce((a,b)=>a+b.cuts.reduce((x,c)=>x+c.qty,0),0),'piece')+' to cut':'')+'</div>';
+    tile(m.pick,'Pick sheet',m.pick?plural(m.pick.length,'line')+', '+plural(m.pick.reduce((a,p)=>a+p.qty_needed,0),'bar')+' to pick'+(vqs?'. Counted from the cutting plan.':''):'')+
+    tile(m.bars,'Cutting plan',m.bars?plural(m.bars.length,'bar')+', '+plural(m.bars.reduce((a,b)=>a+b.cuts.reduce((x,c)=>x+c.qty,0),0),'piece')+' to cut'+(vqs?'. Copied from vQuote '+when(m.vq.synced_at)+'.':''):'')+'</div>';
+  if(vqs)h+='<div class="note ok">Straight from vQuote, as saved there when it was copied. If the quote has changed in the last 15 minutes, wait and find it again.</div>';
   (m.warn||[]).forEach(w=>{h+='<div class="note">'+esc(w)+'</div>'});
-  if(m.pick&&m.bars)h+=m.diffs.length?'<div class="note">The two sheets don’t agree on '+plural(m.diffs.length,'extrusion')+' ('+esc(m.diffs.slice(0,6).map(d=>d.extrusion+': pick '+d.pick+', plan '+d.plan).join('; '))+'). They may be from different versions of the quote.</div>'
+  if(m.pick&&m.bars&&!vqs)h+=m.diffs.length?'<div class="note">The two sheets don’t agree on '+plural(m.diffs.length,'extrusion')+' ('+esc(m.diffs.slice(0,6).map(d=>d.extrusion+': pick '+d.pick+', plan '+d.plan).join('; '))+'). They may be from different versions of the quote.</div>'
     :'<div class="note ok">The two sheets agree: every pick line matches the bars on the cutting plan.</div>';
   if(m.existing)h+='<div class="note">Quote '+esc(q.quote_num)+' is already on the saw bench. Loading replaces its sheets. Stock counts and ticked bars are kept wherever the line or bar is unchanged.</div>';
   h+='<div class="rowx"><label class="field" style="flex:1;min-width:180px;max-width:260px">Job number (optional)<input id="impjob" inputmode="numeric" value="'+esc(m.job_number||'')+'"></label>'+
-    '<input type="file" id="files" accept="application/pdf,.pdf" multiple hidden><button class="btn" data-act="choose">Add the other PDF</button>'+
+    (vqs?'':'<input type="file" id="files" accept="application/pdf,.pdf" multiple hidden><button class="btn" data-act="choose">Add the other PDF</button>')+
     '<span style="flex:1"></span><button class="btn" data-act="impcancel">Cancel</button><button class="btn pri" data-act="impgo"'+(S.busy?' disabled':'')+'>'+(S.busy?'Loading…':(m.existing?'Replace sheets':'Load onto saw bench'))+'</button></div></div>';
   return h;
 }
 
+const vqNewer=()=>S.vq&&S.job&&S.vq.bar_count>0&&S.vq.quote_vers!=null&&String(S.vq.quote_vers)!==String(S.job.quote_version||'');
+const vqNote=()=>vqNewer()&&isSup()?'<div class="note" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:220px">vQuote now has version '+esc(S.vq.quote_vers)+' of this quote. This cut sheet is version '+esc(S.job.quote_version||'?')+'.</span><button class="btn sm pri" data-act="vqupdate">Update from vQuote</button></div>':'';
 function jobHTML(){
   const j=S.job,gs=groups();
   const bc=barCounts(S.bars),counted=S.pick.filter(l=>l.qty_in_stock!=null).length;
@@ -568,7 +591,7 @@ function jobHTML(){
     const mf=mainFinish();
     const list=S.pick.filter(l=>S.filter==='all'||(S.filter==='todo'&&l.qty_in_stock==null)||(S.filter==='short'&&shortOf(l)>0));
     const hi=[...heldSet()].sort((a,b)=>itemNo(a)-itemNo(b));
-    h+='<div class="main"><div class="pad">'+orderHTML()+(hi.length?'<div class="note">'+hi.map(itemLabel).join(', ')+(hi.length>1?' are':' is')+' on hold on the cut sheet. This pick sheet still counts the bars for '+(hi.length>1?'them':'it')+'.</div>':'')+
+    h+='<div class="main"><div class="pad">'+vqNote()+orderHTML()+(hi.length?'<div class="note">'+hi.map(itemLabel).join(', ')+(hi.length>1?' are':' is')+' on hold on the cut sheet. This pick sheet still counts the bars for '+(hi.length>1?'them':'it')+'.</div>':'')+
       '<div class="bar2">'+[['all','All '+S.pick.length],['todo','Still to count'],['short','Short']].map(c=>'<button class="chip'+(S.filter===c[0]?' on':'')+'" data-act="filter" data-v="'+c[0]+'">'+c[1]+'</button>').join('')+'</div>'+
       (list.length?'<div class="pick">'+list.map(l=>pickRow(l,mf)).join('')+'</div>':'<div class="empty">'+(S.filter==='todo'?'<b>Every line is counted</b>Tap Send to office below.':'Nothing short.')+'</div>')+
       '</div></div><div class="foot" id="foot">'+footHTML()+'</div>';
@@ -577,7 +600,7 @@ function jobHTML(){
   if(!S.bars.length)return h+'<div class="main"><div class="empty"><b>No cutting plan loaded for this job</b>The office adds it by dropping the Optimised Cutting Plan PDF on the Saw Bench page.</div></div>';
   const open=g=>g.bars.some(b=>{const s=barState(b).st;return s==='todo'||s==='more'});
   if(!S.grp||!gs.find(g=>g.key===S.grp))S.grp=(gs.find(open)||gs[0]).key;
-  h+='<div class="main cutwrap">'+itemsHTML()+'<div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+groupHTML(gs)+'</div></div></div>';
+  h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+groupHTML(gs)+'</div></div></div>';
   return h;
 }
 function pickRow(l,mf){
@@ -650,20 +673,20 @@ function barCard(b,g,nextBar){
     '<table class="cuts"><tr><th>Left end</th><th>Length</th><th>Right end</th><th>Qty</th><th>For</th></tr>'+
     b.cuts.map((c,i)=>{
       const hold=H.has(c.item),was=bs.st==='more'&&!bs.out.includes(i)&&!hold;
-      return '<tr class="'+(c.qty>1?'many':'')+(hold?' hold':'')+(was?' was':'')+'"><td class="ang num'+(c.l?'':' sq')+'">'+(c.l?esc(c.l):'square')+'</td><td class="sz num">'+mm(c.size)+' <small>mm</small></td>'+
-      '<td class="ang num'+(c.r?'':' sq')+'">'+(c.r?esc(c.r):'square')+'</td><td class="qty num">× '+c.qty+'</td><td class="itm num">'+esc(itemLabel(c.item))+(hold?' <span class="tag amber">On hold</span>':was?' <span class="tag green">Cut</span>':'')+'</td></tr>'}).join('')+'</table></section>';
+      return '<tr class="'+(c.qty>1?'many':'')+(hold?' hold':'')+(was?' was':'')+'"><td class="ang num'+(c.l?'':' sq')+'">'+(c.l?esc(c.l):'square')+'</td><td class="sz num">'+mm(c.size)+' <small>mm</small>'+(c.full?'<div class="part">one part of a '+mm(c.full)+' mm length</div>':'')+'</td>'+
+      '<td class="ang num'+(c.r?'':' sq')+'">'+(c.r?esc(c.r):'square')+'</td><td class="qty num">× '+c.qty+'</td><td class="itm num">'+esc(itemLabel(c.item))+(itemCode(c.item)?' <span class="wcode">'+esc(itemCode(c.item))+'</span>':'')+(hold?' <span class="tag amber">On hold</span>':was?' <span class="tag green">Cut</span>':'')+'</td></tr>'}).join('')+'</table></section>';
 }
-// The item summary across the top of the cut sheet. Supervisors and above tap an item to
-// take it off the cut sheet (on hold) or put it back.
+// The item summary across the top of the cut sheet. Any signed-in staff member taps an item
+// to take it off the cut sheet (on hold, after a confirm) or put it back.
 function itemsHTML(){
-  const st=itemStats(),H=heldSet(),can=isSup();let shut=false;try{shut=localStorage.getItem('wm_saw_items')==='0'}catch(e){}
+  const st=itemStats(),H=heldSet(),can=true;let shut=false;try{shut=localStorage.getItem('wm_saw_items')==='0'}catch(e){}
   const nHold=st.filter(x=>H.has(x.item)).length;
   let h='<div class="items"><div class="ihead"><b>'+plural(st.length,'item')+' on this cut sheet</b><span>'+(nHold?plural(nHold,'item')+' on hold':'All on')+(can&&!shut?'. Tap an item to take it off the cut sheet or put it back.':'')+'</span>'+
     '<span class="grow"></span><button class="btn sm" data-act="itemsfold" aria-expanded="'+!shut+'">'+(shut?'Show items':'Hide')+'</button></div>';
   const list=shut?st.filter(x=>H.has(x.item)):st;
   if(list.length)h+='<div class="ilist">'+list.map(x=>{
     const hold=H.has(x.item),fin=!hold&&x.cut>=x.total,lab=itemLabel(x.item).replace(/^Item /,'');
-    const inner='<b class="num">'+esc(lab)+'</b><small class="num">'+(hold?'On hold':fin?'Cut':x.cut+'/'+x.total)+'</small>';
+    const inner='<b class="num">'+esc(lab)+'</b>'+(itemCode(x.item)?'<small>'+esc(itemCode(x.item))+'</small>':'')+'<small class="num">'+(hold?'On hold':fin?'Cut':x.cut+'/'+x.total)+'</small>';
     return can?'<button class="it'+(hold?' hold':'')+(fin?' fin':'')+'" data-act="hold" data-v="'+esc(x.item)+'" aria-pressed="'+!hold+'" aria-label="Item '+esc(lab)+(hold?', on hold':', on the cut sheet')+'">'+inner+'</button>'
       :'<div class="it'+(hold?' hold':'')+(fin?' fin':'')+'">'+inner+'</div>'}).join('')+'</div>';
   return h+'</div>';
@@ -704,9 +727,9 @@ async function tickBar(id){
   catch(e){Object.assign(b,before);toast(failMsg(e),true);render(true)}
 }
 async function toggleHold(item){
-  if(!isSup())return;
   const cur=(S.job.held_items||[]).slice(),on=cur.includes(item),next=on?cur.filter(x=>x!==item):cur.concat(item);
   const pieces=S.bars.reduce((a,b)=>a+b.cuts.reduce((x,c)=>x+(c.item===item?c.qty:0),0),0);
+  if(!on){const a=await ask('Put '+itemLabel(item)+' on hold?',(itemDescr(item)?itemDescr(item)+'. ':'')+plural(pieces,'piece')+' come off the cut sheet until it is switched back on.','Put on hold');if(!a.ok)return}
   S.job.held_items=next;render(true);
   try{await rest('saw_jobs?id=eq.'+S.job.id,Object.assign({method:'PATCH',body:JSON.stringify({held_items:next,updated_at:new Date().toISOString()})},QUIET));
     toast(on?itemLabel(item)+' is back on the cut sheet.':itemLabel(item)+' is on hold. '+plural(pieces,'piece')+' taken off the cut sheet.')}
@@ -743,12 +766,14 @@ function copyOrder(){
 function sheetsDialog(){
   const j=S.job,ov=document.createElement('div');ov.className='ov';
   ov.innerHTML='<div class="dlg" role="dialog" aria-modal="true"><h2>'+esc(j.quote_num||'')+' '+esc(j.title||'')+'</h2><p>'+
-    (j.pick_report_at?'Pick sheet printed '+esc(j.pick_report_at)+'. ':'')+(j.cut_report_at?'Cutting plan printed '+esc(j.cut_report_at)+'.':'')+'</p><div style="display:grid;gap:10px">'+
+    (j.source==='vquote'?'Loaded straight from vQuote, as copied '+when(j.vq_synced_at)+'.':(j.pick_report_at?'Pick sheet printed '+esc(j.pick_report_at)+'. ':'')+(j.cut_report_at?'Cutting plan printed '+esc(j.cut_report_at)+'.':''))+'</p><div style="display:grid;gap:10px">'+
     (j.pick_pdf?'<button class="btn" data-x="pick">View the pick sheet PDF</button>':'')+(j.cut_pdf?'<button class="btn" data-x="cut">View the cutting plan PDF</button>':'')+
+    (isSup()&&j.quote_num?'<button class="btn" data-x="vq">Update the sheets from vQuote</button>':'')+
     (j.status==='Done'?'<button class="btn" data-x="reopen">Put back on the bench</button>':'<button class="btn" data-x="finish">Finish job (take it off the bench)</button>')+
     (isMgr()?'<button class="btn" style="color:var(--red)" data-x="del">Delete this job</button>':'')+'<button class="btn pri" data-x="close">Close</button></div></div>';
   ov.addEventListener('click',async ev=>{
     const b=ev.target.closest('[data-x]');if(!b&&ev.target!==ov)return;const x=b?b.dataset.x:'close';ov.remove();
+    if(x==='vq')vqUpdate();
     if(x==='pick')viewPdf(j.pick_pdf,'Pick sheet');
     if(x==='cut')viewPdf(j.cut_pdf,'Cutting plan');
     if(x==='finish'||x==='reopen'){
@@ -824,6 +849,8 @@ async function commitImport(){
     const q=m.meta,now=new Date().toISOString();
     let job=m.existing;
     const head={quote_num:q.quote_num||null,quote_version:q.quote_version||null,job_number:m.job_number.trim()||null,title:q.title||null,customer:q.customer||null,updated_at:now};
+    if(m.src==='vquote')Object.assign(head,{source:'vquote',item_info:m.item_info||{},vq_synced_at:m.vq.synced_at,pick_pdf:null,cut_pdf:null,pick_report_at:null,cut_report_at:null});
+    else head.source='pdf';
     if(!job)job=(await rest('saw_jobs',POST(Object.assign({created_by_name:me().name||''},head))))[0];
     const patch=Object.assign({},head);
     if(m.pick){
@@ -833,20 +860,81 @@ async function commitImport(){
       if(old.length)await rest('saw_pick_lines?job_id=eq.'+job.id,Object.assign({method:'DELETE'},QUIET));
       await rest('saw_pick_lines',Object.assign({method:'POST',body:JSON.stringify(m.pick.map((l,i)=>{const o=was[key(l)];const have=o&&o.qty_in_stock!=null?Math.min(o.qty_in_stock,l.qty_needed):null;
         return Object.assign({job_id:job.id,sort_order:i,qty_in_stock:have,checked_by:have!=null?o.checked_by:null,checked_at:have!=null?o.checked_at:null},l)}))},QUIET));
-      patch.pick_pdf=await upload(job.id,'pick',m.pickFile);patch.pick_report_at=m.pickMeta.report_at||null;
+      if(m.pickFile){patch.pick_pdf=await upload(job.id,'pick',m.pickFile);patch.pick_report_at=m.pickMeta.report_at||null}
       if(!same)Object.assign(patch,{pick_sent_at:null,pick_sent_by:null,ordered_at:null,ordered_by:null});
     }
     if(m.bars){
       const old=m.existing?await restAll('saw_bars?job_id=eq.'+job.id+'&order=sort_order'):[];
       const key=b=>[b.extrusion,b.bar_length_mm,b.bar_no,JSON.stringify(b.cuts.map(c=>[c.l,c.size,c.r,c.qty,c.item]))].join('|'),was={};old.forEach(b=>{was[key(b)]=b});
       if(old.length)await rest('saw_bars?job_id=eq.'+job.id,Object.assign({method:'DELETE'},QUIET));
-      const rows=m.bars.map(b=>{const o=was[key(b)];return Object.assign({job_id:job.id,done:!!(o&&o.done),skipped:o&&o.done?(o.skipped||[]):[],done_by:o&&o.done?o.done_by:null,done_at:o&&o.done?o.done_at:null},b)});
+      const rows=m.bars.map((b,i)=>{const o=was[key(b)];return Object.assign({sort_order:i,job_id:job.id,done:!!(o&&o.done),skipped:o&&o.done?(o.skipped||[]):[],done_by:o&&o.done?o.done_by:null,done_at:o&&o.done?o.done_at:null},b)});
       for(let i=0;i<rows.length;i+=400)await rest('saw_bars',Object.assign({method:'POST',body:JSON.stringify(rows.slice(i,i+400))},QUIET));
-      patch.cut_pdf=await upload(job.id,'cut',m.cutFile);patch.cut_report_at=m.cutMeta.report_at||null;
+      if(m.cutFile){patch.cut_pdf=await upload(job.id,'cut',m.cutFile);patch.cut_report_at=m.cutMeta.report_at||null}
     }
     await rest('saw_jobs?id=eq.'+job.id,Object.assign({method:'PATCH',body:JSON.stringify(patch)},QUIET));
+    if(m.src==='vquote')dropWait(q.quote_num);
     S.imp=null;S.busy=false;toast('Quote '+(q.quote_num||'')+' is on the saw bench.');loadJobs();
   }catch(e){S.busy=false;render();toast(e.status===401||e.status===403?'Not loaded — only supervisors and managers can load sheets. Sign in again if that is you.':'Not loaded — '+(e.message||'check the connection')+'. Try again.',true)}
+}
+
+// ── loading straight from vQuote ─────────────────────────────────────────────
+// The office PC copies saved cutting plans from vQuote to the portal every 15 minutes
+// (table vquote_cutplans). A quote that isn't there yet is asked for (vquote_cutplan_requests)
+// and the next copy brings it over.
+const readWaits=()=>{try{return JSON.parse(localStorage.getItem('wm_saw_wait')||'[]')}catch(e){return[]}};
+const saveWaits=w=>{try{localStorage.setItem('wm_saw_wait',JSON.stringify(w))}catch(e){}};
+function dropWait(num){saveWaits(readWaits().filter(w=>String(w.num)!==String(num)));S.waits=S.waits.filter(w=>String(w.num)!==String(num))}
+async function checkWaits(){
+  const w=readWaits();if(!w.length||!isSup()){S.waits=[];return}
+  try{
+    const nums=w.map(x=>x.num).join(',');
+    const[rows,reqs]=await Promise.all([rest('vquote_cutplans?quote_num=in.('+nums+')&select=quote_num,quote_vers,quote_title,bar_count,synced_at'),rest('vquote_cutplan_requests?quote_num=in.('+nums+')&order=requested_at.desc&limit=100')]);
+    S.waits=w.map(x=>{
+      const row=(rows||[]).find(r=>String(r.quote_num)===String(x.num)),rq=(reqs||[]).find(r=>String(r.quote_num)===String(x.num)&&r.requested_at>=x.at);
+      const fresh=row&&row.synced_at>=x.at;
+      return{num:x.num,at:x.at,title:row?row.quote_title:'',state:fresh&&row.bar_count>0?'ready':(rq&&rq.done_at&&rq.result&&rq.result!=='ok')||(fresh&&!row.bar_count)?'none':'wait',msg:rq&&rq.result&&rq.result!=='ok'?rq.result:(fresh&&!row.bar_count?'No cutting plan saved in vQuote for this quote':'')};
+    });
+  }catch(e){}
+}
+function waitsHTML(){
+  if(!S.waits.length)return'';
+  return '<div class="waits">'+S.waits.map(w=>'<div class="wrow"><b class="num">'+esc(w.num)+'</b><span>'+(w.state==='ready'?esc(w.title||'')+' has arrived from vQuote.':w.state==='none'?esc(w.msg)+'.':'Asked the office PC '+when(w.at)+'. It arrives within 15 minutes.')+'</span><span style="flex:1"></span>'+
+    (w.state==='ready'?'<button class="btn sm pri" type="button" data-act="vqload" data-v="'+esc(w.num)+'">Load</button>':'')+'<button class="btn sm" type="button" data-act="vqdrop" data-v="'+esc(w.num)+'">'+(w.state==='wait'?'Stop waiting':'Clear')+'</button></div>').join('')+'</div>';
+}
+function pickFromBars(bars){
+  const out=[],by={};
+  bars.forEach(b=>{const k=b.extrusion+'|'+b.bar_length_mm+'|'+(b.finish||'');if(!by[k]){by[k]={extrusion:b.extrusion,description:b.description||'',finish:b.finish||'',bar_length_mm:b.bar_length_mm,qty_needed:0};out.push(by[k])}by[k].qty_needed++});
+  return out;
+}
+async function vqPreview(row,existing){
+  const bars=(row.bars||[]).map(b=>({extrusion:b.extrusion,description:b.description,finish:b.finish,bar_length_mm:b.bar_length_mm,bar_no:b.bar_no,waste_mm:b.waste_mm,cuts:b.cuts||[]}));
+  const info={};(row.items||[]).forEach(i=>{if(i.descr)info[row.quote_num+'/'+i.pos]=i.descr});
+  const m={src:'vquote',vq:row,warn:[],diffs:[],bars:bars,pick:pickFromBars(bars),item_info:info,
+    meta:{quote_num:String(row.quote_num),quote_version:row.quote_vers==null?'':String(row.quote_vers),title:row.quote_title||'',customer:'',job_ref:row.job_num||''},job_number:row.job_num||'',existing:existing||null};
+  if(!m.existing){try{const ex=await rest('saw_jobs?quote_num=eq.'+encodeURIComponent(row.quote_num)+'&status=eq.Active&order=created_at.desc&limit=1');m.existing=ex&&ex[0]||null}catch(e){}}
+  if(m.existing&&!m.job_number)m.job_number=m.existing.job_number||'';
+  S.imp=m;S.view='jobs';S.job=null;render();
+}
+async function vqFind(num,quietIfMissing){
+  num=String(num||'').trim();
+  if(!/^\d{3,9}$/.test(num))return toast('Type the quote number, digits only.',true);
+  if(S.busy)return;S.busy=true;render();
+  try{
+    const rows=await rest('vquote_cutplans?quote_num=eq.'+num),row=rows&&rows[0];
+    if(row&&row.bar_count>0){S.busy=false;return vqPreview(row)}
+    await rest('vquote_cutplan_requests',Object.assign({method:'POST',body:JSON.stringify({quote_num:+num,requested_by:me().name||''})},QUIET));
+    saveWaits(readWaits().filter(w=>String(w.num)!==num).concat({num:num,at:new Date().toISOString()}));
+    await checkWaits();
+    toast('Quote '+num+' isn’t in the portal yet. Asked the office PC to fetch it from vQuote.');
+  }catch(e){toast(e.status===401||e.status===403?'Sign in again to load from vQuote.':'Could not reach the portal. Check the connection.',true)}
+  S.busy=false;render();
+}
+async function vqUpdate(){
+  const j=S.job;if(!j||!j.quote_num)return;
+  try{const rows=await rest('vquote_cutplans?quote_num=eq.'+encodeURIComponent(j.quote_num)),row=rows&&rows[0];
+    if(!row||!row.bar_count)return vqFind(j.quote_num);
+    vqPreview(row,j);
+  }catch(e){toast('Could not reach the portal. Check the connection.',true)}
 }
 
 // ── wiring ───────────────────────────────────────────────────────────────────
@@ -868,6 +956,9 @@ document.addEventListener('click',function(ev){
   else if(a==='grp'){S.grp=v;render(true);const e=$('#bars');if(e)e.scrollTop=0;const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
   else if(a==='tick')tickBar(id);
   else if(a==='hold')toggleHold(v);
+  else if(a==='vqload')vqFind(v);
+  else if(a==='vqdrop'){dropWait(v);render()}
+  else if(a==='vqupdate')vqUpdate();
   else if(a==='itemsfold'){try{localStorage.setItem('wm_saw_items',localStorage.getItem('wm_saw_items')==='0'?'1':'0')}catch(e){}render(true)}
   else if(a==='sheets')sheetsDialog();
   else if(a==='choose'){const f=$('#files');if(f)f.click()}
@@ -875,7 +966,7 @@ document.addEventListener('click',function(ev){
   else if(a==='impgo')commitImport();
 });
 document.addEventListener('change',function(ev){if(ev.target.id==='files'&&ev.target.files.length)takeFiles(ev.target.files)});
-document.addEventListener('submit',function(ev){if(ev.target.id==='login'){ev.preventDefault();doLogin()}});
+document.addEventListener('submit',function(ev){if(ev.target.id==='login'){ev.preventDefault();doLogin()}if(ev.target.id==='vqform'){ev.preventDefault();vqFind(($('#vqnum')||{}).value)}});
 ['dragover','dragenter'].forEach(t=>document.addEventListener(t,function(ev){if(!isSup()||S.view!=='jobs')return;ev.preventDefault();const d=$('#drop');if(d)d.classList.add('over')}));
 document.addEventListener('dragleave',function(ev){if(ev.relatedTarget)return;const d=$('#drop');if(d)d.classList.remove('over')});
 document.addEventListener('drop',function(ev){if(!isSup()||S.view!=='jobs')return;ev.preventDefault();const d=$('#drop');if(d)d.classList.remove('over');if(ev.dataTransfer&&ev.dataTransfer.files.length)takeFiles(ev.dataTransfer.files)});
