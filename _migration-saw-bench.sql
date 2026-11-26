@@ -229,3 +229,10 @@ create table if not exists public.esp_job_headings (
 alter table public.saw_jobs add column if not exists pin_pick boolean not null default false;
 alter table public.saw_jobs add column if not exists pin_cut  boolean not null default false;
 alter table public.saw_bars add column if not exists done_cuts jsonb not null default '[]'::jsonb;
+
+-- Ready to pick (26/11/2026, live migration saw_board_ready_to_pick): saw_board only lists a
+-- Pre-production job once ESP shows Quote Signed, Sizes Confirmed and Confirm Deposit Paid all
+-- finished (a heading the job doesn't have counts as not needed). esp-headings-sync.ps1 copies
+-- those three headings too. Jobs added by hand (pin_pick) are listed regardless.
+-- Production weeks (27/11/2026): no database change; the page groups both lists by the Monday
+-- of the week of production_jobs.due_date.
