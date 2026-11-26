@@ -140,23 +140,66 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .order td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line)}
 .order td.r,.order th.r{text-align:right}
 
+/* ── office ordering sheet: the paper bar summary, struck through where picked ── */
+.osheet{max-width:1400px}
+.ohead{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.pkmark{font-size:1.5rem;font-weight:800;color:var(--green-dark);display:inline-flex;align-items:center;gap:6px}
+.pkmark svg{width:26px;height:26px}
+.osub{color:var(--muted);font-size:.9rem}
+.otable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden}
+.otable th{text-align:left;font-size:.75rem;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:2px solid var(--fg);white-space:nowrap}
+.otable td{padding:6px 12px;border-bottom:1px dashed var(--line);vertical-align:middle}
+.otable .r{text-align:right;white-space:nowrap}.otable .c{text-align:center}
+.otable .code{font-weight:800;font-size:1.1rem;white-space:nowrap}
+.otable .f{color:var(--muted);font-size:.85rem;min-width:240px}
+.otable .d{font-weight:600;min-width:200px}
+.otable .q{font-weight:800;font-size:1.1rem}
+.otable tr.picked .code,.otable tr.picked .d{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
+.otable tr.picked .f,.otable tr.picked .q{color:var(--muted)}
+.otable tr.need td{background:#fff8ec}
+.otable tr.need .code{color:var(--amber)}
+.otable tr.odone td{background:var(--green-soft)}
+.ostep{display:inline-flex;align-items:center;gap:6px}
+.ostep .sb{width:44px;height:44px;font-size:1.3rem}
+.ostep b{min-width:44px;font-size:1.5rem;font-weight:800}
+.ostep b.zero{color:var(--line)}
+.adj{font-size:.72rem;color:var(--amber);font-weight:700}
+.link{color:inherit;text-decoration:underline;font-size:inherit;font-weight:700}
+.odn{width:48px;height:48px;border-radius:10px;border:2px solid var(--line);background:#fff;display:inline-grid;place-items:center;color:var(--line)}
+.odn svg{width:26px;height:26px}
+.odn.on{background:var(--green);border-color:var(--green);color:#fff}
+@media print{
+  html{font-size:11px}html,body,#app{height:auto}
+  .top .tabs,.top .tbtn,.foot .btn,.ohead .chip,.toast{display:none!important}
+  .top{background:none;color:#000;padding:0 0 6px;min-height:0}.top .sub{color:#000}
+  .main{overflow:visible}.pad{padding:0;max-width:none}
+  .ostep .sb,.adj .link{display:none}.odn{width:16px;height:16px;border-width:1px}.odn svg{width:12px;height:12px}
+  .otable td{padding:3px 6px}.otable tr.need td,.otable tr.odone td{background:none}
+  .foot{border:0;padding:8px 0}
+}
+
 /* ── cutting plan ── */
 .cut{display:grid;grid-template-columns:300px minmax(0,1fr);height:100%}
 .rail{overflow:auto;background:var(--surface);border-right:2px solid var(--line);padding:8px}
-.g{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;min-height:var(--tap);align-items:center}
+.g{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:2px 10px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;min-height:var(--tap);align-items:center}
 .g .c{font-weight:800;font-size:1.05rem;line-height:1.1}
-.g .d{grid-column:1;font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.g .n{grid-row:1/3;grid-column:2;font-weight:700;font-size:.9rem;color:var(--muted)}
+.g .gp{grid-row:1/3;grid-column:1;display:grid;place-items:center}
+.g .c{grid-column:2}
+.rail.nopic .g{grid-template-columns:0 minmax(0,1fr) auto;column-gap:0}
+.g .d{grid-column:2;font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g .n{grid-row:1/3;grid-column:3;font-weight:700;font-size:.9rem;color:var(--muted)}
 .g.on{background:var(--ink);color:#fff}
 .g.on .d,.g.on .n{color:rgba(255,255,255,.7)}
 .g.fin .c{color:var(--green-dark)}
 .g.fin .n{color:var(--green-dark)}
 .g.on.fin .c,.g.on.fin .n{color:#b6e68c}
-.bars{overflow:auto;padding:16px}
+.bars{overflow:auto;padding:16px;position:relative}
 .ghead{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
 .ghead .code{font-size:2.4rem;font-weight:800;line-height:1}
 .ghead .desc{font-size:1.2rem;font-weight:600}
 .ghead .grow{flex:1}
+.gsec{margin-bottom:30px;padding-bottom:6px;border-bottom:3px solid var(--line)}
+.gsec:last-of-type{border-bottom:0}
 .bc{background:var(--surface);border-radius:14px;margin-bottom:14px;overflow:hidden;border:2px solid transparent}
 .bc.done{opacity:.6}
 .bc.next{border-color:var(--green)}
@@ -213,6 +256,14 @@ button.it:active{background:var(--sunk)}
 .g.held .c,.g.held .n{color:var(--amber)}
 .g.on.held .c,.g.on.held .n{color:#f6c58e}
 .heldbars{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:12px 16px;margin-bottom:14px;border:2px dashed var(--amber)}
+
+.xp{display:block;flex:none;color:#2b2f2a}
+.g.on .xp{color:#fff}
+.gpic{background:var(--surface);border-radius:12px;padding:6px;border:2px solid var(--line)}
+.plx{display:flex;gap:14px;align-items:center;min-width:0}
+.ppic{flex:none}
+.otable .pc{width:48px;padding:2px 4px}
+.otable tr.picked .xp{color:var(--line)}
 
 /* ── overlays ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:50;padding:16px}
@@ -420,7 +471,8 @@ function ask(title,body,okLabel,extraHTML){
 }
 
 // ── state ────────────────────────────────────────────────────────────────────
-const S={vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
+const S={shapes:{},vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
+const fullList=()=>{try{return localStorage.getItem('wm_saw_full')!=='0'}catch(e){return true}};
 const pending={};   // line id -> timer, so quick taps on − / + save once
 let lastTouch=0;
 
@@ -442,8 +494,10 @@ async function openJob(id,quiet){
     const same=quiet&&JSON.stringify([j&&j[0],pick,bars])===JSON.stringify([S.job,S.pick,S.bars]);
     if(j&&j[0])S.job=j[0];S.pick=pick;S.bars=bars;S.loading=false;S.err='';
     if(!quiet){S.vq=null;if(isSup()&&S.job.quote_num&&/^\d+$/.test(S.job.quote_num))rest('vquote_cutplans?quote_num=eq.'+S.job.quote_num+'&select=quote_num,quote_vers,bar_count,synced_at').then(r=>{if(r&&r[0]&&S.job&&String(S.job.quote_num)===String(r[0].quote_num)){S.vq=r[0];if(vqNewer())render(true)}}).catch(()=>{})}
+    if(!quiet&&isSup()&&pick.length&&S.job.pick_sent_at)S.tab='order';else
     if(!quiet)S.tab=(pick.length&&(!bars.length||S.job.pick_counted<S.job.pick_total||!S.job.pick_sent_at))?'pick':'cut';
     if(!same)render(true);
+    loadShapes();
   }catch(e){if(!quiet){S.loading=false;S.err=(e.status===401||e.status===403)?'signin':'Could not load this job. Check the Wi-Fi.';render()}}
 }
 setInterval(function(){
@@ -453,6 +507,28 @@ setInterval(function(){
 document.addEventListener('visibilitychange',function(){if(document.hidden)return;keepFresh();wake();if(S.view==='jobs'&&!S.imp&&signedIn())loadJobs(true)});
 // Keep the bench screen from going to sleep while this page is showing.
 let wl=null;async function wake(){try{if(navigator.wakeLock&&!document.hidden&&(!wl||wl.released))wl=await navigator.wakeLock.request('screen')}catch(e){}}
+
+// ── extrusion profile pictures (drawn from vQuote's own profile drawings, table extn_shapes) ──
+async function loadShapes(){
+  const codes=[...new Set(S.pick.map(l=>l.extrusion).concat(S.bars.map(b=>b.extrusion)))].filter(c=>c&&!(c in S.shapes));
+  if(!codes.length)return;
+  let got=false;
+  try{
+    for(let i=0;i<codes.length;i+=50){
+      const list=codes.slice(i,i+50).map(c=>'"'+String(c).replace(/["\\]/g,'')+'"').join(',');
+      const rows=await rest('extn_shapes?select=extn_code,w_mm,h_mm,path&extn_code=in.('+encodeURIComponent(list)+')')||[];
+      rows.forEach(r=>{if(r.path&&r.w_mm>0&&r.h_mm>0){S.shapes[r.extn_code]={d:r.path,w:+r.w_mm,h:+r.h_mm};got=true}});
+    }
+  }catch(e){}
+  codes.forEach(c=>{if(!(c in S.shapes))S.shapes[c]=null});
+  if(got&&S.view==='job')render(true);
+}
+const hasPics=()=>Object.keys(S.shapes).some(k=>S.shapes[k]);
+function pic(code,size){
+  const p=S.shapes[code];if(!p)return'';
+  const m=Math.max(p.w,p.h)*0.06+0.5;
+  return '<svg class="xp" width="'+size+'" height="'+size+'" viewBox="'+(-m)+' '+(-m)+' '+(p.w+2*m).toFixed(2)+' '+(p.h+2*m).toFixed(2)+'" aria-hidden="true"><path d="'+p.d+'" fill="none" stroke="currentColor" stroke-width="'+(size>60?1.8:1.3)+'" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>';
+}
 
 // ── cutting plan grouping ────────────────────────────────────────────────────
 function groups(){
@@ -484,6 +560,13 @@ function itemStats(){
   return Object.values(m).sort((a,b)=>itemNo(a.item)-itemNo(b.item)||String(a.item).localeCompare(b.item));
 }
 const shortOf=l=>l.qty_in_stock==null?0:Math.max(0,l.qty_needed-l.qty_in_stock);
+// What the office will order for a line: its own figure if it has set one, else the shortfall.
+const orderOf=l=>l.order_qty!=null?l.order_qty:shortOf(l);
+// Same order as the vQuote Extrusion Bar Summary (and the ESP ordering list): extrusion, then bar length.
+function pickSorted(){
+  const first={};S.pick.forEach((l,i)=>{if(!(l.extrusion in first))first[l.extrusion]=i});
+  return S.pick.slice().sort((a,b)=>first[a.extrusion]-first[b.extrusion]||(a.bar_length_mm||0)-(b.bar_length_mm||0)||a.sort_order-b.sort_order);
+}
 
 // ── rendering ────────────────────────────────────────────────────────────────
 function render(keepScroll){
@@ -582,16 +665,19 @@ function jobHTML(){
     '<div class="grow"><h1><span class="num">'+esc(j.quote_num||j.job_number||'')+'</span> '+esc(j.title||j.customer||'')+'</h1>'+
     '<div class="sub">'+(j.quote_version?'Ver '+esc(j.quote_version):'')+(j.job_number?'  Job '+esc(j.job_number):'')+(j.status==='Done'?'  Finished':'')+'</div></div>'+
     '<div class="tabs" role="tablist"><button class="tab'+(S.tab==='pick'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='pick')+'" data-act="tab" data-v="pick">Pick<small class="num" id="tpick">'+counted+' of '+S.pick.length+'</small></button>'+
-    '<button class="tab'+(S.tab==='cut'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='cut')+'" data-act="tab" data-v="cut">Cut<small class="num" id="tcut">'+bc.done+' of '+bc.total+'</small></button></div>'+
+    '<button class="tab'+(S.tab==='cut'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='cut')+'" data-act="tab" data-v="cut">Cut<small class="num" id="tcut">'+bc.done+' of '+bc.total+'</small></button>'+
+    (isSup()&&S.pick.length?'<button class="tab'+(S.tab==='order'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='order')+'" data-act="tab" data-v="order">Order<small class="num" id="tord">'+S.pick.reduce((a,l)=>a+orderOf(l),0)+' bars</small></button>':'')+'</div>'+
     '<button class="tbtn" data-act="sheets" aria-label="Sheets and job options">'+ICON.doc+'</button></div>';
   if(S.loading)return h+'<div class="main"><div class="empty">Loading…</div></div>';
   if(S.err)return h+'<div class="main"><div class="pad"><div class="note red">'+esc(S.err)+'</div></div></div>';
+  if(S.tab==='order'&&isSup()&&S.pick.length)return h+orderTabHTML();
+  if(S.tab==='order')S.tab='pick';
   if(S.tab==='pick'){
     if(!S.pick.length)return h+'<div class="main"><div class="empty"><b>No pick sheet loaded for this job</b>The office adds it by dropping the Extrusion Bar Summary PDF on the Saw Bench page.</div></div>';
     const mf=mainFinish();
-    const list=S.pick.filter(l=>S.filter==='all'||(S.filter==='todo'&&l.qty_in_stock==null)||(S.filter==='short'&&shortOf(l)>0));
+    const list=pickSorted().filter(l=>S.filter==='all'||(S.filter==='todo'&&l.qty_in_stock==null)||(S.filter==='short'&&shortOf(l)>0));
     const hi=[...heldSet()].sort((a,b)=>itemNo(a)-itemNo(b));
-    h+='<div class="main"><div class="pad">'+vqNote()+orderHTML()+(hi.length?'<div class="note">'+hi.map(itemLabel).join(', ')+(hi.length>1?' are':' is')+' on hold on the cut sheet. This pick sheet still counts the bars for '+(hi.length>1?'them':'it')+'.</div>':'')+
+    h+='<div class="main"><div class="pad">'+vqNote()+(hi.length?'<div class="note">'+hi.map(itemLabel).join(', ')+(hi.length>1?' are':' is')+' on hold on the cut sheet. This pick sheet still counts the bars for '+(hi.length>1?'them':'it')+'.</div>':'')+
       '<div class="bar2">'+[['all','All '+S.pick.length],['todo','Still to count'],['short','Short']].map(c=>'<button class="chip'+(S.filter===c[0]?' on':'')+'" data-act="filter" data-v="'+c[0]+'">'+c[1]+'</button>').join('')+'</div>'+
       (list.length?'<div class="pick">'+list.map(l=>pickRow(l,mf)).join('')+'</div>':'<div class="empty">'+(S.filter==='todo'?'<b>Every line is counted</b>Tap Send to office below.':'Nothing short.')+'</div>')+
       '</div></div><div class="foot" id="foot">'+footHTML()+'</div>';
@@ -600,13 +686,13 @@ function jobHTML(){
   if(!S.bars.length)return h+'<div class="main"><div class="empty"><b>No cutting plan loaded for this job</b>The office adds it by dropping the Optimised Cutting Plan PDF on the Saw Bench page.</div></div>';
   const open=g=>g.bars.some(b=>{const s=barState(b).st;return s==='todo'||s==='more'});
   if(!S.grp||!gs.find(g=>g.key===S.grp))S.grp=(gs.find(open)||gs[0]).key;
-  h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+groupHTML(gs)+'</div></div></div>';
+  h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail'+(hasPics()?'':' nopic')+'" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+barsHTML(gs)+'</div></div></div>';
   return h;
 }
 function pickRow(l,mf){
   const s=shortOf(l),st=l.qty_in_stock==null?'':(s>0?' short':' ok');
-  return '<div class="pl'+st+'" id="pl'+l.id+'"><div style="min-width:0"><div class="code num">'+esc(l.extrusion)+'</div><div class="desc">'+esc(l.description)+'</div>'+
-    '<div class="meta"><span class="num">'+mm(l.bar_length_mm)+' mm bar</span><span class="tag'+((l.finish||'')!==mf?' odd':'')+'">'+esc(l.finish)+'</span></div></div>'+
+  return '<div class="pl'+st+'" id="pl'+l.id+'"><div class="plx">'+(pic(l.extrusion,64)?'<div class="ppic">'+pic(l.extrusion,64)+'</div>':'')+'<div style="min-width:0"><div class="code num">'+esc(l.extrusion)+'</div><div class="desc">'+esc(l.description)+'</div>'+
+    '<div class="meta"><span class="num">'+mm(l.bar_length_mm)+' mm bar</span><span class="tag'+((l.finish||'')!==mf?' odd':'')+'">'+esc(l.finish)+'</span></div></div></div>'+
     '<div class="need"><b class="num">'+l.qty_needed+'</b><span>needed</span></div>'+
     '<div class="step"><button class="sb wide none'+(l.qty_in_stock===0?' on':'')+'" data-act="pk" data-id="'+l.id+'" data-v="none">None</button>'+
     '<button class="sb" data-act="pk" data-id="'+l.id+'" data-v="minus" aria-label="One fewer in stock">−</button>'+
@@ -623,34 +709,87 @@ function footHTML(){
   return '<div class="sum">'+head+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'+
     '<button class="btn pri" data-act="send"'+(S.busy||!counted?' disabled':'')+'>'+(S.busy?'Sending…':(j.pick_sent_at?'Send again':'Send to office'))+'</button>';
 }
-function orderHTML(){
-  const j=S.job;if(!j.pick_sent_at)return'';
-  const sh=S.pick.filter(l=>shortOf(l)>0),n=sh.reduce((a,l)=>a+shortOf(l),0);
-  let h='<div class="order'+(j.ordered_at||!n?' done':'')+'"><div class="rowx" style="align-items:center"><div style="flex:1;min-width:200px"><h2>'+(n?'To order: '+plural(n,'bar'):'Nothing to order')+'</h2>'+
-    '<div style="color:var(--muted);font-size:.85rem">Sent by '+esc(j.pick_sent_by||'the saw bench')+', '+when(j.pick_sent_at)+(j.ordered_at?'. Ordered by '+esc(j.ordered_by||'')+', '+when(j.ordered_at):'')+'</div></div>';
-  if(n)h+='<button class="btn sm" data-act="copy">Copy list</button>';
-  if(n&&isSup())h+=j.ordered_at?'<button class="btn sm" data-act="ordered" data-v="0">Not ordered yet</button>':'<button class="btn sm pri" data-act="ordered" data-v="1">Mark ordered</button>';
-  h+='</div>';
-  if(j.pick_note)h+='<div class="note" style="margin:10px 0 0">'+esc(j.pick_note)+'</div>';
-  if(n)h+='<table><tr><th>Extrusion</th><th>Description</th><th>Finish</th><th class="r">Bar</th><th class="r">Need</th><th class="r">Have</th><th class="r">Order</th></tr>'+
-    sh.map(l=>'<tr><td><b class="num">'+esc(l.extrusion)+'</b></td><td>'+esc(l.description)+'</td><td>'+esc(l.finish)+'</td><td class="r num">'+mm(l.bar_length_mm)+'</td><td class="r num">'+l.qty_needed+'</td><td class="r num">'+l.qty_in_stock+'</td><td class="r num"><b>'+shortOf(l)+'</b></td></tr>').join('')+'</table>';
-  return h+'</div>';
+// The office's ordering sheet. Laid out like the paper Extrusion Bar Summary the sawyer used to
+// strike through: every line in ESP order, picked lines struck out, the rest standing out with
+// the quantity to order. The office can change a quantity and tick each line as it is done in ESP.
+function orderTabHTML(){
+  const j=S.job,all=pickSorted(),counted=all.filter(l=>l.qty_in_stock!=null).length;
+  const list=S.ofilter==='order'?all.filter(l=>orderOf(l)>0||l.qty_in_stock==null):all;
+  const state=j.pick_sent_at?'<span class="pkmark">Picked'+ICON.tick+'</span><span class="osub">'+esc(j.pick_sent_by||'Saw bench')+', '+when(j.pick_sent_at)+(counted<all.length?'. '+plural(all.length-counted,'line')+' not counted.':'')+'</span>'
+    :'<span class="tag amber" style="font-size:.9rem">Not sent by the saw bench yet</span><span class="osub">'+counted+' of '+all.length+' lines counted so far</span>';
+  let h='<div class="main"><div class="pad osheet"><div class="ohead">'+state+'<span style="flex:1"></span>'+
+    [['all','Every line'],['order','To order only']].map(c=>'<button class="chip'+((S.ofilter||'all')===c[0]?' on':'')+'" data-act="ofilter" data-v="'+c[0]+'">'+c[1]+'</button>').join('')+'</div>';
+  if(j.pick_note)h+='<div class="note">Note from the saw bench: '+esc(j.pick_note)+'</div>';
+  h+='<table class="otable"><thead><tr><th>Extrusion</th><th></th><th>Description</th><th>Finish</th><th class="r">Bar length</th><th class="r">Qty</th><th class="r">In stock</th><th class="c">Order</th><th class="c">Done in ESP</th></tr></thead><tbody>'+
+    (list.length?list.map(orderRow).join(''):'<tr><td colspan="9" class="c" style="padding:28px">Nothing to order. Every line is in stock.</td></tr>')+'</tbody></table></div></div>'+
+    '<div class="foot" id="foot">'+orderFootHTML()+'</div>';
+  return h;
+}
+function orderRow(l){
+  const o=orderOf(l),un=l.qty_in_stock==null,picked=!un&&shortOf(l)===0&&!o;
+  return '<tr id="or'+l.id+'" class="'+(picked?'picked':'')+(un?' un':'')+(o>0?' need':'')+(l.office_done?' odone':'')+'"><td class="code num">'+esc(l.extrusion)+'</td><td class="pc">'+pic(l.extrusion,40)+'</td><td class="d">'+esc(l.description)+'</td><td class="f">'+esc(l.finish)+'</td>'+
+    '<td class="r num">'+mm(l.bar_length_mm)+' mm</td><td class="r num q">'+l.qty_needed+'</td><td class="r num">'+(un?'<span class="tag amber">Not counted</span>':l.qty_in_stock)+'</td>'+
+    '<td class="c"><div class="ostep"><button class="sb" data-act="oq" data-id="'+l.id+'" data-v="minus" aria-label="Order one fewer">−</button><b class="num'+(o?'':' zero')+'">'+o+'</b><button class="sb" data-act="oq" data-id="'+l.id+'" data-v="plus" aria-label="Order one more">+</button></div>'+
+    (l.order_qty!=null&&l.order_qty!==shortOf(l)?'<div class="adj">changed from '+shortOf(l)+' <button class="link" data-act="oq" data-id="'+l.id+'" data-v="reset">undo</button></div>':'')+'</td>'+
+    '<td class="c"><button class="odn'+(l.office_done?' on':'')+'" data-act="odone" data-id="'+l.id+'" aria-pressed="'+!!l.office_done+'" aria-label="Done in ESP">'+ICON.tick+'</button></td></tr>';
+}
+function orderFootHTML(){
+  const j=S.job,need=S.pick.filter(l=>orderOf(l)>0),n=need.reduce((a,l)=>a+orderOf(l),0),done=need.filter(l=>l.office_done).length;
+  return '<div class="sum">'+(n?plural(n,'bar')+' to order across '+plural(need.length,'extrusion'):'Nothing to order')+'<small>'+(n?done+' of '+need.length+' lines done in ESP':'')+(j.ordered_at?(n?'. ':'')+'Marked ordered by '+esc(j.ordered_by||'')+', '+when(j.ordered_at):'')+'</small></div>'+
+    '<button class="btn" data-act="print">Print</button>'+(n?'<button class="btn" data-act="copy">Copy list</button>':'')+
+    (j.ordered_at?'<button class="btn" data-act="ordered" data-v="0">Not ordered yet</button>':'<button class="btn pri" data-act="ordered" data-v="1"'+(n?'':' disabled')+'>Mark ordered</button>');
+}
+function refreshOrderRow(l){
+  const el=$('#or'+l.id);if(el)el.outerHTML=orderRow(l);
+  const f=$('#foot');if(f)f.innerHTML=orderFootHTML();
+  const t=$('#tord');if(t)t.textContent=S.pick.reduce((a,x)=>a+orderOf(x),0)+' bars';
+}
+function setOrderQty(id,how){
+  const l=S.pick.find(x=>x.id===id);if(!l)return;
+  const before=l.order_qty;
+  let v=how==='reset'?null:Math.max(0,orderOf(l)+(how==='plus'?1:-1));
+  if(v===shortOf(l))v=null;                       // back to the saw bench's figure: no override to keep
+  if(v===before)return;
+  l.order_qty=v;refreshOrderRow(l);
+  const k='o'+id;clearTimeout(pending[k]&&pending[k].t);
+  const first=pending[k]?pending[k].before:before;
+  pending[k]={before:first,t:setTimeout(async function(){
+    delete pending[k];
+    try{await rest('saw_pick_lines?id=eq.'+id,Object.assign({method:'PATCH',body:JSON.stringify({order_qty:l.order_qty})},QUIET))}
+    catch(e){l.order_qty=first;toast(failMsg(e),true);if(S.tab==='order')render(true)}
+  },450)};
+}
+async function toggleOfficeDone(id){
+  const l=S.pick.find(x=>x.id===id);if(!l)return;
+  const before={office_done:l.office_done,office_by:l.office_by,office_at:l.office_at};
+  l.office_done=!l.office_done;l.office_by=l.office_done?(me().name||''):null;l.office_at=l.office_done?new Date().toISOString():null;
+  refreshOrderRow(l);
+  try{await rest('saw_pick_lines?id=eq.'+id,Object.assign({method:'PATCH',body:JSON.stringify({office_done:l.office_done,office_by:l.office_by,office_at:l.office_at})},QUIET))}
+  catch(e){Object.assign(l,before);toast(failMsg(e),true);refreshOrderRow(l)}
 }
 function railBtn(g){
   const c=barCounts(g.bars),fin=c.total>0&&c.done===c.total,allHold=!c.total;
-  return '<button class="g'+(g.key===S.grp?' on':'')+(fin?' fin':'')+(allHold?' held':'')+'" id="g'+g.bars[0].id+'" data-act="grp" data-v="'+esc(g.key)+'"'+(g.key===S.grp?' aria-current="true"':'')+'><span class="c num">'+esc(g.code)+'</span><span class="d">'+esc(g.desc)+'</span><span class="n num">'+(allHold?'On hold':fin?'Done':c.done+'/'+c.total)+'</span></button>';
+  return '<button class="g'+(g.key===S.grp?' on':'')+(fin?' fin':'')+(allHold?' held':'')+'" id="g'+g.bars[0].id+'" data-act="grp" data-v="'+esc(g.key)+'"'+(g.key===S.grp?' aria-current="true"':'')+'><span class="gp">'+pic(g.code,36)+'</span><span class="c num">'+esc(g.code)+'</span><span class="d">'+esc(g.desc)+'</span><span class="n num">'+(allHold?'On hold':fin?'Done':c.done+'/'+c.total)+'</span></button>';
 }
-function groupHTML(gs){
-  const g=gs.find(x=>x.key===S.grp),mf=mainFinish();
+// Full list: every extrusion down the page in report order, like the Optimised Cutting Plan.
+// One at a time: just the extrusion picked in the side list.
+function firstOpenBar(){const H=heldSet();return S.bars.find(b=>{const s=barState(b,H).st;return s==='todo'||s==='more'})}
+function barsHTML(gs){
+  if(!fullList())return groupHTML(gs,gs.find(x=>x.key===S.grp));
+  const nb=firstOpenBar();
+  return gs.map(g=>'<div class="gsec" id="gs'+g.bars[0].id+'" data-k="'+esc(g.key)+'">'+groupHTML(gs,g,nb)+'</div>').join('')+(nb?'':'<div class="note ok" style="text-align:center;font-size:1.1rem">'+(barCounts(S.bars).hold?'Every bar is cut except the ones on hold.':'Every bar on this job is cut.')+'</div>');
+}
+function groupHTML(gs,g,globalNext){
+  const full=fullList(),mf=mainFinish();
   const H=heldSet(),isOpen=b=>{const s=barState(b,H).st;return s==='todo'||s==='more'};
-  const nextBar=g.bars.find(isOpen),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(isOpen));
+  const nextBar=full?globalNext:g.bars.find(isOpen),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(isOpen));
   const onHold=g.bars.filter(b=>barState(b,H).st==='hold');
   const lens=[...new Set(g.bars.map(b=>b.bar_length_mm))];
-  let h='<div class="ghead"><div class="code num">'+esc(g.code)+'</div><div><div class="desc">'+esc(g.desc)+'</div><span class="tag'+(g.finish!==mf?' odd':'')+'">'+esc(g.finish)+'</span></div><div class="grow"></div>'+
+  let h='<div class="ghead">'+(pic(g.code,92)?'<div class="gpic">'+pic(g.code,92)+'</div>':'')+'<div class="code num">'+esc(g.code)+'</div><div><div class="desc">'+esc(g.desc)+'</div><span class="tag'+(g.finish!==mf?' odd':'')+'">'+esc(g.finish)+'</span></div><div class="grow"></div>'+
     '<div style="text-align:right;font-weight:700"><span class="num">'+plural(g.bars.length,'bar')+'</span><div style="color:var(--muted);font-size:.85rem;font-weight:600" class="num">'+lens.map(l=>g.bars.filter(b=>b.bar_length_mm===l).length+' × '+mm(l)+' mm').join(', ')+'</div></div></div>';
   h+=g.bars.filter(b=>barState(b,H).st!=='hold').map(b=>barCard(b,g,nextBar)).join('');
   if(onHold.length)h+='<div class="heldbars"><b>'+plural(onHold.length,'bar')+' on hold</b> '+esc(onHold.map(b=>'Bar '+b.bar_no).join(', '))+'. Every piece on '+(onHold.length>1?'them':'it')+' is for '+esc([...new Set(onHold.flatMap(b=>b.cuts.map(c=>c.item)))].sort((a,b)=>itemNo(a)-itemNo(b)).map(itemLabel).join(', '))+'.</div>';
-  if(!nextBar)h+=nextG?'<button class="btn pri" style="width:100%;min-height:72px;font-size:1.1rem" data-act="grp" data-v="'+esc(nextG.key)+'">Next: '+esc(nextG.code)+' '+esc(nextG.desc)+'</button>'
+  if(!full&&!nextBar)h+=nextG?'<button class="btn pri" style="width:100%;min-height:72px;font-size:1.1rem" data-act="grp" data-v="'+esc(nextG.key)+'">Next: '+esc(nextG.code)+' '+esc(nextG.desc)+'</button>'
     :'<div class="note ok" style="text-align:center;font-size:1.1rem">'+(barCounts(S.bars).hold?'Every bar is cut except the ones on hold.':'Every bar on this job is cut.')+'</div>';
   return h;
 }
@@ -682,7 +821,7 @@ function itemsHTML(){
   const st=itemStats(),H=heldSet(),can=true;let shut=false;try{shut=localStorage.getItem('wm_saw_items')==='0'}catch(e){}
   const nHold=st.filter(x=>H.has(x.item)).length;
   let h='<div class="items"><div class="ihead"><b>'+plural(st.length,'item')+' on this cut sheet</b><span>'+(nHold?plural(nHold,'item')+' on hold':'All on')+(can&&!shut?'. Tap an item to take it off the cut sheet or put it back.':'')+'</span>'+
-    '<span class="grow"></span><button class="btn sm" data-act="itemsfold" aria-expanded="'+!shut+'">'+(shut?'Show items':'Hide')+'</button></div>';
+    '<span class="grow"></span><button class="btn sm" data-act="fulltoggle">'+(fullList()?'Show one extrusion at a time':'Show the full list')+'</button><button class="btn sm" data-act="itemsfold" aria-expanded="'+!shut+'">'+(shut?'Show items':'Hide items')+'</button></div>';
   const list=shut?st.filter(x=>H.has(x.item)):st;
   if(list.length)h+='<div class="ilist">'+list.map(x=>{
     const hold=H.has(x.item),fin=!hold&&x.cut>=x.total,lab=itemLabel(x.item).replace(/^Item /,'');
@@ -714,6 +853,15 @@ function setPick(id,how){
     catch(e){Object.assign(l,first);toast(failMsg(e),true);if(S.view==='job'&&S.tab==='pick')render(true)}
   },450)};
 }
+// After a tick, redraw the bars, side list, item summary and count in place, keeping every scroll position.
+function refreshCut(){
+  const bars=$('#bars'),rail=$('.rail'),items=$('.items');if(!bars||!rail)return render(true);
+  const gs=groups(),bt=bars.scrollTop,rt=rail.scrollTop,rl=rail.scrollLeft,il=$('.ilist'),it=il?il.scrollTop:0;
+  bars.innerHTML=barsHTML(gs);bars.scrollTop=bt;
+  rail.innerHTML=gs.map(railBtn).join('');rail.scrollTop=rt;rail.scrollLeft=rl;
+  if(items){items.outerHTML=itemsHTML();const il2=$('.ilist');if(il2)il2.scrollTop=it}
+  const c=barCounts(S.bars),t=$('#tcut');if(t)t.textContent=c.done+' of '+c.total;
+}
 async function tickBar(id){
   const b=S.bars.find(x=>x.id===id);if(!b)return;
   const bs=barState(b);if(bs.st==='hold')return;
@@ -722,9 +870,9 @@ async function tickBar(id){
   if(bs.st==='todo'){b.done=true;b.skipped=bs.heldIdx;b.done_by=who;b.done_at=now}                        // pieces on hold are remembered as not cut
   else if(bs.st==='more'){b.skipped=(b.skipped||[]).filter(i=>!bs.out.includes(i));b.done_by=who;b.done_at=now}
   else{b.done=false;b.skipped=[];b.done_by=null;b.done_at=null}
-  render(true);
+  refreshCut();
   try{await rest('saw_bars?id=eq.'+id,Object.assign({method:'PATCH',body:JSON.stringify({done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:b.skipped})},QUIET))}
-  catch(e){Object.assign(b,before);toast(failMsg(e),true);render(true)}
+  catch(e){Object.assign(b,before);toast(failMsg(e),true);refreshCut()}
 }
 async function toggleHold(item){
   const cur=(S.job.held_items||[]).slice(),on=cur.includes(item),next=on?cur.filter(x=>x!==item):cur.concat(item);
@@ -759,7 +907,7 @@ async function setOrdered(on){
   catch(e){toast(failMsg(e),true)}
 }
 function copyOrder(){
-  const j=S.job,rows=S.pick.filter(l=>shortOf(l)>0).map(l=>[l.extrusion,l.description,l.finish,mm(l.bar_length_mm)+' mm',shortOf(l)].join('\t'));
+  const j=S.job,rows=pickSorted().filter(l=>orderOf(l)>0).map(l=>[l.extrusion,l.description,l.finish,mm(l.bar_length_mm)+' mm',orderOf(l)].join('\t'));
   const text='Quote '+(j.quote_num||'')+' '+(j.title||'')+'\nExtrusion\tDescription\tFinish\tBar length\tOrder\n'+rows.join('\n');
   (navigator.clipboard?navigator.clipboard.writeText(text):Promise.reject()).then(()=>toast('List copied.'),()=>toast('Could not copy on this device.',true));
 }
@@ -859,7 +1007,8 @@ async function commitImport(){
       const same=old.length===m.pick.length&&m.pick.every(l=>was[key(l)]&&was[key(l)].qty_needed===l.qty_needed);
       if(old.length)await rest('saw_pick_lines?job_id=eq.'+job.id,Object.assign({method:'DELETE'},QUIET));
       await rest('saw_pick_lines',Object.assign({method:'POST',body:JSON.stringify(m.pick.map((l,i)=>{const o=was[key(l)];const have=o&&o.qty_in_stock!=null?Math.min(o.qty_in_stock,l.qty_needed):null;
-        return Object.assign({job_id:job.id,sort_order:i,qty_in_stock:have,checked_by:have!=null?o.checked_by:null,checked_at:have!=null?o.checked_at:null},l)}))},QUIET));
+        const keep=o&&o.qty_needed===l.qty_needed;
+        return Object.assign({job_id:job.id,sort_order:i,qty_in_stock:have,checked_by:have!=null?o.checked_by:null,checked_at:have!=null?o.checked_at:null,order_qty:keep?o.order_qty:null,office_done:keep?!!o.office_done:false,office_by:keep?o.office_by:null,office_at:keep?o.office_at:null},l)}))},QUIET));
       if(m.pickFile){patch.pick_pdf=await upload(job.id,'pick',m.pickFile);patch.pick_report_at=m.pickMeta.report_at||null}
       if(!same)Object.assign(patch,{pick_sent_at:null,pick_sent_by:null,ordered_at:null,ordered_by:null});
     }
@@ -904,7 +1053,8 @@ function waitsHTML(){
 function pickFromBars(bars){
   const out=[],by={};
   bars.forEach(b=>{const k=b.extrusion+'|'+b.bar_length_mm+'|'+(b.finish||'');if(!by[k]){by[k]={extrusion:b.extrusion,description:b.description||'',finish:b.finish||'',bar_length_mm:b.bar_length_mm,qty_needed:0};out.push(by[k])}by[k].qty_needed++});
-  return out;
+  const first={};out.forEach((l,i)=>{if(!(l.extrusion in first))first[l.extrusion]=i});
+  return out.sort((a,b)=>first[a.extrusion]-first[b.extrusion]||a.bar_length_mm-b.bar_length_mm);
 }
 async function vqPreview(row,existing){
   const bars=(row.bars||[]).map(b=>({extrusion:b.extrusion,description:b.description,finish:b.finish,bar_length_mm:b.bar_length_mm,bar_no:b.bar_no,waste_mm:b.waste_mm,cuts:b.cuts||[]}));
@@ -937,6 +1087,20 @@ async function vqUpdate(){
   }catch(e){toast('Could not reach the portal. Check the connection.',true)}
 }
 
+// In the full list, the side list follows where you have scrolled to.
+function markRail(){
+  document.querySelectorAll('.g').forEach(b=>{const on=b.dataset.v===S.grp;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current')});
+}
+let spyT=null;
+document.addEventListener('scroll',function(ev){
+  const e=ev.target;if(!e||e.id!=='bars'||!fullList())return;
+  clearTimeout(spyT);spyT=setTimeout(function(){
+    const top=e.scrollTop+60;let cur=null;
+    document.querySelectorAll('.gsec').forEach(x=>{if(x.offsetTop<=top)cur=x});
+    if(cur&&cur.dataset.k!==S.grp){S.grp=cur.dataset.k;markRail();const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+  },120);
+},true);
+
 // ── wiring ───────────────────────────────────────────────────────────────────
 document.addEventListener('click',function(ev){
   lastTouch=Date.now();
@@ -953,7 +1117,16 @@ document.addEventListener('click',function(ev){
   else if(a==='send')sendPick();
   else if(a==='ordered')setOrdered(v==='1');
   else if(a==='copy')copyOrder();
-  else if(a==='grp'){S.grp=v;render(true);const e=$('#bars');if(e)e.scrollTop=0;const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+  else if(a==='oq')setOrderQty(id,v);
+  else if(a==='odone')toggleOfficeDone(id);
+  else if(a==='ofilter'){S.ofilter=v;render()}
+  else if(a==='print')window.print();
+  else if(a==='grp'){
+    S.grp=v;
+    if(fullList()){const sec=[...document.querySelectorAll('.gsec')].find(x=>x.dataset.k===v),e=$('#bars');if(sec&&e)e.scrollTop=Math.max(0,sec.offsetTop-10);markRail()}
+    else{render(true);const e=$('#bars');if(e)e.scrollTop=0;const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+  }
+  else if(a==='fulltoggle'){try{localStorage.setItem('wm_saw_full',fullList()?'0':'1')}catch(e){}render(true);const on=$('.g.on');if(fullList()&&on)on.click()}
   else if(a==='tick')tickBar(id);
   else if(a==='hold')toggleHold(v);
   else if(a==='vqload')vqFind(v);

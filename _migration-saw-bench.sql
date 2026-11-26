@@ -173,3 +173,34 @@ create policy "staff ask for a cutplan" on public.vquote_cutplan_requests for in
 alter table public.saw_jobs add column if not exists source text not null default 'pdf';
 alter table public.saw_jobs add column if not exists item_info jsonb not null default '{}'::jsonb;
 alter table public.saw_jobs add column if not exists vq_synced_at timestamptz;
+
+-- Office ordering sheet (26/11/2026). The Order tab lays the pick sheet out like the paper
+-- Extrusion Bar Summary (ESP order, picked lines struck through).
+--   order_qty    the office's own figure for a line; null = order the shortfall
+--   office_done  the office has dealt with this line in ESP
+alter table public.saw_pick_lines add column if not exists order_qty integer;
+alter table public.saw_pick_lines add column if not exists office_done boolean not null default false;
+alter table public.saw_pick_lines add column if not exists office_by text;
+alter table public.saw_pick_lines add column if not exists office_at timestamptz;
+
+-- Extrusion profile pictures (26/11/2026).
+-- extn_shapes: one row per extrusion code. esp-sync\vquote-shapes-sync.ps1 copies vQuote's
+-- drawing (EXTN.DXF_ENTITY_LIST) into "raw" as base64; edge function extn-shapes-build turns
+-- it into an SVG path ("path", in mm, with w_mm/h_mm). Staff can read everything except raw.
+create table if not exists public.extn_shapes (
+  extn_code   text primary key,
+  descr       text,
+  w_mm        numeric,
+  h_mm        numeric,
+  raw         text,
+  path        text,
+  modified    date,
+  synced_at   timestamptz not null default now(),
+  built_at    timestamptz,
+  build_note  text
+);
+alter table public.extn_shapes enable row level security;
+revoke all on public.extn_shapes from anon, authenticated;
+grant select (extn_code, descr, w_mm, h_mm, path, built_at) on public.extn_shapes to authenticated;
+create policy "staff read extn shapes" on public.extn_shapes for select to authenticated using (public.is_staff());
+-- app_config.shapes_build_key lets the build function be called without the service key.
