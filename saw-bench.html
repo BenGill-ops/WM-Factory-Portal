@@ -176,6 +176,32 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .cuts .sz{font-size:1.7rem}
 }
 
+/* ── item summary and items on hold ── */
+.cutwrap{overflow:hidden;display:flex;flex-direction:column}
+.cutwrap .cut{flex:1;min-height:0;height:auto}
+.items{flex:none;background:var(--surface);border-bottom:2px solid var(--line);padding:10px 16px}
+.ihead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ihead span{color:var(--muted);font-size:.85rem}
+.ihead .grow{flex:1}
+.ilist{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;max-height:30vh;overflow:auto}
+.it{min-width:68px;min-height:var(--tap);padding:4px 10px;border-radius:10px;border:2px solid var(--line);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.it b{font-size:1.25rem;font-weight:800}
+.it small{font-size:.68rem;font-weight:600;color:var(--muted)}
+.it.fin{border-color:var(--green);background:var(--green-soft)}
+.it.fin small{color:var(--green-dark)}
+.it.hold{border-color:var(--amber);background:var(--amber-soft);border-style:dashed}
+.it.hold b{text-decoration:line-through;color:var(--amber)}
+.it.hold small{color:var(--amber)}
+button.it:active{background:var(--sunk)}
+.cuts tr.hold td{background:var(--amber-soft)}
+.cuts tr.hold .sz,.cuts tr.hold .ang,.cuts tr.hold .qty{text-decoration:line-through;color:var(--amber);opacity:.75}
+.cuts tr.was .sz,.cuts tr.was .ang,.cuts tr.was .qty{opacity:.35}
+.strip i.h{background:repeating-linear-gradient(90deg,var(--amber-soft) 0 5px,#f3cfa3 5px 10px);color:var(--amber)}
+.bh .tag{white-space:normal}
+.g.held .c,.g.held .n{color:var(--amber)}
+.g.on.held .c,.g.on.held .n{color:#f6c58e}
+.heldbars{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:12px 16px;margin-bottom:14px;border:2px dashed var(--amber)}
+
 /* ── overlays ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:50;padding:16px}
 .dlg{background:#fff;border-radius:16px;padding:22px;max-width:520px;width:100%}
@@ -422,6 +448,24 @@ function groups(){
 }
 const mainFinish=()=>{const n={};let best='',bn=0;S.pick.concat(S.bars).forEach(l=>{const f=l.finish||'';n[f]=(n[f]||0)+1;if(n[f]>bn){bn=n[f];best=f}});return best};
 const itemLabel=it=>{const q=S.job&&S.job.quote_num;const m=/^(\d+)\/(\d+)$/.exec(it||'');return m&&q&&m[1]===String(q)?'Item '+m[2]:(it||'')};
+// Items on hold: the office switches an item off (say its size isn't confirmed) and its
+// pieces come off the cut sheet until it is switched back on.
+const heldSet=()=>new Set((S.job&&S.job.held_items)||[]);
+const itemNo=it=>{const m=/(\d+)$/.exec(it||'');return m?+m[1]:1e9};
+// todo = cut it; hold = every piece on it is on hold; done = cut;
+// more = cut earlier while some pieces were on hold, and those pieces are now back on.
+function barState(b,H){
+  H=H||heldSet();const heldIdx=[];b.cuts.forEach((c,i)=>{if(H.has(c.item))heldIdx.push(i)});
+  if(!b.done)return{st:heldIdx.length&&heldIdx.length===b.cuts.length?'hold':'todo',heldIdx:heldIdx,out:[]};
+  const out=(b.skipped||[]).filter(i=>b.cuts[i]&&!H.has(b.cuts[i].item));
+  return{st:out.length?'more':'done',heldIdx:heldIdx,out:out};
+}
+function barCounts(bars){const H=heldSet();let total=0,done=0,hold=0;bars.forEach(b=>{const s=barState(b,H).st;if(s==='hold')hold++;else{total++;if(s==='done')done++}});return{total:total,done:done,hold:hold}}
+function itemStats(){
+  const m={};
+  S.bars.forEach(b=>b.cuts.forEach((c,i)=>{const k=c.item||'';const o=m[k]||(m[k]={item:k,total:0,cut:0});o.total+=c.qty;if(b.done&&!(b.skipped||[]).includes(i))o.cut+=c.qty}));
+  return Object.values(m).sort((a,b)=>itemNo(a.item)-itemNo(b.item)||String(a.item).localeCompare(b.item));
+}
 const shortOf=l=>l.qty_in_stock==null?0:Math.max(0,l.qty_needed-l.qty_in_stock);
 
 // ── rendering ────────────────────────────────────────────────────────────────
@@ -510,12 +554,12 @@ function impHTML(){
 
 function jobHTML(){
   const j=S.job,gs=groups();
-  const doneBars=S.bars.filter(b=>b.done).length,counted=S.pick.filter(l=>l.qty_in_stock!=null).length;
+  const bc=barCounts(S.bars),counted=S.pick.filter(l=>l.qty_in_stock!=null).length;
   let h='<div class="top"><button class="tbtn" data-act="back" aria-label="Back to jobs">'+ICON.back+'</button>'+
     '<div class="grow"><h1><span class="num">'+esc(j.quote_num||j.job_number||'')+'</span> '+esc(j.title||j.customer||'')+'</h1>'+
     '<div class="sub">'+(j.quote_version?'Ver '+esc(j.quote_version):'')+(j.job_number?'  Job '+esc(j.job_number):'')+(j.status==='Done'?'  Finished':'')+'</div></div>'+
     '<div class="tabs" role="tablist"><button class="tab'+(S.tab==='pick'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='pick')+'" data-act="tab" data-v="pick">Pick<small class="num" id="tpick">'+counted+' of '+S.pick.length+'</small></button>'+
-    '<button class="tab'+(S.tab==='cut'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='cut')+'" data-act="tab" data-v="cut">Cut<small class="num" id="tcut">'+doneBars+' of '+S.bars.length+'</small></button></div>'+
+    '<button class="tab'+(S.tab==='cut'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='cut')+'" data-act="tab" data-v="cut">Cut<small class="num" id="tcut">'+bc.done+' of '+bc.total+'</small></button></div>'+
     '<button class="tbtn" data-act="sheets" aria-label="Sheets and job options">'+ICON.doc+'</button></div>';
   if(S.loading)return h+'<div class="main"><div class="empty">Loading…</div></div>';
   if(S.err)return h+'<div class="main"><div class="pad"><div class="note red">'+esc(S.err)+'</div></div></div>';
@@ -523,15 +567,17 @@ function jobHTML(){
     if(!S.pick.length)return h+'<div class="main"><div class="empty"><b>No pick sheet loaded for this job</b>The office adds it by dropping the Extrusion Bar Summary PDF on the Saw Bench page.</div></div>';
     const mf=mainFinish();
     const list=S.pick.filter(l=>S.filter==='all'||(S.filter==='todo'&&l.qty_in_stock==null)||(S.filter==='short'&&shortOf(l)>0));
-    h+='<div class="main"><div class="pad">'+orderHTML()+
+    const hi=[...heldSet()].sort((a,b)=>itemNo(a)-itemNo(b));
+    h+='<div class="main"><div class="pad">'+orderHTML()+(hi.length?'<div class="note">'+hi.map(itemLabel).join(', ')+(hi.length>1?' are':' is')+' on hold on the cut sheet. This pick sheet still counts the bars for '+(hi.length>1?'them':'it')+'.</div>':'')+
       '<div class="bar2">'+[['all','All '+S.pick.length],['todo','Still to count'],['short','Short']].map(c=>'<button class="chip'+(S.filter===c[0]?' on':'')+'" data-act="filter" data-v="'+c[0]+'">'+c[1]+'</button>').join('')+'</div>'+
       (list.length?'<div class="pick">'+list.map(l=>pickRow(l,mf)).join('')+'</div>':'<div class="empty">'+(S.filter==='todo'?'<b>Every line is counted</b>Tap Send to office below.':'Nothing short.')+'</div>')+
       '</div></div><div class="foot" id="foot">'+footHTML()+'</div>';
     return h;
   }
   if(!S.bars.length)return h+'<div class="main"><div class="empty"><b>No cutting plan loaded for this job</b>The office adds it by dropping the Optimised Cutting Plan PDF on the Saw Bench page.</div></div>';
-  if(!S.grp||!gs.find(g=>g.key===S.grp))S.grp=(gs.find(g=>g.bars.some(b=>!b.done))||gs[0]).key;
-  h+='<div class="main" style="overflow:hidden"><div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+groupHTML(gs)+'</div></div></div>';
+  const open=g=>g.bars.some(b=>{const s=barState(b).st;return s==='todo'||s==='more'});
+  if(!S.grp||!gs.find(g=>g.key===S.grp))S.grp=(gs.find(open)||gs[0]).key;
+  h+='<div class="main cutwrap">'+itemsHTML()+'<div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+groupHTML(gs)+'</div></div></div>';
   return h;
 }
 function pickRow(l,mf){
@@ -568,35 +614,59 @@ function orderHTML(){
   return h+'</div>';
 }
 function railBtn(g){
-  const d=g.bars.filter(b=>b.done).length,fin=d===g.bars.length;
-  return '<button class="g'+(g.key===S.grp?' on':'')+(fin?' fin':'')+'" id="g'+g.bars[0].id+'" data-act="grp" data-v="'+esc(g.key)+'"'+(g.key===S.grp?' aria-current="true"':'')+'><span class="c num">'+esc(g.code)+'</span><span class="d">'+esc(g.desc)+'</span><span class="n num">'+(fin?'Done':d+'/'+g.bars.length)+'</span></button>';
+  const c=barCounts(g.bars),fin=c.total>0&&c.done===c.total,allHold=!c.total;
+  return '<button class="g'+(g.key===S.grp?' on':'')+(fin?' fin':'')+(allHold?' held':'')+'" id="g'+g.bars[0].id+'" data-act="grp" data-v="'+esc(g.key)+'"'+(g.key===S.grp?' aria-current="true"':'')+'><span class="c num">'+esc(g.code)+'</span><span class="d">'+esc(g.desc)+'</span><span class="n num">'+(allHold?'On hold':fin?'Done':c.done+'/'+c.total)+'</span></button>';
 }
 function groupHTML(gs){
   const g=gs.find(x=>x.key===S.grp),mf=mainFinish();
-  const nextBar=g.bars.find(b=>!b.done),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(b=>!b.done));
+  const H=heldSet(),isOpen=b=>{const s=barState(b,H).st;return s==='todo'||s==='more'};
+  const nextBar=g.bars.find(isOpen),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(isOpen));
+  const onHold=g.bars.filter(b=>barState(b,H).st==='hold');
   const lens=[...new Set(g.bars.map(b=>b.bar_length_mm))];
   let h='<div class="ghead"><div class="code num">'+esc(g.code)+'</div><div><div class="desc">'+esc(g.desc)+'</div><span class="tag'+(g.finish!==mf?' odd':'')+'">'+esc(g.finish)+'</span></div><div class="grow"></div>'+
     '<div style="text-align:right;font-weight:700"><span class="num">'+plural(g.bars.length,'bar')+'</span><div style="color:var(--muted);font-size:.85rem;font-weight:600" class="num">'+lens.map(l=>g.bars.filter(b=>b.bar_length_mm===l).length+' × '+mm(l)+' mm').join(', ')+'</div></div></div>';
-  h+=g.bars.map(b=>barCard(b,g,nextBar)).join('');
+  h+=g.bars.filter(b=>barState(b,H).st!=='hold').map(b=>barCard(b,g,nextBar)).join('');
+  if(onHold.length)h+='<div class="heldbars"><b>'+plural(onHold.length,'bar')+' on hold</b> '+esc(onHold.map(b=>'Bar '+b.bar_no).join(', '))+'. Every piece on '+(onHold.length>1?'them':'it')+' is for '+esc([...new Set(onHold.flatMap(b=>b.cuts.map(c=>c.item)))].sort((a,b)=>itemNo(a)-itemNo(b)).map(itemLabel).join(', '))+'.</div>';
   if(!nextBar)h+=nextG?'<button class="btn pri" style="width:100%;min-height:72px;font-size:1.1rem" data-act="grp" data-v="'+esc(nextG.key)+'">Next: '+esc(nextG.code)+' '+esc(nextG.desc)+'</button>'
-    :'<div class="note ok" style="text-align:center;font-size:1.1rem">Every bar on this job is cut.</div>';
+    :'<div class="note ok" style="text-align:center;font-size:1.1rem">'+(barCounts(S.bars).hold?'Every bar is cut except the ones on hold.':'Every bar on this job is cut.')+'</div>';
   return h;
 }
 function barCard(b,g,nextBar){
+  const bs=barState(b),H=heldSet();
   const used=b.cuts.reduce((a,c)=>a+c.size*c.qty,0),over=b.bar_length_mm&&used>b.bar_length_mm;
   let strip='';
   if(!over&&b.bar_length_mm){
     strip='<div class="strip" aria-hidden="true">';
-    b.cuts.forEach(c=>{for(let k=0;k<c.qty;k++){const w=100*c.size/b.bar_length_mm;strip+='<i style="width:'+w.toFixed(2)+'%">'+(w>9?mm(c.size):'')+'</i>'}});
+    b.cuts.forEach(c=>{for(let k=0;k<c.qty;k++){const w=100*c.size/b.bar_length_mm;strip+='<i'+(H.has(c.item)?' class="h"':'')+' style="width:'+w.toFixed(2)+'%">'+(w>9?mm(c.size):'')+'</i>'}});
     strip+='<i class="w" style="flex:1"></i></div>';
   }
-  return '<section class="bc'+(b.done?' done':'')+(nextBar&&nextBar.id===b.id?' next':'')+'" id="b'+b.id+'"><div class="bh"><span class="bn num">Bar '+b.bar_no+'</span><span class="bl num">'+mm(b.bar_length_mm)+' mm bar</span>'+
-    (over?'<span class="tag red">Cuts add up to '+mm(used)+' mm, longer than the bar. Check with the office.</span>':(b.waste_mm!=null?'<span class="tag num">'+mm(b.waste_mm)+' mm left over</span>':''))+
+  const shown=bs.st==='done';
+  let tags=over?'<span class="tag red">Cuts add up to '+mm(used)+' mm, longer than the bar. Check with the office.</span>':(b.waste_mm!=null?'<span class="tag num">'+mm(b.waste_mm)+' mm left over</span>':'');
+  if(bs.st==='more')tags='<span class="tag amber">'+esc([...new Set(bs.out.map(i=>itemLabel(b.cuts[i].item)))].join(', '))+' is back on. Cut '+(bs.out.length>1?'these pieces':'this piece')+' from this bar’s offcut.</span>';
+  else if(bs.heldIdx.length)tags+='<span class="tag amber">'+plural(bs.heldIdx.reduce((a,i)=>a+b.cuts[i].qty,0),'piece')+' on hold. Don’t cut '+(bs.heldIdx.length>1?'them':'it')+' yet.</span>';
+  return '<section class="bc'+(shown?' done':'')+(nextBar&&nextBar.id===b.id?' next':'')+'" id="b'+b.id+'"><div class="bh"><span class="bn num">Bar '+b.bar_no+'</span><span class="bl num">'+mm(b.bar_length_mm)+' mm bar</span>'+tags+
     '<span class="grow"></span>'+(b.done&&b.done_by?'<span class="bl" style="font-size:.8rem">'+esc(b.done_by)+', '+when(b.done_at)+'</span>':'')+
-    '<button class="tick'+(b.done?' on':'')+'" data-act="tick" data-id="'+b.id+'" aria-pressed="'+!!b.done+'">'+ICON.tick+(b.done?'Cut':'Mark cut')+'</button></div>'+strip+
+    '<button class="tick'+(shown?' on':'')+'" data-act="tick" data-id="'+b.id+'" aria-pressed="'+shown+'">'+ICON.tick+(shown?'Cut':'Mark cut')+'</button></div>'+strip+
     '<table class="cuts"><tr><th>Left end</th><th>Length</th><th>Right end</th><th>Qty</th><th>For</th></tr>'+
-    b.cuts.map(c=>'<tr'+(c.qty>1?' class="many"':'')+'><td class="ang num'+(c.l?'':' sq')+'">'+(c.l?esc(c.l):'square')+'</td><td class="sz num">'+mm(c.size)+' <small>mm</small></td>'+
-      '<td class="ang num'+(c.r?'':' sq')+'">'+(c.r?esc(c.r):'square')+'</td><td class="qty num">× '+c.qty+'</td><td class="itm num">'+esc(itemLabel(c.item))+'</td></tr>').join('')+'</table></section>';
+    b.cuts.map((c,i)=>{
+      const hold=H.has(c.item),was=bs.st==='more'&&!bs.out.includes(i)&&!hold;
+      return '<tr class="'+(c.qty>1?'many':'')+(hold?' hold':'')+(was?' was':'')+'"><td class="ang num'+(c.l?'':' sq')+'">'+(c.l?esc(c.l):'square')+'</td><td class="sz num">'+mm(c.size)+' <small>mm</small></td>'+
+      '<td class="ang num'+(c.r?'':' sq')+'">'+(c.r?esc(c.r):'square')+'</td><td class="qty num">× '+c.qty+'</td><td class="itm num">'+esc(itemLabel(c.item))+(hold?' <span class="tag amber">On hold</span>':was?' <span class="tag green">Cut</span>':'')+'</td></tr>'}).join('')+'</table></section>';
+}
+// The item summary across the top of the cut sheet. Supervisors and above tap an item to
+// take it off the cut sheet (on hold) or put it back.
+function itemsHTML(){
+  const st=itemStats(),H=heldSet(),can=isSup();let shut=false;try{shut=localStorage.getItem('wm_saw_items')==='0'}catch(e){}
+  const nHold=st.filter(x=>H.has(x.item)).length;
+  let h='<div class="items"><div class="ihead"><b>'+plural(st.length,'item')+' on this cut sheet</b><span>'+(nHold?plural(nHold,'item')+' on hold':'All on')+(can&&!shut?'. Tap an item to take it off the cut sheet or put it back.':'')+'</span>'+
+    '<span class="grow"></span><button class="btn sm" data-act="itemsfold" aria-expanded="'+!shut+'">'+(shut?'Show items':'Hide')+'</button></div>';
+  const list=shut?st.filter(x=>H.has(x.item)):st;
+  if(list.length)h+='<div class="ilist">'+list.map(x=>{
+    const hold=H.has(x.item),fin=!hold&&x.cut>=x.total,lab=itemLabel(x.item).replace(/^Item /,'');
+    const inner='<b class="num">'+esc(lab)+'</b><small class="num">'+(hold?'On hold':fin?'Cut':x.cut+'/'+x.total)+'</small>';
+    return can?'<button class="it'+(hold?' hold':'')+(fin?' fin':'')+'" data-act="hold" data-v="'+esc(x.item)+'" aria-pressed="'+!hold+'" aria-label="Item '+esc(lab)+(hold?', on hold':', on the cut sheet')+'">'+inner+'</button>'
+      :'<div class="it'+(hold?' hold':'')+(fin?' fin':'')+'">'+inner+'</div>'}).join('')+'</div>';
+  return h+'</div>';
 }
 
 // ── actions ──────────────────────────────────────────────────────────────────
@@ -623,11 +693,24 @@ function setPick(id,how){
 }
 async function tickBar(id){
   const b=S.bars.find(x=>x.id===id);if(!b)return;
-  const before={done:b.done,done_by:b.done_by,done_at:b.done_at};
-  b.done=!b.done;b.done_by=b.done?(me().name||''):null;b.done_at=b.done?new Date().toISOString():null;
+  const bs=barState(b);if(bs.st==='hold')return;
+  const before={done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:b.skipped};
+  const now=new Date().toISOString(),who=me().name||'';
+  if(bs.st==='todo'){b.done=true;b.skipped=bs.heldIdx;b.done_by=who;b.done_at=now}                        // pieces on hold are remembered as not cut
+  else if(bs.st==='more'){b.skipped=(b.skipped||[]).filter(i=>!bs.out.includes(i));b.done_by=who;b.done_at=now}
+  else{b.done=false;b.skipped=[];b.done_by=null;b.done_at=null}
   render(true);
-  try{await rest('saw_bars?id=eq.'+id,Object.assign({method:'PATCH',body:JSON.stringify({done:b.done,done_by:b.done_by,done_at:b.done_at})},QUIET))}
+  try{await rest('saw_bars?id=eq.'+id,Object.assign({method:'PATCH',body:JSON.stringify({done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:b.skipped})},QUIET))}
   catch(e){Object.assign(b,before);toast(failMsg(e),true);render(true)}
+}
+async function toggleHold(item){
+  if(!isSup())return;
+  const cur=(S.job.held_items||[]).slice(),on=cur.includes(item),next=on?cur.filter(x=>x!==item):cur.concat(item);
+  const pieces=S.bars.reduce((a,b)=>a+b.cuts.reduce((x,c)=>x+(c.item===item?c.qty:0),0),0);
+  S.job.held_items=next;render(true);
+  try{await rest('saw_jobs?id=eq.'+S.job.id,Object.assign({method:'PATCH',body:JSON.stringify({held_items:next,updated_at:new Date().toISOString()})},QUIET));
+    toast(on?itemLabel(item)+' is back on the cut sheet.':itemLabel(item)+' is on hold. '+plural(pieces,'piece')+' taken off the cut sheet.')}
+  catch(e){S.job.held_items=cur;toast(failMsg(e),true);render(true)}
 }
 async function sendPick(){
   const todo=S.pick.filter(l=>l.qty_in_stock==null).length,short=S.pick.reduce((a,l)=>a+shortOf(l),0);
@@ -669,7 +752,7 @@ function sheetsDialog(){
     if(x==='pick')viewPdf(j.pick_pdf,'Pick sheet');
     if(x==='cut')viewPdf(j.cut_pdf,'Cutting plan');
     if(x==='finish'||x==='reopen'){
-      const left=S.bars.filter(b=>!b.done).length;
+      const c=barCounts(S.bars),left=c.total-c.done;
       if(x==='finish'&&left){const a=await ask('Finish with '+plural(left,'bar')+' not ticked?','The job comes off the saw bench. The office can put it back.','Finish job');if(!a.ok)return}
       try{await rest('saw_jobs?id=eq.'+j.id,Object.assign({method:'PATCH',body:JSON.stringify({status:x==='finish'?'Done':'Active',updated_at:new Date().toISOString()})},QUIET));
         if(x==='finish'){S.view='jobs';S.job=null;loadJobs()}else{j.status='Active';render(true)}}catch(e){toast(failMsg(e),true)}
@@ -757,7 +840,7 @@ async function commitImport(){
       const old=m.existing?await restAll('saw_bars?job_id=eq.'+job.id+'&order=sort_order'):[];
       const key=b=>[b.extrusion,b.bar_length_mm,b.bar_no,JSON.stringify(b.cuts.map(c=>[c.l,c.size,c.r,c.qty,c.item]))].join('|'),was={};old.forEach(b=>{was[key(b)]=b});
       if(old.length)await rest('saw_bars?job_id=eq.'+job.id,Object.assign({method:'DELETE'},QUIET));
-      const rows=m.bars.map(b=>{const o=was[key(b)];return Object.assign({job_id:job.id,done:!!(o&&o.done),done_by:o&&o.done?o.done_by:null,done_at:o&&o.done?o.done_at:null},b)});
+      const rows=m.bars.map(b=>{const o=was[key(b)];return Object.assign({job_id:job.id,done:!!(o&&o.done),skipped:o&&o.done?(o.skipped||[]):[],done_by:o&&o.done?o.done_by:null,done_at:o&&o.done?o.done_at:null},b)});
       for(let i=0;i<rows.length;i+=400)await rest('saw_bars',Object.assign({method:'POST',body:JSON.stringify(rows.slice(i,i+400))},QUIET));
       patch.cut_pdf=await upload(job.id,'cut',m.cutFile);patch.cut_report_at=m.cutMeta.report_at||null;
     }
@@ -784,6 +867,8 @@ document.addEventListener('click',function(ev){
   else if(a==='copy')copyOrder();
   else if(a==='grp'){S.grp=v;render(true);const e=$('#bars');if(e)e.scrollTop=0;const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
   else if(a==='tick')tickBar(id);
+  else if(a==='hold')toggleHold(v);
+  else if(a==='itemsfold'){try{localStorage.setItem('wm_saw_items',localStorage.getItem('wm_saw_items')==='0'?'1':'0')}catch(e){}render(true)}
   else if(a==='sheets')sheetsDialog();
   else if(a==='choose'){const f=$('#files');if(f)f.click()}
   else if(a==='impcancel'){S.imp=null;render()}

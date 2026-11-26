@@ -116,3 +116,12 @@ grant select on public.saw_job_summary to authenticated;
 -- Email: edge function saw-pick-notify (deployed 26/11/2026) sends the shortage
 -- list when the sawyer taps "Send to office". It goes to SAW_TO_EMAIL if that
 -- secret is set, otherwise to the same address as stock orders (STOCK_TO_EMAIL).
+
+-- Items on hold (26/11/2026). The office switches an item off on the cut sheet
+-- (say its size isn't confirmed yet) and its pieces come off until it is back on.
+--   saw_jobs.held_items  the quote items on hold, e.g. ["21967/17"]
+--   saw_bars.skipped     positions in "cuts" that were on hold when the bar was
+--                        marked cut, so they come back as "still to cut" later
+-- (saw_job_summary was dropped and re-created after this so it carries held_items.)
+alter table public.saw_jobs add column if not exists held_items jsonb not null default '[]'::jsonb;
+alter table public.saw_bars add column if not exists skipped jsonb not null default '[]'::jsonb;
