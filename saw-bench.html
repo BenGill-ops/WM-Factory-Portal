@@ -181,10 +181,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 /* ── cutting plan ── */
 .cut{display:grid;grid-template-columns:300px minmax(0,1fr);height:100%}
 .rail{overflow:auto;background:var(--surface);border-right:2px solid var(--line);padding:8px}
-.g{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;min-height:var(--tap);align-items:center}
+.g{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:2px 10px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;min-height:var(--tap);align-items:center}
 .g .c{font-weight:800;font-size:1.05rem;line-height:1.1}
-.g .d{grid-column:1;font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.g .n{grid-row:1/3;grid-column:2;font-weight:700;font-size:.9rem;color:var(--muted)}
+.g .gp{grid-row:1/3;grid-column:1;display:grid;place-items:center}
+.g .c{grid-column:2}
+.rail.nopic .g{grid-template-columns:0 minmax(0,1fr) auto;column-gap:0}
+.g .d{grid-column:2;font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g .n{grid-row:1/3;grid-column:3;font-weight:700;font-size:.9rem;color:var(--muted)}
 .g.on{background:var(--ink);color:#fff}
 .g.on .d,.g.on .n{color:rgba(255,255,255,.7)}
 .g.fin .c{color:var(--green-dark)}
@@ -253,6 +256,14 @@ button.it:active{background:var(--sunk)}
 .g.held .c,.g.held .n{color:var(--amber)}
 .g.on.held .c,.g.on.held .n{color:#f6c58e}
 .heldbars{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:12px 16px;margin-bottom:14px;border:2px dashed var(--amber)}
+
+.xp{display:block;flex:none;color:#2b2f2a}
+.g.on .xp{color:#fff}
+.gpic{background:var(--surface);border-radius:12px;padding:6px;border:2px solid var(--line)}
+.plx{display:flex;gap:14px;align-items:center;min-width:0}
+.ppic{flex:none}
+.otable .pc{width:48px;padding:2px 4px}
+.otable tr.picked .xp{color:var(--line)}
 
 /* ── overlays ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:50;padding:16px}
@@ -460,7 +471,7 @@ function ask(title,body,okLabel,extraHTML){
 }
 
 // ── state ────────────────────────────────────────────────────────────────────
-const S={vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
+const S={shapes:{},vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
 const fullList=()=>{try{return localStorage.getItem('wm_saw_full')!=='0'}catch(e){return true}};
 const pending={};   // line id -> timer, so quick taps on − / + save once
 let lastTouch=0;
@@ -486,6 +497,7 @@ async function openJob(id,quiet){
     if(!quiet&&isSup()&&pick.length&&S.job.pick_sent_at)S.tab='order';else
     if(!quiet)S.tab=(pick.length&&(!bars.length||S.job.pick_counted<S.job.pick_total||!S.job.pick_sent_at))?'pick':'cut';
     if(!same)render(true);
+    loadShapes();
   }catch(e){if(!quiet){S.loading=false;S.err=(e.status===401||e.status===403)?'signin':'Could not load this job. Check the Wi-Fi.';render()}}
 }
 setInterval(function(){
@@ -495,6 +507,28 @@ setInterval(function(){
 document.addEventListener('visibilitychange',function(){if(document.hidden)return;keepFresh();wake();if(S.view==='jobs'&&!S.imp&&signedIn())loadJobs(true)});
 // Keep the bench screen from going to sleep while this page is showing.
 let wl=null;async function wake(){try{if(navigator.wakeLock&&!document.hidden&&(!wl||wl.released))wl=await navigator.wakeLock.request('screen')}catch(e){}}
+
+// ── extrusion profile pictures (drawn from vQuote's own profile drawings, table extn_shapes) ──
+async function loadShapes(){
+  const codes=[...new Set(S.pick.map(l=>l.extrusion).concat(S.bars.map(b=>b.extrusion)))].filter(c=>c&&!(c in S.shapes));
+  if(!codes.length)return;
+  let got=false;
+  try{
+    for(let i=0;i<codes.length;i+=50){
+      const list=codes.slice(i,i+50).map(c=>'"'+String(c).replace(/["\\]/g,'')+'"').join(',');
+      const rows=await rest('extn_shapes?select=extn_code,w_mm,h_mm,path&extn_code=in.('+encodeURIComponent(list)+')')||[];
+      rows.forEach(r=>{if(r.path&&r.w_mm>0&&r.h_mm>0){S.shapes[r.extn_code]={d:r.path,w:+r.w_mm,h:+r.h_mm};got=true}});
+    }
+  }catch(e){}
+  codes.forEach(c=>{if(!(c in S.shapes))S.shapes[c]=null});
+  if(got&&S.view==='job')render(true);
+}
+const hasPics=()=>Object.keys(S.shapes).some(k=>S.shapes[k]);
+function pic(code,size){
+  const p=S.shapes[code];if(!p)return'';
+  const m=Math.max(p.w,p.h)*0.06+0.5;
+  return '<svg class="xp" width="'+size+'" height="'+size+'" viewBox="'+(-m)+' '+(-m)+' '+(p.w+2*m).toFixed(2)+' '+(p.h+2*m).toFixed(2)+'" aria-hidden="true"><path d="'+p.d+'" fill="none" stroke="currentColor" stroke-width="'+(size>60?1.8:1.3)+'" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>';
+}
 
 // ── cutting plan grouping ────────────────────────────────────────────────────
 function groups(){
@@ -652,13 +686,13 @@ function jobHTML(){
   if(!S.bars.length)return h+'<div class="main"><div class="empty"><b>No cutting plan loaded for this job</b>The office adds it by dropping the Optimised Cutting Plan PDF on the Saw Bench page.</div></div>';
   const open=g=>g.bars.some(b=>{const s=barState(b).st;return s==='todo'||s==='more'});
   if(!S.grp||!gs.find(g=>g.key===S.grp))S.grp=(gs.find(open)||gs[0]).key;
-  h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+barsHTML(gs)+'</div></div></div>';
+  h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail'+(hasPics()?'':' nopic')+'" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+barsHTML(gs)+'</div></div></div>';
   return h;
 }
 function pickRow(l,mf){
   const s=shortOf(l),st=l.qty_in_stock==null?'':(s>0?' short':' ok');
-  return '<div class="pl'+st+'" id="pl'+l.id+'"><div style="min-width:0"><div class="code num">'+esc(l.extrusion)+'</div><div class="desc">'+esc(l.description)+'</div>'+
-    '<div class="meta"><span class="num">'+mm(l.bar_length_mm)+' mm bar</span><span class="tag'+((l.finish||'')!==mf?' odd':'')+'">'+esc(l.finish)+'</span></div></div>'+
+  return '<div class="pl'+st+'" id="pl'+l.id+'"><div class="plx">'+(pic(l.extrusion,64)?'<div class="ppic">'+pic(l.extrusion,64)+'</div>':'')+'<div style="min-width:0"><div class="code num">'+esc(l.extrusion)+'</div><div class="desc">'+esc(l.description)+'</div>'+
+    '<div class="meta"><span class="num">'+mm(l.bar_length_mm)+' mm bar</span><span class="tag'+((l.finish||'')!==mf?' odd':'')+'">'+esc(l.finish)+'</span></div></div></div>'+
     '<div class="need"><b class="num">'+l.qty_needed+'</b><span>needed</span></div>'+
     '<div class="step"><button class="sb wide none'+(l.qty_in_stock===0?' on':'')+'" data-act="pk" data-id="'+l.id+'" data-v="none">None</button>'+
     '<button class="sb" data-act="pk" data-id="'+l.id+'" data-v="minus" aria-label="One fewer in stock">−</button>'+
@@ -686,14 +720,14 @@ function orderTabHTML(){
   let h='<div class="main"><div class="pad osheet"><div class="ohead">'+state+'<span style="flex:1"></span>'+
     [['all','Every line'],['order','To order only']].map(c=>'<button class="chip'+((S.ofilter||'all')===c[0]?' on':'')+'" data-act="ofilter" data-v="'+c[0]+'">'+c[1]+'</button>').join('')+'</div>';
   if(j.pick_note)h+='<div class="note">Note from the saw bench: '+esc(j.pick_note)+'</div>';
-  h+='<table class="otable"><thead><tr><th>Extrusion</th><th>Description</th><th>Finish</th><th class="r">Bar length</th><th class="r">Qty</th><th class="r">In stock</th><th class="c">Order</th><th class="c">Done in ESP</th></tr></thead><tbody>'+
-    (list.length?list.map(orderRow).join(''):'<tr><td colspan="8" class="c" style="padding:28px">Nothing to order. Every line is in stock.</td></tr>')+'</tbody></table></div></div>'+
+  h+='<table class="otable"><thead><tr><th>Extrusion</th><th></th><th>Description</th><th>Finish</th><th class="r">Bar length</th><th class="r">Qty</th><th class="r">In stock</th><th class="c">Order</th><th class="c">Done in ESP</th></tr></thead><tbody>'+
+    (list.length?list.map(orderRow).join(''):'<tr><td colspan="9" class="c" style="padding:28px">Nothing to order. Every line is in stock.</td></tr>')+'</tbody></table></div></div>'+
     '<div class="foot" id="foot">'+orderFootHTML()+'</div>';
   return h;
 }
 function orderRow(l){
   const o=orderOf(l),un=l.qty_in_stock==null,picked=!un&&shortOf(l)===0&&!o;
-  return '<tr id="or'+l.id+'" class="'+(picked?'picked':'')+(un?' un':'')+(o>0?' need':'')+(l.office_done?' odone':'')+'"><td class="code num">'+esc(l.extrusion)+'</td><td class="d">'+esc(l.description)+'</td><td class="f">'+esc(l.finish)+'</td>'+
+  return '<tr id="or'+l.id+'" class="'+(picked?'picked':'')+(un?' un':'')+(o>0?' need':'')+(l.office_done?' odone':'')+'"><td class="code num">'+esc(l.extrusion)+'</td><td class="pc">'+pic(l.extrusion,40)+'</td><td class="d">'+esc(l.description)+'</td><td class="f">'+esc(l.finish)+'</td>'+
     '<td class="r num">'+mm(l.bar_length_mm)+' mm</td><td class="r num q">'+l.qty_needed+'</td><td class="r num">'+(un?'<span class="tag amber">Not counted</span>':l.qty_in_stock)+'</td>'+
     '<td class="c"><div class="ostep"><button class="sb" data-act="oq" data-id="'+l.id+'" data-v="minus" aria-label="Order one fewer">−</button><b class="num'+(o?'':' zero')+'">'+o+'</b><button class="sb" data-act="oq" data-id="'+l.id+'" data-v="plus" aria-label="Order one more">+</button></div>'+
     (l.order_qty!=null&&l.order_qty!==shortOf(l)?'<div class="adj">changed from '+shortOf(l)+' <button class="link" data-act="oq" data-id="'+l.id+'" data-v="reset">undo</button></div>':'')+'</td>'+
@@ -735,7 +769,7 @@ async function toggleOfficeDone(id){
 }
 function railBtn(g){
   const c=barCounts(g.bars),fin=c.total>0&&c.done===c.total,allHold=!c.total;
-  return '<button class="g'+(g.key===S.grp?' on':'')+(fin?' fin':'')+(allHold?' held':'')+'" id="g'+g.bars[0].id+'" data-act="grp" data-v="'+esc(g.key)+'"'+(g.key===S.grp?' aria-current="true"':'')+'><span class="c num">'+esc(g.code)+'</span><span class="d">'+esc(g.desc)+'</span><span class="n num">'+(allHold?'On hold':fin?'Done':c.done+'/'+c.total)+'</span></button>';
+  return '<button class="g'+(g.key===S.grp?' on':'')+(fin?' fin':'')+(allHold?' held':'')+'" id="g'+g.bars[0].id+'" data-act="grp" data-v="'+esc(g.key)+'"'+(g.key===S.grp?' aria-current="true"':'')+'><span class="gp">'+pic(g.code,36)+'</span><span class="c num">'+esc(g.code)+'</span><span class="d">'+esc(g.desc)+'</span><span class="n num">'+(allHold?'On hold':fin?'Done':c.done+'/'+c.total)+'</span></button>';
 }
 // Full list: every extrusion down the page in report order, like the Optimised Cutting Plan.
 // One at a time: just the extrusion picked in the side list.
@@ -751,7 +785,7 @@ function groupHTML(gs,g,globalNext){
   const nextBar=full?globalNext:g.bars.find(isOpen),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(isOpen));
   const onHold=g.bars.filter(b=>barState(b,H).st==='hold');
   const lens=[...new Set(g.bars.map(b=>b.bar_length_mm))];
-  let h='<div class="ghead"><div class="code num">'+esc(g.code)+'</div><div><div class="desc">'+esc(g.desc)+'</div><span class="tag'+(g.finish!==mf?' odd':'')+'">'+esc(g.finish)+'</span></div><div class="grow"></div>'+
+  let h='<div class="ghead">'+(pic(g.code,92)?'<div class="gpic">'+pic(g.code,92)+'</div>':'')+'<div class="code num">'+esc(g.code)+'</div><div><div class="desc">'+esc(g.desc)+'</div><span class="tag'+(g.finish!==mf?' odd':'')+'">'+esc(g.finish)+'</span></div><div class="grow"></div>'+
     '<div style="text-align:right;font-weight:700"><span class="num">'+plural(g.bars.length,'bar')+'</span><div style="color:var(--muted);font-size:.85rem;font-weight:600" class="num">'+lens.map(l=>g.bars.filter(b=>b.bar_length_mm===l).length+' × '+mm(l)+' mm').join(', ')+'</div></div></div>';
   h+=g.bars.filter(b=>barState(b,H).st!=='hold').map(b=>barCard(b,g,nextBar)).join('');
   if(onHold.length)h+='<div class="heldbars"><b>'+plural(onHold.length,'bar')+' on hold</b> '+esc(onHold.map(b=>'Bar '+b.bar_no).join(', '))+'. Every piece on '+(onHold.length>1?'them':'it')+' is for '+esc([...new Set(onHold.flatMap(b=>b.cuts.map(c=>c.item)))].sort((a,b)=>itemNo(a)-itemNo(b)).map(itemLabel).join(', '))+'.</div>';
