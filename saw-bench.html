@@ -190,11 +190,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .g.fin .c{color:var(--green-dark)}
 .g.fin .n{color:var(--green-dark)}
 .g.on.fin .c,.g.on.fin .n{color:#b6e68c}
-.bars{overflow:auto;padding:16px}
+.bars{overflow:auto;padding:16px;position:relative}
 .ghead{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
 .ghead .code{font-size:2.4rem;font-weight:800;line-height:1}
 .ghead .desc{font-size:1.2rem;font-weight:600}
 .ghead .grow{flex:1}
+.gsec{margin-bottom:30px;padding-bottom:6px;border-bottom:3px solid var(--line)}
+.gsec:last-of-type{border-bottom:0}
 .bc{background:var(--surface);border-radius:14px;margin-bottom:14px;overflow:hidden;border:2px solid transparent}
 .bc.done{opacity:.6}
 .bc.next{border-color:var(--green)}
@@ -459,6 +461,7 @@ function ask(title,body,okLabel,extraHTML){
 
 // ── state ────────────────────────────────────────────────────────────────────
 const S={vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
+const fullList=()=>{try{return localStorage.getItem('wm_saw_full')!=='0'}catch(e){return true}};
 const pending={};   // line id -> timer, so quick taps on − / + save once
 let lastTouch=0;
 
@@ -649,7 +652,7 @@ function jobHTML(){
   if(!S.bars.length)return h+'<div class="main"><div class="empty"><b>No cutting plan loaded for this job</b>The office adds it by dropping the Optimised Cutting Plan PDF on the Saw Bench page.</div></div>';
   const open=g=>g.bars.some(b=>{const s=barState(b).st;return s==='todo'||s==='more'});
   if(!S.grp||!gs.find(g=>g.key===S.grp))S.grp=(gs.find(open)||gs[0]).key;
-  h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+groupHTML(gs)+'</div></div></div>';
+  h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+barsHTML(gs)+'</div></div></div>';
   return h;
 }
 function pickRow(l,mf){
@@ -734,17 +737,25 @@ function railBtn(g){
   const c=barCounts(g.bars),fin=c.total>0&&c.done===c.total,allHold=!c.total;
   return '<button class="g'+(g.key===S.grp?' on':'')+(fin?' fin':'')+(allHold?' held':'')+'" id="g'+g.bars[0].id+'" data-act="grp" data-v="'+esc(g.key)+'"'+(g.key===S.grp?' aria-current="true"':'')+'><span class="c num">'+esc(g.code)+'</span><span class="d">'+esc(g.desc)+'</span><span class="n num">'+(allHold?'On hold':fin?'Done':c.done+'/'+c.total)+'</span></button>';
 }
-function groupHTML(gs){
-  const g=gs.find(x=>x.key===S.grp),mf=mainFinish();
+// Full list: every extrusion down the page in report order, like the Optimised Cutting Plan.
+// One at a time: just the extrusion picked in the side list.
+function firstOpenBar(){const H=heldSet();return S.bars.find(b=>{const s=barState(b,H).st;return s==='todo'||s==='more'})}
+function barsHTML(gs){
+  if(!fullList())return groupHTML(gs,gs.find(x=>x.key===S.grp));
+  const nb=firstOpenBar();
+  return gs.map(g=>'<div class="gsec" id="gs'+g.bars[0].id+'" data-k="'+esc(g.key)+'">'+groupHTML(gs,g,nb)+'</div>').join('')+(nb?'':'<div class="note ok" style="text-align:center;font-size:1.1rem">'+(barCounts(S.bars).hold?'Every bar is cut except the ones on hold.':'Every bar on this job is cut.')+'</div>');
+}
+function groupHTML(gs,g,globalNext){
+  const full=fullList(),mf=mainFinish();
   const H=heldSet(),isOpen=b=>{const s=barState(b,H).st;return s==='todo'||s==='more'};
-  const nextBar=g.bars.find(isOpen),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(isOpen));
+  const nextBar=full?globalNext:g.bars.find(isOpen),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(isOpen));
   const onHold=g.bars.filter(b=>barState(b,H).st==='hold');
   const lens=[...new Set(g.bars.map(b=>b.bar_length_mm))];
   let h='<div class="ghead"><div class="code num">'+esc(g.code)+'</div><div><div class="desc">'+esc(g.desc)+'</div><span class="tag'+(g.finish!==mf?' odd':'')+'">'+esc(g.finish)+'</span></div><div class="grow"></div>'+
     '<div style="text-align:right;font-weight:700"><span class="num">'+plural(g.bars.length,'bar')+'</span><div style="color:var(--muted);font-size:.85rem;font-weight:600" class="num">'+lens.map(l=>g.bars.filter(b=>b.bar_length_mm===l).length+' × '+mm(l)+' mm').join(', ')+'</div></div></div>';
   h+=g.bars.filter(b=>barState(b,H).st!=='hold').map(b=>barCard(b,g,nextBar)).join('');
   if(onHold.length)h+='<div class="heldbars"><b>'+plural(onHold.length,'bar')+' on hold</b> '+esc(onHold.map(b=>'Bar '+b.bar_no).join(', '))+'. Every piece on '+(onHold.length>1?'them':'it')+' is for '+esc([...new Set(onHold.flatMap(b=>b.cuts.map(c=>c.item)))].sort((a,b)=>itemNo(a)-itemNo(b)).map(itemLabel).join(', '))+'.</div>';
-  if(!nextBar)h+=nextG?'<button class="btn pri" style="width:100%;min-height:72px;font-size:1.1rem" data-act="grp" data-v="'+esc(nextG.key)+'">Next: '+esc(nextG.code)+' '+esc(nextG.desc)+'</button>'
+  if(!full&&!nextBar)h+=nextG?'<button class="btn pri" style="width:100%;min-height:72px;font-size:1.1rem" data-act="grp" data-v="'+esc(nextG.key)+'">Next: '+esc(nextG.code)+' '+esc(nextG.desc)+'</button>'
     :'<div class="note ok" style="text-align:center;font-size:1.1rem">'+(barCounts(S.bars).hold?'Every bar is cut except the ones on hold.':'Every bar on this job is cut.')+'</div>';
   return h;
 }
@@ -776,7 +787,7 @@ function itemsHTML(){
   const st=itemStats(),H=heldSet(),can=true;let shut=false;try{shut=localStorage.getItem('wm_saw_items')==='0'}catch(e){}
   const nHold=st.filter(x=>H.has(x.item)).length;
   let h='<div class="items"><div class="ihead"><b>'+plural(st.length,'item')+' on this cut sheet</b><span>'+(nHold?plural(nHold,'item')+' on hold':'All on')+(can&&!shut?'. Tap an item to take it off the cut sheet or put it back.':'')+'</span>'+
-    '<span class="grow"></span><button class="btn sm" data-act="itemsfold" aria-expanded="'+!shut+'">'+(shut?'Show items':'Hide')+'</button></div>';
+    '<span class="grow"></span><button class="btn sm" data-act="fulltoggle">'+(fullList()?'Show one extrusion at a time':'Show the full list')+'</button><button class="btn sm" data-act="itemsfold" aria-expanded="'+!shut+'">'+(shut?'Show items':'Hide items')+'</button></div>';
   const list=shut?st.filter(x=>H.has(x.item)):st;
   if(list.length)h+='<div class="ilist">'+list.map(x=>{
     const hold=H.has(x.item),fin=!hold&&x.cut>=x.total,lab=itemLabel(x.item).replace(/^Item /,'');
@@ -808,6 +819,15 @@ function setPick(id,how){
     catch(e){Object.assign(l,first);toast(failMsg(e),true);if(S.view==='job'&&S.tab==='pick')render(true)}
   },450)};
 }
+// After a tick, redraw the bars, side list, item summary and count in place, keeping every scroll position.
+function refreshCut(){
+  const bars=$('#bars'),rail=$('.rail'),items=$('.items');if(!bars||!rail)return render(true);
+  const gs=groups(),bt=bars.scrollTop,rt=rail.scrollTop,rl=rail.scrollLeft,il=$('.ilist'),it=il?il.scrollTop:0;
+  bars.innerHTML=barsHTML(gs);bars.scrollTop=bt;
+  rail.innerHTML=gs.map(railBtn).join('');rail.scrollTop=rt;rail.scrollLeft=rl;
+  if(items){items.outerHTML=itemsHTML();const il2=$('.ilist');if(il2)il2.scrollTop=it}
+  const c=barCounts(S.bars),t=$('#tcut');if(t)t.textContent=c.done+' of '+c.total;
+}
 async function tickBar(id){
   const b=S.bars.find(x=>x.id===id);if(!b)return;
   const bs=barState(b);if(bs.st==='hold')return;
@@ -816,9 +836,9 @@ async function tickBar(id){
   if(bs.st==='todo'){b.done=true;b.skipped=bs.heldIdx;b.done_by=who;b.done_at=now}                        // pieces on hold are remembered as not cut
   else if(bs.st==='more'){b.skipped=(b.skipped||[]).filter(i=>!bs.out.includes(i));b.done_by=who;b.done_at=now}
   else{b.done=false;b.skipped=[];b.done_by=null;b.done_at=null}
-  render(true);
+  refreshCut();
   try{await rest('saw_bars?id=eq.'+id,Object.assign({method:'PATCH',body:JSON.stringify({done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:b.skipped})},QUIET))}
-  catch(e){Object.assign(b,before);toast(failMsg(e),true);render(true)}
+  catch(e){Object.assign(b,before);toast(failMsg(e),true);refreshCut()}
 }
 async function toggleHold(item){
   const cur=(S.job.held_items||[]).slice(),on=cur.includes(item),next=on?cur.filter(x=>x!==item):cur.concat(item);
@@ -1033,6 +1053,20 @@ async function vqUpdate(){
   }catch(e){toast('Could not reach the portal. Check the connection.',true)}
 }
 
+// In the full list, the side list follows where you have scrolled to.
+function markRail(){
+  document.querySelectorAll('.g').forEach(b=>{const on=b.dataset.v===S.grp;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current')});
+}
+let spyT=null;
+document.addEventListener('scroll',function(ev){
+  const e=ev.target;if(!e||e.id!=='bars'||!fullList())return;
+  clearTimeout(spyT);spyT=setTimeout(function(){
+    const top=e.scrollTop+60;let cur=null;
+    document.querySelectorAll('.gsec').forEach(x=>{if(x.offsetTop<=top)cur=x});
+    if(cur&&cur.dataset.k!==S.grp){S.grp=cur.dataset.k;markRail();const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+  },120);
+},true);
+
 // ── wiring ───────────────────────────────────────────────────────────────────
 document.addEventListener('click',function(ev){
   lastTouch=Date.now();
@@ -1053,7 +1087,12 @@ document.addEventListener('click',function(ev){
   else if(a==='odone')toggleOfficeDone(id);
   else if(a==='ofilter'){S.ofilter=v;render()}
   else if(a==='print')window.print();
-  else if(a==='grp'){S.grp=v;render(true);const e=$('#bars');if(e)e.scrollTop=0;const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+  else if(a==='grp'){
+    S.grp=v;
+    if(fullList()){const sec=[...document.querySelectorAll('.gsec')].find(x=>x.dataset.k===v),e=$('#bars');if(sec&&e)e.scrollTop=Math.max(0,sec.offsetTop-10);markRail()}
+    else{render(true);const e=$('#bars');if(e)e.scrollTop=0;const on=$('.g.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+  }
+  else if(a==='fulltoggle'){try{localStorage.setItem('wm_saw_full',fullList()?'0':'1')}catch(e){}render(true);const on=$('.g.on');if(fullList()&&on)on.click()}
   else if(a==='tick')tickBar(id);
   else if(a==='hold')toggleHold(v);
   else if(a==='vqload')vqFind(v);
