@@ -653,10 +653,10 @@ function barCard(b,g,nextBar){
       return '<tr class="'+(c.qty>1?'many':'')+(hold?' hold':'')+(was?' was':'')+'"><td class="ang num'+(c.l?'':' sq')+'">'+(c.l?esc(c.l):'square')+'</td><td class="sz num">'+mm(c.size)+' <small>mm</small></td>'+
       '<td class="ang num'+(c.r?'':' sq')+'">'+(c.r?esc(c.r):'square')+'</td><td class="qty num">× '+c.qty+'</td><td class="itm num">'+esc(itemLabel(c.item))+(hold?' <span class="tag amber">On hold</span>':was?' <span class="tag green">Cut</span>':'')+'</td></tr>'}).join('')+'</table></section>';
 }
-// The item summary across the top of the cut sheet. Supervisors and above tap an item to
-// take it off the cut sheet (on hold) or put it back.
+// The item summary across the top of the cut sheet. Any signed-in staff member taps an item
+// to take it off the cut sheet (on hold, after a confirm) or put it back.
 function itemsHTML(){
-  const st=itemStats(),H=heldSet(),can=isSup();let shut=false;try{shut=localStorage.getItem('wm_saw_items')==='0'}catch(e){}
+  const st=itemStats(),H=heldSet(),can=true;let shut=false;try{shut=localStorage.getItem('wm_saw_items')==='0'}catch(e){}
   const nHold=st.filter(x=>H.has(x.item)).length;
   let h='<div class="items"><div class="ihead"><b>'+plural(st.length,'item')+' on this cut sheet</b><span>'+(nHold?plural(nHold,'item')+' on hold':'All on')+(can&&!shut?'. Tap an item to take it off the cut sheet or put it back.':'')+'</span>'+
     '<span class="grow"></span><button class="btn sm" data-act="itemsfold" aria-expanded="'+!shut+'">'+(shut?'Show items':'Hide')+'</button></div>';
@@ -704,9 +704,9 @@ async function tickBar(id){
   catch(e){Object.assign(b,before);toast(failMsg(e),true);render(true)}
 }
 async function toggleHold(item){
-  if(!isSup())return;
   const cur=(S.job.held_items||[]).slice(),on=cur.includes(item),next=on?cur.filter(x=>x!==item):cur.concat(item);
   const pieces=S.bars.reduce((a,b)=>a+b.cuts.reduce((x,c)=>x+(c.item===item?c.qty:0),0),0);
+  if(!on){const a=await ask('Put '+itemLabel(item)+' on hold?',plural(pieces,'piece')+' come off the cut sheet until it is switched back on.','Put on hold');if(!a.ok)return}
   S.job.held_items=next;render(true);
   try{await rest('saw_jobs?id=eq.'+S.job.id,Object.assign({method:'PATCH',body:JSON.stringify({held_items:next,updated_at:new Date().toISOString()})},QUIET));
     toast(on?itemLabel(item)+' is back on the cut sheet.':itemLabel(item)+' is on hold. '+plural(pieces,'piece')+' taken off the cut sheet.')}
