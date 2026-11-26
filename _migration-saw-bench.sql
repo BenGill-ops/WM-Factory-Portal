@@ -204,3 +204,28 @@ revoke all on public.extn_shapes from anon, authenticated;
 grant select (extn_code, descr, w_mm, h_mm, path, built_at) on public.extn_shapes to authenticated;
 create policy "staff read extn shapes" on public.extn_shapes for select to authenticated using (public.is_staff());
 -- app_config.shapes_build_key lets the build function be called without the service key.
+
+-- Pick and Cut sections fed from ESP, and per-cut ticks (26/11/2026).
+-- esp_job_headings: how far four ESP headings have got per job (Pick Stock, Metal Order,
+--   Metal Arrived, Cut), filled by esp-sync\esp-headings-sync.ps1.
+-- saw_board (view): one row per ESP job in Pre-production / Production with those headings,
+--   whether vQuote's cutting plan is copied, and the Saw Bench job if one is open.
+--   Pick list = stage 2 and Metal Order not finished. Cut list = stage 3 and Cut not finished.
+-- saw_open_from_vquote(quote, job_number): any staff member opens (or creates from
+--   vquote_cutplans) the Saw Bench job for a quote; asks for the plan if it isn't copied yet.
+-- saw_jobs.pin_pick / pin_cut: a job the office added by hand stays on that list.
+-- saw_bars.done_cuts: positions in "cuts" that are cut; "done" = every cut not on hold is cut.
+--   (saw_bars.skipped is no longer used.)
+-- The SQL for the view and function is in the live database (migration saw_bench_sections_esp).
+create table if not exists public.esp_job_headings (
+  esp_oid       integer not null,
+  work_type     text not null,
+  std_min       integer,
+  claimed_min   integer,
+  last_claim_at timestamptz,
+  synced_at     timestamptz not null default now(),
+  primary key (esp_oid, work_type)
+);
+alter table public.saw_jobs add column if not exists pin_pick boolean not null default false;
+alter table public.saw_jobs add column if not exists pin_cut  boolean not null default false;
+alter table public.saw_bars add column if not exists done_cuts jsonb not null default '[]'::jsonb;

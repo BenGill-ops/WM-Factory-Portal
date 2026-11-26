@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Saw Bench">
 <!-- Saw Bench: cut sheets and pick sheets for the saw screen.
      Shown inside index.html (Saw Bench page) in an iframe, and opened on its own
      full-screen on the touch screen at the saw. Kept in its own file so its
@@ -60,6 +63,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .tag.amber{background:var(--amber-soft);color:var(--amber)}
 .tag.green{background:var(--green-soft);color:var(--green-dark)}
 .tag.red{background:var(--red-soft);color:var(--red)}
+
+/* ── home: one tile per stage ── */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;min-height:min(70vh,640px)}
+@media (max-width:700px){.tiles{grid-template-columns:minmax(0,1fr)}}
+.tile{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:28px;border-radius:20px;background:var(--surface);border:3px solid var(--line);min-height:300px}
+.tile:active{border-color:var(--green)}
+.tile.tpick{border-top:14px solid #3b6ea5}
+.tile.tcut{border-top:14px solid var(--green)}
+.tstage{font-size:.95rem;font-weight:700;color:var(--muted)}
+.tname{font-size:4rem;font-weight:800;line-height:1.05}
+.tblurb{color:var(--muted);font-size:1rem;max-width:32ch;margin-top:6px}
+.tcount{font-size:5.5rem;font-weight:800;line-height:1;margin-top:auto;padding-top:24px}
+.tlabel{font-weight:700;font-size:1.05rem}
+.lhead{font-size:1rem;margin:26px 0 10px;color:var(--muted)}
+.secname{font-weight:800;font-size:1.05rem;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;margin-right:4px}
+.secname small{font-size:.75rem;font-weight:500;color:rgba(255,255,255,.7)}
 
 /* ── job list ── */
 .jobs{display:grid;gap:12px}
@@ -129,7 +148,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .res{grid-column:1/-1;font-weight:700;font-size:.9rem;color:var(--amber);display:none}
 .pl.short .res{display:block}
 @media (max-width:820px){.pl{grid-template-columns:minmax(0,1fr) auto}.step{grid-column:1/-1;justify-content:flex-end}}
-.foot{flex:none;background:var(--surface);border-top:2px solid var(--line);padding:10px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.foot{flex:none;background:var(--surface);border-top:2px solid var(--line);padding:10px 16px max(10px,env(safe-area-inset-bottom));display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .foot .sum{flex:1;min-width:200px;font-weight:700;font-size:1.05rem}
 .foot .sum small{display:block;font-weight:500;color:var(--muted);font-size:.8rem}
 .order{background:var(--surface);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:2px solid var(--amber)}
@@ -250,7 +269,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 button.it:active{background:var(--sunk)}
 .cuts tr.hold td{background:var(--amber-soft)}
 .cuts tr.hold .sz,.cuts tr.hold .ang,.cuts tr.hold .qty{text-decoration:line-through;color:var(--amber);opacity:.75}
-.cuts tr.was .sz,.cuts tr.was .ang,.cuts tr.was .qty{opacity:.35}
+.cuts .ct{width:84px}
+.ctk{width:64px;height:var(--tap);border-radius:10px;border:2px solid var(--green);background:#fff;color:var(--green-dark);display:inline-grid;place-items:center}
+.ctk svg{width:28px;height:28px;opacity:.35}
+.ctk.on{background:var(--green);color:#fff}
+.ctk.on svg{opacity:1}
+.cuts tr.cdone td{background:var(--green-soft)}
+.cuts tr.cdone .sz,.cuts tr.cdone .ang,.cuts tr.cdone .qty,.cuts tr.cdone .itm{opacity:.45}
+.strip i.dn{background:var(--green);color:#fff}
 .strip i.h{background:repeating-linear-gradient(90deg,var(--amber-soft) 0 5px,#f3cfa3 5px 10px);color:var(--amber)}
 .bh .tag{white-space:normal}
 .g.held .c,.g.held .n{color:var(--amber)}
@@ -471,7 +497,7 @@ function ask(title,body,okLabel,extraHTML){
 }
 
 // ── state ────────────────────────────────────────────────────────────────────
-const S={shapes:{},vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
+const S={section:(function(){try{const v=localStorage.getItem('wm_saw_section');return v==='pick'||v==='cut'?v:null}catch(e){return null}})(),board:[],adding:false,shapes:{},vq:null,waits:[],view:'jobs',jobs:[],showDone:false,job:null,pick:[],bars:[],tab:'pick',filter:'all',grp:null,imp:null,err:'',loading:true,busy:false};
 const fullList=()=>{try{return localStorage.getItem('wm_saw_full')!=='0'}catch(e){return true}};
 const pending={};   // line id -> timer, so quick taps on − / + save once
 let lastTouch=0;
@@ -480,10 +506,45 @@ let lastTouch=0;
 async function loadJobs(quiet){
   if(!quiet){S.loading=true;render()}
   try{
-    S.jobs=await rest('saw_job_summary?order=created_at.desc&limit=200'+(S.showDone?'':'&status=eq.Active'))||[];S.err='';
+    const[board,jobs]=await Promise.all([rest('saw_board?order=due_date.asc.nullslast&limit=500'),rest('saw_job_summary?order=created_at.desc&limit=300'+(S.showDone?'':'&status=eq.Active'))]);
+    S.board=board||[];S.jobs=jobs||[];S.err='';
   }catch(e){S.err=(e.status===401||e.status===403)?'signin':'Could not reach the portal. Check the Wi-Fi.'}
   await checkWaits();
   S.loading=false;if(S.view==='jobs')render();
+}
+// ── the two lists ────────────────────────────────────────────────────────────
+// Pick  = ESP jobs in Pre-production whose "Metal Order" heading isn't finished yet.
+// Cut   = ESP jobs in Production whose "Cut" heading isn't finished yet.
+// Plus, in either list, any job the office added to it by hand.
+const SEC={pick:{name:'Pick',stage:'Pre-production',blurb:'Walk the stock, count what is there, send the shortages to the office.'},
+           cut:{name:'Cut',stage:'Production',blurb:'The cutting plan for each job, ticked off cut by cut.'}};
+const espDone=(std,claimed)=>std>0&&claimed>=std;
+function sectionRows(sec){
+  const byId={};S.jobs.forEach(j=>{byId[j.id]=j});
+  const used=new Set(),rows=[];
+  S.board.forEach(b=>{
+    const j=b.saw_job_id?byId[b.saw_job_id]:null;
+    if(j&&used.has(j.id))return;
+    const due=sec==='pick'?(b.stage===2&&b.order_std>0&&!espDone(b.order_std,b.order_claimed)):(b.stage===3&&b.cut_std>0&&!espDone(b.cut_std,b.cut_claimed));
+    if(!due&&!(j&&(sec==='pick'?j.pin_pick:j.pin_cut)))return;
+    if(j)used.add(j.id);
+    rows.push({esp:b,job:j});
+  });
+  S.jobs.forEach(j=>{if(used.has(j.id))return;if((sec==='pick'?j.pin_pick:j.pin_cut)||j.status==='Done')rows.push({esp:null,job:j})});
+  return rows;
+}
+const rowWaiting=r=>!!(r.job&&r.job.pick_sent_at);       // pick is with the office
+function setSection(sec){S.section=sec;S.adding=false;S.imp=null;try{if(sec)localStorage.setItem('wm_saw_section',sec);else localStorage.removeItem('wm_saw_section')}catch(e){}}
+async function openRow(jobId,quote,jobNumber){
+  if(jobId)return openJob(jobId);
+  if(!/^\d{1,9}$/.test(String(quote||'')))return toast('ESP has no quote number on this job, so its sheets can’t be found in vQuote.',true);
+  if(S.busy)return;S.busy=true;
+  try{
+    const id=await rest('rpc/saw_open_from_vquote',{method:'POST',body:JSON.stringify({p_quote:+quote,p_job_number:jobNumber||null})});
+    S.busy=false;
+    if(id){await loadJobs(true);return openJob(+id)}
+    toast('The cutting plan for quote '+quote+' isn’t in the portal yet. The office PC has been asked to fetch it from vQuote. Try again in about 15 minutes.');
+  }catch(e){S.busy=false;toast(e.status===401||e.status===403?'Sign in again to open this job.':'Could not open the job. Check the Wi-Fi.',true)}
 }
 async function openJob(id,quiet){
   if(!quiet){S.view='job';S.job=S.jobs.find(j=>j.id===id)||{id:id};S.pick=[];S.bars=[];S.loading=true;S.grp=null;S.filter='all';render()}
@@ -494,15 +555,14 @@ async function openJob(id,quiet){
     const same=quiet&&JSON.stringify([j&&j[0],pick,bars])===JSON.stringify([S.job,S.pick,S.bars]);
     if(j&&j[0])S.job=j[0];S.pick=pick;S.bars=bars;S.loading=false;S.err='';
     if(!quiet){S.vq=null;if(isSup()&&S.job.quote_num&&/^\d+$/.test(S.job.quote_num))rest('vquote_cutplans?quote_num=eq.'+S.job.quote_num+'&select=quote_num,quote_vers,bar_count,synced_at').then(r=>{if(r&&r[0]&&S.job&&String(S.job.quote_num)===String(r[0].quote_num)){S.vq=r[0];if(vqNewer())render(true)}}).catch(()=>{})}
-    if(!quiet&&isSup()&&pick.length&&S.job.pick_sent_at)S.tab='order';else
-    if(!quiet)S.tab=(pick.length&&(!bars.length||S.job.pick_counted<S.job.pick_total||!S.job.pick_sent_at))?'pick':'cut';
+    if(!quiet)S.tab=S.section==='cut'?'cut':(isSup()&&pick.length&&S.job.pick_sent_at?'order':'pick');
     if(!same)render(true);
     loadShapes();
   }catch(e){if(!quiet){S.loading=false;S.err=(e.status===401||e.status===403)?'signin':'Could not load this job. Check the Wi-Fi.';render()}}
 }
 setInterval(function(){
   if(document.hidden||!signedIn()||S.busy||$('.ov')||$('.pdf'))return;
-  if(S.view==='jobs'&&!S.imp)loadJobs(true);else if(S.view==='job'&&S.job)openJob(S.job.id,true);
+  if(S.view==='jobs'&&!S.imp&&!S.adding)loadJobs(true);else if(S.view==='job'&&S.job)openJob(S.job.id,true);
 },60000);
 document.addEventListener('visibilitychange',function(){if(document.hidden)return;keepFresh();wake();if(S.view==='jobs'&&!S.imp&&signedIn())loadJobs(true)});
 // Keep the bench screen from going to sleep while this page is showing.
@@ -545,18 +605,19 @@ const itemDescr=it=>(S.job&&S.job.item_info&&S.job.item_info[it])||'';
 // the window or door number inside the item description, e.g. W101 or D12
 const itemCode=it=>{const m=/\b([WD]\d{1,4}[A-Z]?)\b/.exec(itemDescr(it));return m?m[1]:''};
 const itemNo=it=>{const m=/(\d+)$/.exec(it||'');return m?+m[1]:1e9};
-// todo = cut it; hold = every piece on it is on hold; done = cut;
-// more = cut earlier while some pieces were on hold, and those pieces are now back on.
+// Each bar remembers which of its cuts are done (done_cuts = positions in "cuts").
+// todo = nothing cut yet; part = some cuts done; done = every cut that isn't on hold is done;
+// hold = nothing cut and every piece on it is on hold.
 function barState(b,H){
-  H=H||heldSet();const heldIdx=[];b.cuts.forEach((c,i)=>{if(H.has(c.item))heldIdx.push(i)});
-  if(!b.done)return{st:heldIdx.length&&heldIdx.length===b.cuts.length?'hold':'todo',heldIdx:heldIdx,out:[]};
-  const out=(b.skipped||[]).filter(i=>b.cuts[i]&&!H.has(b.cuts[i].item));
-  return{st:out.length?'more':'done',heldIdx:heldIdx,out:out};
+  H=H||heldSet();const dn=new Set(b.done_cuts||[]),heldIdx=[],open=[];
+  b.cuts.forEach((c,i)=>{if(dn.has(i))return;if(H.has(c.item))heldIdx.push(i);else open.push(i)});
+  return{st:open.length?(dn.size?'part':'todo'):(dn.size||!heldIdx.length?'done':'hold'),heldIdx:heldIdx,open:open,dn:dn};
 }
+const isOpenBar=(b,H)=>{const s=barState(b,H).st;return s==='todo'||s==='part'};
 function barCounts(bars){const H=heldSet();let total=0,done=0,hold=0;bars.forEach(b=>{const s=barState(b,H).st;if(s==='hold')hold++;else{total++;if(s==='done')done++}});return{total:total,done:done,hold:hold}}
 function itemStats(){
   const m={};
-  S.bars.forEach(b=>b.cuts.forEach((c,i)=>{const k=c.item||'';const o=m[k]||(m[k]={item:k,total:0,cut:0});o.total+=c.qty;if(b.done&&!(b.skipped||[]).includes(i))o.cut+=c.qty}));
+  S.bars.forEach(b=>b.cuts.forEach((c,i)=>{const k=c.item||'';const o=m[k]||(m[k]={item:k,total:0,cut:0});o.total+=c.qty;if((b.done_cuts||[]).includes(i))o.cut+=c.qty}));
   return Object.values(m).sort((a,b)=>itemNo(a.item)-itemNo(b.item)||String(a.item).localeCompare(b.item));
 }
 const shortOf=l=>l.qty_in_stock==null?0:Math.max(0,l.qty_needed-l.qty_in_stock);
@@ -609,33 +670,63 @@ async function doLogin(){
 }
 
 function jobsHTML(){
-  let h='<div class="top"><div class="grow"><h1>Saw Bench</h1><div class="sub">'+esc(me().name||'')+'</div></div>'+
+  const sec=S.section;
+  let h='<div class="top">'+(sec?'<button class="tbtn" data-act="home" aria-label="Back to Pick and Cut">'+ICON.back+'</button>':'')+
+    '<div class="grow"><h1>'+(sec?SEC[sec].name+' sheets':'Saw Bench')+'</h1><div class="sub">'+(sec?SEC[sec].stage+' jobs':esc(me().name||''))+'</div></div>'+
     '<button class="tbtn" data-act="reload" aria-label="Refresh">'+ICON.refresh+'</button>'+
     (inFrame?'<a class="tbtn" href="saw-bench.html" target="_blank" rel="noopener" style="text-decoration:none">Full screen</a>':'<button class="tbtn" data-act="signout">Sign out</button>')+'</div>';
   h+='<div class="main"><div class="pad">';
   if(S.err)h+='<div class="note red">'+esc(S.err)+'</div>';
-  if(isSup())h+=S.imp?impHTML():'<div class="load"><form class="vq" id="vqform"><b>Load a job from vQuote</b><p>Type the quote number. The cut sheet and pick sheet come straight from vQuote.</p>'+
-    '<div class="rowx"><label class="field" style="flex:1;min-width:150px">Quote number<input id="vqnum" inputmode="numeric" autocomplete="off" placeholder="21967"></label><button class="btn pri" type="submit"'+(S.busy?' disabled':'')+'>'+(S.busy?'Looking…':'Find in vQuote')+'</button></div>'+waitsHTML()+'</form>'+
-    '<div class="drop" id="drop"><b>Or drop the PDFs</b><p>The vQuote Extrusion Bar Summary and Optimised Cutting Plan, both at once.</p>'+
-    '<button class="btn" data-act="choose">Choose PDFs</button><input type="file" id="files" accept="application/pdf,.pdf" multiple hidden></div></div>';
-  if(isSup())h+='<div class="bar2"><button class="chip'+(S.showDone?'':' on')+'" data-act="showdone" data-v="0">On the bench</button><button class="chip'+(S.showDone?' on':'')+'" data-act="showdone" data-v="1">Include finished</button></div>';
-  if(S.loading&&!S.jobs.length)h+='<div class="empty">Loading jobs…</div>';
-  else if(!S.jobs.length)h+='<div class="empty"><b>No jobs on the saw bench</b>'+(isSup()?'Type a quote number above to put a job here.':'Jobs appear here when the office loads the cut sheets.')+'</div>';
-  else h+='<div class="jobs">'+S.jobs.map(jobCard).join('')+'</div>';
+  if(!sec){
+    const tile=k=>{const rows=sectionRows(k).filter(r=>!(r.job&&r.job.status==='Done')),n=k==='pick'?rows.filter(r=>!rowWaiting(r)).length:rows.length,w=k==='pick'?rows.length-n:0;
+      return '<button class="tile t'+k+'" data-act="section" data-v="'+k+'"><span class="tstage">'+SEC[k].stage+'</span><span class="tname">'+SEC[k].name+'</span><span class="tblurb">'+SEC[k].blurb+'</span>'+
+        '<span class="tcount num">'+(S.loading&&!S.board.length&&!S.jobs.length?'…':n)+'</span><span class="tlabel">'+(k==='pick'?(n===1?'job to pick':'jobs to pick')+(w?' &nbsp; '+w+' with the office':''):(n===1?'job to cut':'jobs to cut'))+'</span></button>'};
+    return h+'<div class="tiles">'+tile('pick')+tile('cut')+'</div></div></div>';
+  }
+  if(isSup()){
+    if(S.imp)h+=impHTML();
+    else if(S.adding)h+='<div class="load"><form class="vq" id="vqform"><b>Add a job to the '+SEC[sec].name+' list from vQuote</b><p>Type the quote number. The cut sheet and pick sheet come straight from vQuote.</p>'+
+      '<div class="rowx"><label class="field" style="flex:1;min-width:150px">Quote number<input id="vqnum" inputmode="numeric" autocomplete="off" placeholder="21967"></label><button class="btn pri" type="submit"'+(S.busy?' disabled':'')+'>'+(S.busy?'Looking…':'Find in vQuote')+'</button></div>'+waitsHTML()+'</form>'+
+      '<div class="drop" id="drop"><b>Or drop the PDFs</b><p>The vQuote Extrusion Bar Summary and Optimised Cutting Plan, both at once.</p>'+
+      '<button class="btn" data-act="choose">Choose PDFs</button><input type="file" id="files" accept="application/pdf,.pdf" multiple hidden></div></div>';
+    h+='<div class="bar2"><button class="chip'+(S.adding?' on':'')+'" data-act="adding">'+(S.adding?'Close':'Add a job by hand')+'</button>'+
+      '<button class="chip'+(S.showDone?' on':'')+'" data-act="showdone" data-v="'+(S.showDone?'0':'1')+'">'+(S.showDone?'Hide finished':'Show finished')+'</button>'+(!S.adding&&S.waits.length?'<span class="tag amber">'+plural(S.waits.length,'quote')+' on the way from vQuote</span>':'')+'</div>';
+  }
+  const rows=sectionRows(sec);
+  if(S.loading&&!rows.length)return h+'<div class="empty">Loading jobs…</div></div></div>';
+  const live=rows.filter(r=>!(r.job&&r.job.status==='Done')),fin=rows.filter(r=>r.job&&r.job.status==='Done');
+  if(sec==='pick'){
+    const todo=live.filter(r=>!rowWaiting(r)),sent=live.filter(rowWaiting);
+    h+=todo.length?'<div class="jobs">'+todo.map(r=>rowCard(sec,r)).join('')+'</div>':'<div class="empty"><b>Nothing to pick</b>A job shows here when it goes into Pre-production in ESP and its metal hasn’t been ordered yet.</div>';
+    if(sent.length)h+='<h2 class="lhead">With the office to order</h2><div class="jobs">'+sent.map(r=>rowCard(sec,r)).join('')+'</div>';
+  }else h+=live.length?'<div class="jobs">'+live.map(r=>rowCard(sec,r)).join('')+'</div>':'<div class="empty"><b>Nothing to cut</b>A job shows here when it goes into Production in ESP.</div>';
+  if(fin.length)h+='<h2 class="lhead">Finished</h2><div class="jobs">'+fin.map(r=>rowCard(sec,r)).join('')+'</div>';
   return h+'</div></div>';
 }
-function jobCard(j){
-  const pct=j.bars_total?Math.round(100*j.bars_done/j.bars_total):0;
-  let tags='';
-  if(j.status==='Done')tags+='<span class="tag">Finished</span> ';
-  if(j.pick_total&&!j.pick_sent_at)tags+='<span class="tag amber">Pick sheet to do</span> ';
-  if(j.pick_sent_at&&j.bars_short>0)tags+=j.ordered_at?'<span class="tag green">'+plural(j.bars_short,'bar')+' ordered</span> ':'<span class="tag amber">'+plural(j.bars_short,'bar')+' to order</span> ';
-  if(j.pick_sent_at&&j.bars_short===0)tags+='<span class="tag green">All in stock</span> ';
-  if(!j.bars_total)tags+='<span class="tag">No cutting plan yet</span> ';
-  return '<button class="job" data-act="open" data-id="'+j.id+'"><div style="min-width:0"><div class="q num">'+esc(j.quote_num||j.job_number||'Job')+'</div>'+
-    '<div class="t">'+esc(j.title||j.customer||'')+'</div><div class="m">'+(j.quote_version?'Ver '+esc(j.quote_version):'')+(j.job_number?' &nbsp; Job '+esc(j.job_number):'')+' &nbsp; '+tags+'</div></div>'+
-    '<div class="stats"><div><b class="num">'+j.pick_counted+'/'+j.pick_total+'</b><span>lines picked</span></div><div><b class="num">'+j.bars_done+'/'+j.bars_total+'</b><span>bars cut</span></div></div>'+
-    '<div class="meter" role="img" aria-label="'+pct+'% cut"><i style="width:'+pct+'%"></i></div></button>';
+const shortDate=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}catch(e){return''}};
+function rowCard(sec,r){
+  const b=r.esp,j=r.job,quote=(j&&j.quote_num)||(b&&b.quote_code)||'',jobNo=(b&&b.job_number)||(j&&j.job_number)||'';
+  const title=(b&&(b.customer||b.title))||(j&&(j.title||j.customer))||'';
+  let tags='',stats='',meter='';
+  if(j&&j.status==='Done')tags+='<span class="tag">Finished</span> ';
+  if(!b&&j&&j.status!=='Done')tags+='<span class="tag">Added by hand</span> ';
+  if(b&&b.due_date)tags+='<span class="tag">Due '+esc(shortDate(b.due_date))+'</span> ';
+  if(!j&&b&&!(b.vq_bars>0))tags+='<span class="tag amber">Sheets not copied from vQuote yet</span> ';
+  if(sec==='pick'){
+    if(j&&j.pick_sent_at)tags+=(j.bars_short>0?(j.ordered_at?'<span class="tag green">'+plural(j.bars_short,'bar')+' ordered</span> ':'<span class="tag amber">'+plural(j.bars_short,'bar')+' to order</span> '):'<span class="tag green">All in stock</span> ');
+    if(b&&espDone(b.order_std,b.order_claimed))tags+='<span class="tag green">Metal ordered in ESP</span> ';
+    if(b&&espDone(b.arrived_std,b.arrived_claimed))tags+='<span class="tag green">Metal arrived</span> ';
+    stats=j?'<div><b class="num">'+j.pick_counted+'/'+j.pick_total+'</b><span>lines counted</span></div>':'<div><b>–</b><span>not started</span></div>';
+  }else{
+    if(b&&b.arrived_std>0&&!espDone(b.arrived_std,b.arrived_claimed))tags+='<span class="tag amber">Metal not marked arrived in ESP</span> ';
+    if(j&&(j.held_items||[]).length)tags+='<span class="tag amber">'+plural(j.held_items.length,'item')+' on hold</span> ';
+    const pct=j&&j.bars_total?Math.round(100*j.bars_done/j.bars_total):0;
+    stats=j?'<div><b class="num">'+j.bars_done+'/'+j.bars_total+'</b><span>bars cut</span></div>':'<div><b>–</b><span>not started</span></div>';
+    meter='<div class="meter" role="img" aria-label="'+pct+'% cut"><i style="width:'+pct+'%"></i></div>';
+  }
+  return '<button class="job" data-act="openrow" data-id="'+(j?j.id:'')+'" data-q="'+esc(quote)+'" data-jn="'+esc(jobNo)+'"><div style="min-width:0"><div class="q num">'+(jobNo?'Job '+esc(jobNo):'Quote '+esc(quote))+'</div>'+
+    '<div class="t">'+esc(title)+'</div><div class="m">'+(jobNo&&quote?'Quote '+esc(quote)+(j&&j.quote_version?' ver '+esc(j.quote_version):'')+' &nbsp; ':'')+tags+'</div></div>'+
+    '<div class="stats">'+stats+'</div>'+meter+'</button>';
 }
 function impHTML(){
   const m=S.imp,q=m.meta;
@@ -649,10 +740,10 @@ function impHTML(){
   (m.warn||[]).forEach(w=>{h+='<div class="note">'+esc(w)+'</div>'});
   if(m.pick&&m.bars&&!vqs)h+=m.diffs.length?'<div class="note">The two sheets don’t agree on '+plural(m.diffs.length,'extrusion')+' ('+esc(m.diffs.slice(0,6).map(d=>d.extrusion+': pick '+d.pick+', plan '+d.plan).join('; '))+'). They may be from different versions of the quote.</div>'
     :'<div class="note ok">The two sheets agree: every pick line matches the bars on the cutting plan.</div>';
-  if(m.existing)h+='<div class="note">Quote '+esc(q.quote_num)+' is already on the saw bench. Loading replaces its sheets. Stock counts and ticked bars are kept wherever the line or bar is unchanged.</div>';
+  if(m.existing)h+='<div class="note">Quote '+esc(q.quote_num)+' is already on the Saw Bench. Loading replaces its sheets. Stock counts and ticked bars are kept wherever the line or bar is unchanged.</div>';
   h+='<div class="rowx"><label class="field" style="flex:1;min-width:180px;max-width:260px">Job number (optional)<input id="impjob" inputmode="numeric" value="'+esc(m.job_number||'')+'"></label>'+
     (vqs?'':'<input type="file" id="files" accept="application/pdf,.pdf" multiple hidden><button class="btn" data-act="choose">Add the other PDF</button>')+
-    '<span style="flex:1"></span><button class="btn" data-act="impcancel">Cancel</button><button class="btn pri" data-act="impgo"'+(S.busy?' disabled':'')+'>'+(S.busy?'Loading…':(m.existing?'Replace sheets':'Load onto saw bench'))+'</button></div></div>';
+    '<span style="flex:1"></span><button class="btn" data-act="impcancel">Cancel</button><button class="btn pri" data-act="impgo"'+(S.busy?' disabled':'')+'>'+(S.busy?'Loading…':(m.existing?'Replace sheets':'Add to the '+(S.section?SEC[S.section].name:'')+' list'))+'</button></div></div>';
   return h;
 }
 
@@ -664,14 +755,14 @@ function jobHTML(){
   let h='<div class="top"><button class="tbtn" data-act="back" aria-label="Back to jobs">'+ICON.back+'</button>'+
     '<div class="grow"><h1><span class="num">'+esc(j.quote_num||j.job_number||'')+'</span> '+esc(j.title||j.customer||'')+'</h1>'+
     '<div class="sub">'+(j.quote_version?'Ver '+esc(j.quote_version):'')+(j.job_number?'  Job '+esc(j.job_number):'')+(j.status==='Done'?'  Finished':'')+'</div></div>'+
-    '<div class="tabs" role="tablist"><button class="tab'+(S.tab==='pick'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='pick')+'" data-act="tab" data-v="pick">Pick<small class="num" id="tpick">'+counted+' of '+S.pick.length+'</small></button>'+
-    '<button class="tab'+(S.tab==='cut'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='cut')+'" data-act="tab" data-v="cut">Cut<small class="num" id="tcut">'+bc.done+' of '+bc.total+'</small></button>'+
-    (isSup()&&S.pick.length?'<button class="tab'+(S.tab==='order'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='order')+'" data-act="tab" data-v="order">Order<small class="num" id="tord">'+S.pick.reduce((a,l)=>a+orderOf(l),0)+' bars</small></button>':'')+'</div>'+
+    (S.section==='cut'?'<span class="secname">Cut sheet<small class="num" id="tcut">'+bc.done+' of '+bc.total+' bars</small></span>'
+      :'<div class="tabs" role="tablist"><button class="tab'+(S.tab==='pick'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='pick')+'" data-act="tab" data-v="pick">Pick<small class="num" id="tpick">'+counted+' of '+S.pick.length+'</small></button>'+
+        (isSup()&&S.pick.length?'<button class="tab'+(S.tab==='order'?' on':'')+'" role="tab" aria-selected="'+(S.tab==='order')+'" data-act="tab" data-v="order">Order<small class="num" id="tord">'+S.pick.reduce((a,l)=>a+orderOf(l),0)+' bars</small></button>':'')+'</div>')+
     '<button class="tbtn" data-act="sheets" aria-label="Sheets and job options">'+ICON.doc+'</button></div>';
   if(S.loading)return h+'<div class="main"><div class="empty">Loading…</div></div>';
   if(S.err)return h+'<div class="main"><div class="pad"><div class="note red">'+esc(S.err)+'</div></div></div>';
-  if(S.tab==='order'&&isSup()&&S.pick.length)return h+orderTabHTML();
-  if(S.tab==='order')S.tab='pick';
+  if(S.section==='cut')S.tab='cut';else if(S.tab==='cut'||(S.tab==='order'&&!(isSup()&&S.pick.length)))S.tab='pick';
+  if(S.tab==='order')return h+orderTabHTML();
   if(S.tab==='pick'){
     if(!S.pick.length)return h+'<div class="main"><div class="empty"><b>No pick sheet loaded for this job</b>The office adds it by dropping the Extrusion Bar Summary PDF on the Saw Bench page.</div></div>';
     const mf=mainFinish();
@@ -684,7 +775,7 @@ function jobHTML(){
     return h;
   }
   if(!S.bars.length)return h+'<div class="main"><div class="empty"><b>No cutting plan loaded for this job</b>The office adds it by dropping the Optimised Cutting Plan PDF on the Saw Bench page.</div></div>';
-  const open=g=>g.bars.some(b=>{const s=barState(b).st;return s==='todo'||s==='more'});
+  const open=g=>g.bars.some(b=>isOpenBar(b));
   if(!S.grp||!gs.find(g=>g.key===S.grp))S.grp=(gs.find(open)||gs[0]).key;
   h+='<div class="main cutwrap">'+(vqNote()?'<div style="padding:12px 16px 0">'+vqNote()+'</div>':'')+itemsHTML()+'<div class="cut"><nav class="rail'+(hasPics()?'':' nopic')+'" aria-label="Extrusions">'+gs.map(railBtn).join('')+'</nav><div class="bars" id="bars">'+barsHTML(gs)+'</div></div></div>';
   return h;
@@ -773,7 +864,7 @@ function railBtn(g){
 }
 // Full list: every extrusion down the page in report order, like the Optimised Cutting Plan.
 // One at a time: just the extrusion picked in the side list.
-function firstOpenBar(){const H=heldSet();return S.bars.find(b=>{const s=barState(b,H).st;return s==='todo'||s==='more'})}
+function firstOpenBar(){const H=heldSet();return S.bars.find(b=>isOpenBar(b,H))}
 function barsHTML(gs){
   if(!fullList())return groupHTML(gs,gs.find(x=>x.key===S.grp));
   const nb=firstOpenBar();
@@ -781,7 +872,7 @@ function barsHTML(gs){
 }
 function groupHTML(gs,g,globalNext){
   const full=fullList(),mf=mainFinish();
-  const H=heldSet(),isOpen=b=>{const s=barState(b,H).st;return s==='todo'||s==='more'};
+  const H=heldSet(),isOpen=b=>isOpenBar(b,H);
   const nextBar=full?globalNext:g.bars.find(isOpen),i=gs.indexOf(g),nextG=gs.slice(i+1).concat(gs.slice(0,i)).find(x=>x.bars.some(isOpen));
   const onHold=g.bars.filter(b=>barState(b,H).st==='hold');
   const lens=[...new Set(g.bars.map(b=>b.bar_length_mm))];
@@ -799,21 +890,22 @@ function barCard(b,g,nextBar){
   let strip='';
   if(!over&&b.bar_length_mm){
     strip='<div class="strip" aria-hidden="true">';
-    b.cuts.forEach(c=>{for(let k=0;k<c.qty;k++){const w=100*c.size/b.bar_length_mm;strip+='<i'+(H.has(c.item)?' class="h"':'')+' style="width:'+w.toFixed(2)+'%">'+(w>9?mm(c.size):'')+'</i>'}});
+    b.cuts.forEach((c,i)=>{for(let k=0;k<c.qty;k++){const w=100*c.size/b.bar_length_mm;strip+='<i'+(bs.dn.has(i)?' class="dn"':H.has(c.item)?' class="h"':'')+' style="width:'+w.toFixed(2)+'%">'+(w>9?mm(c.size):'')+'</i>'}});
     strip+='<i class="w" style="flex:1"></i></div>';
   }
   const shown=bs.st==='done';
   let tags=over?'<span class="tag red">Cuts add up to '+mm(used)+' mm, longer than the bar. Check with the office.</span>':(b.waste_mm!=null?'<span class="tag num">'+mm(b.waste_mm)+' mm left over</span>':'');
-  if(bs.st==='more')tags='<span class="tag amber">'+esc([...new Set(bs.out.map(i=>itemLabel(b.cuts[i].item)))].join(', '))+' is back on. Cut '+(bs.out.length>1?'these pieces':'this piece')+' from this bar’s offcut.</span>';
-  else if(bs.heldIdx.length)tags+='<span class="tag amber">'+plural(bs.heldIdx.reduce((a,i)=>a+b.cuts[i].qty,0),'piece')+' on hold. Don’t cut '+(bs.heldIdx.length>1?'them':'it')+' yet.</span>';
+  if(bs.st==='part')tags+='<span class="tag green">'+bs.dn.size+' of '+(bs.dn.size+bs.open.length)+' cuts done</span>';
+  if(bs.heldIdx.length)tags+='<span class="tag amber">'+plural(bs.heldIdx.reduce((a,i)=>a+b.cuts[i].qty,0),'piece')+' on hold. Don’t cut '+(bs.heldIdx.length>1?'them':'it')+' yet.</span>';
   return '<section class="bc'+(shown?' done':'')+(nextBar&&nextBar.id===b.id?' next':'')+'" id="b'+b.id+'"><div class="bh"><span class="bn num">Bar '+b.bar_no+'</span><span class="bl num">'+mm(b.bar_length_mm)+' mm bar</span>'+tags+
-    '<span class="grow"></span>'+(b.done&&b.done_by?'<span class="bl" style="font-size:.8rem">'+esc(b.done_by)+', '+when(b.done_at)+'</span>':'')+
-    '<button class="tick'+(shown?' on':'')+'" data-act="tick" data-id="'+b.id+'" aria-pressed="'+shown+'">'+ICON.tick+(shown?'Cut':'Mark cut')+'</button></div>'+strip+
-    '<table class="cuts"><tr><th>Left end</th><th>Length</th><th>Right end</th><th>Qty</th><th>For</th></tr>'+
+    '<span class="grow"></span>'+(shown&&b.done_by?'<span class="bl" style="font-size:.8rem">'+esc(b.done_by)+', '+when(b.done_at)+'</span>':'')+
+    '<button class="tick'+(shown?' on':'')+'" data-act="tick" data-id="'+b.id+'" aria-pressed="'+shown+'">'+ICON.tick+(shown?'Bar cut':'Whole bar cut')+'</button></div>'+strip+
+    '<table class="cuts"><tr><th>Left end</th><th>Length</th><th>Right end</th><th>Qty</th><th>For</th><th>Cut</th></tr>'+
     b.cuts.map((c,i)=>{
-      const hold=H.has(c.item),was=bs.st==='more'&&!bs.out.includes(i)&&!hold;
-      return '<tr class="'+(c.qty>1?'many':'')+(hold?' hold':'')+(was?' was':'')+'"><td class="ang num'+(c.l?'':' sq')+'">'+(c.l?esc(c.l):'square')+'</td><td class="sz num">'+mm(c.size)+' <small>mm</small>'+(c.full?'<div class="part">one part of a '+mm(c.full)+' mm length</div>':'')+'</td>'+
-      '<td class="ang num'+(c.r?'':' sq')+'">'+(c.r?esc(c.r):'square')+'</td><td class="qty num">× '+c.qty+'</td><td class="itm num">'+esc(itemLabel(c.item))+(itemCode(c.item)?' <span class="wcode">'+esc(itemCode(c.item))+'</span>':'')+(hold?' <span class="tag amber">On hold</span>':was?' <span class="tag green">Cut</span>':'')+'</td></tr>'}).join('')+'</table></section>';
+      const cutDone=bs.dn.has(i),hold=!cutDone&&H.has(c.item);
+      return '<tr class="'+(c.qty>1?'many':'')+(hold?' hold':'')+(cutDone?' cdone':'')+'"><td class="ang num'+(c.l?'':' sq')+'">'+(c.l?esc(c.l):'square')+'</td><td class="sz num">'+mm(c.size)+' <small>mm</small>'+(c.full?'<div class="part">one part of a '+mm(c.full)+' mm length</div>':'')+'</td>'+
+      '<td class="ang num'+(c.r?'':' sq')+'">'+(c.r?esc(c.r):'square')+'</td><td class="qty num">× '+c.qty+'</td><td class="itm num">'+esc(itemLabel(c.item))+(itemCode(c.item)?' <span class="wcode">'+esc(itemCode(c.item))+'</span>':'')+'</td>'+
+      '<td class="ct">'+(hold?'<span class="tag amber">On hold</span>':'<button class="ctk'+(cutDone?' on':'')+'" data-act="cutrow" data-id="'+b.id+'" data-v="'+i+'" aria-pressed="'+cutDone+'" aria-label="'+mm(c.size)+' mm '+(cutDone?'cut':'not cut yet')+'">'+ICON.tick+'</button>')+'</td></tr>'}).join('')+'</table></section>';
 }
 // The item summary across the top of the cut sheet. Any signed-in staff member taps an item
 // to take it off the cut sheet (on hold, after a confirm) or put it back.
@@ -860,19 +952,32 @@ function refreshCut(){
   bars.innerHTML=barsHTML(gs);bars.scrollTop=bt;
   rail.innerHTML=gs.map(railBtn).join('');rail.scrollTop=rt;rail.scrollLeft=rl;
   if(items){items.outerHTML=itemsHTML();const il2=$('.ilist');if(il2)il2.scrollTop=it}
-  const c=barCounts(S.bars),t=$('#tcut');if(t)t.textContent=c.done+' of '+c.total;
+  const c=barCounts(S.bars),t=$('#tcut');if(t)t.textContent=c.done+' of '+c.total+' bars';
 }
-async function tickBar(id){
+async function saveBar(b,before){
+  const st=barState(b).st,who=me().name||'';
+  b.done=st==='done';b.skipped=[];
+  if(b.done){b.done_by=who;b.done_at=new Date().toISOString()}else{b.done_by=null;b.done_at=null}
+  refreshCut();
+  try{await rest('saw_bars?id=eq.'+b.id,Object.assign({method:'PATCH',body:JSON.stringify({done_cuts:b.done_cuts,done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:[]})},QUIET))}
+  catch(e){Object.assign(b,before);toast(failMsg(e),true);refreshCut()}
+}
+const barBefore=b=>({done_cuts:(b.done_cuts||[]).slice(),done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:b.skipped});
+// the whole bar at once: tick every cut that isn't on hold, or untick them all
+function tickBar(id){
   const b=S.bars.find(x=>x.id===id);if(!b)return;
   const bs=barState(b);if(bs.st==='hold')return;
-  const before={done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:b.skipped};
-  const now=new Date().toISOString(),who=me().name||'';
-  if(bs.st==='todo'){b.done=true;b.skipped=bs.heldIdx;b.done_by=who;b.done_at=now}                        // pieces on hold are remembered as not cut
-  else if(bs.st==='more'){b.skipped=(b.skipped||[]).filter(i=>!bs.out.includes(i));b.done_by=who;b.done_at=now}
-  else{b.done=false;b.skipped=[];b.done_by=null;b.done_at=null}
-  refreshCut();
-  try{await rest('saw_bars?id=eq.'+id,Object.assign({method:'PATCH',body:JSON.stringify({done:b.done,done_by:b.done_by,done_at:b.done_at,skipped:b.skipped})},QUIET))}
-  catch(e){Object.assign(b,before);toast(failMsg(e),true);refreshCut()}
+  const before=barBefore(b);
+  b.done_cuts=bs.st==='done'?[]:[...bs.dn].concat(bs.open).sort((x,y)=>x-y);
+  saveBar(b,before);
+}
+// one cut at a time
+function tickCut(id,i){
+  const b=S.bars.find(x=>x.id===id);if(!b||!b.cuts[i])return;
+  const before=barBefore(b),dn=new Set(b.done_cuts||[]);
+  if(dn.has(i))dn.delete(i);else dn.add(i);
+  b.done_cuts=[...dn].sort((x,y)=>x-y);
+  saveBar(b,before);
 }
 async function toggleHold(item){
   const cur=(S.job.held_items||[]).slice(),on=cur.includes(item),next=on?cur.filter(x=>x!==item):cur.concat(item);
@@ -880,7 +985,11 @@ async function toggleHold(item){
   if(!on){const a=await ask('Put '+itemLabel(item)+' on hold?',(itemDescr(item)?itemDescr(item)+'. ':'')+plural(pieces,'piece')+' come off the cut sheet until it is switched back on.','Put on hold');if(!a.ok)return}
   S.job.held_items=next;render(true);
   try{await rest('saw_jobs?id=eq.'+S.job.id,Object.assign({method:'PATCH',body:JSON.stringify({held_items:next,updated_at:new Date().toISOString()})},QUIET));
-    toast(on?itemLabel(item)+' is back on the cut sheet.':itemLabel(item)+' is on hold. '+plural(pieces,'piece')+' taken off the cut sheet.')}
+    toast(on?itemLabel(item)+' is back on the cut sheet.':itemLabel(item)+' is on hold. '+plural(pieces,'piece')+' taken off the cut sheet.');
+    const flip={true:[],false:[]};
+    S.bars.forEach(b=>{if(!b.cuts.some(c=>c.item===item))return;const d=barState(b).st==='done';if(d!==!!b.done){b.done=d;flip[d].push(b.id)}});
+    for(const k of ['true','false'])if(flip[k].length)rest('saw_bars?id=in.('+flip[k].join(',')+')',Object.assign({method:'PATCH',body:JSON.stringify({done:k==='true'})},QUIET)).catch(()=>{});
+    refreshCut()}
   catch(e){S.job.held_items=cur;toast(failMsg(e),true);render(true)}
 }
 async function sendPick(){
@@ -917,16 +1026,18 @@ function sheetsDialog(){
     (j.source==='vquote'?'Loaded straight from vQuote, as copied '+when(j.vq_synced_at)+'.':(j.pick_report_at?'Pick sheet printed '+esc(j.pick_report_at)+'. ':'')+(j.cut_report_at?'Cutting plan printed '+esc(j.cut_report_at)+'.':''))+'</p><div style="display:grid;gap:10px">'+
     (j.pick_pdf?'<button class="btn" data-x="pick">View the pick sheet PDF</button>':'')+(j.cut_pdf?'<button class="btn" data-x="cut">View the cutting plan PDF</button>':'')+
     (isSup()&&j.quote_num?'<button class="btn" data-x="vq">Update the sheets from vQuote</button>':'')+
-    (j.status==='Done'?'<button class="btn" data-x="reopen">Put back on the bench</button>':'<button class="btn" data-x="finish">Finish job (take it off the bench)</button>')+
+    (isSup()&&S.section&&j[S.section==='cut'?'pin_cut':'pin_pick']?'<button class="btn" data-x="unpin">Take it off the '+SEC[S.section].name+' list</button>':'')+
+    (j.status==='Done'?'<button class="btn" data-x="reopen">Put back on the lists</button>':(S.section==='cut'||isSup()?'<button class="btn" data-x="finish">Finish job (cutting is done)</button>':''))+
     (isMgr()?'<button class="btn" style="color:var(--red)" data-x="del">Delete this job</button>':'')+'<button class="btn pri" data-x="close">Close</button></div></div>';
   ov.addEventListener('click',async ev=>{
     const b=ev.target.closest('[data-x]');if(!b&&ev.target!==ov)return;const x=b?b.dataset.x:'close';ov.remove();
     if(x==='vq')vqUpdate();
+    if(x==='unpin'){const k=S.section==='cut'?'pin_cut':'pin_pick',p={};p[k]=false;try{await rest('saw_jobs?id=eq.'+j.id,Object.assign({method:'PATCH',body:JSON.stringify(p)},QUIET));S.view='jobs';S.job=null;loadJobs()}catch(e){toast(failMsg(e),true)}}
     if(x==='pick')viewPdf(j.pick_pdf,'Pick sheet');
     if(x==='cut')viewPdf(j.cut_pdf,'Cutting plan');
     if(x==='finish'||x==='reopen'){
       const c=barCounts(S.bars),left=c.total-c.done;
-      if(x==='finish'&&left){const a=await ask('Finish with '+plural(left,'bar')+' not ticked?','The job comes off the saw bench. The office can put it back.','Finish job');if(!a.ok)return}
+      if(x==='finish'&&left){const a=await ask('Finish with '+plural(left,'bar')+' not ticked?','The job comes off both lists. The office can put it back.','Finish job');if(!a.ok)return}
       try{await rest('saw_jobs?id=eq.'+j.id,Object.assign({method:'PATCH',body:JSON.stringify({status:x==='finish'?'Done':'Active',updated_at:new Date().toISOString()})},QUIET));
         if(x==='finish'){S.view='jobs';S.job=null;loadJobs()}else{j.status='Active';render(true)}}catch(e){toast(failMsg(e),true)}
     }
@@ -997,6 +1108,7 @@ async function commitImport(){
     const q=m.meta,now=new Date().toISOString();
     let job=m.existing;
     const head={quote_num:q.quote_num||null,quote_version:q.quote_version||null,job_number:m.job_number.trim()||null,title:q.title||null,customer:q.customer||null,updated_at:now};
+    if(S.section)head[S.section==='cut'?'pin_cut':'pin_pick']=true;
     if(m.src==='vquote')Object.assign(head,{source:'vquote',item_info:m.item_info||{},vq_synced_at:m.vq.synced_at,pick_pdf:null,cut_pdf:null,pick_report_at:null,cut_report_at:null});
     else head.source='pdf';
     if(!job)job=(await rest('saw_jobs',POST(Object.assign({created_by_name:me().name||''},head))))[0];
@@ -1016,13 +1128,13 @@ async function commitImport(){
       const old=m.existing?await restAll('saw_bars?job_id=eq.'+job.id+'&order=sort_order'):[];
       const key=b=>[b.extrusion,b.bar_length_mm,b.bar_no,JSON.stringify(b.cuts.map(c=>[c.l,c.size,c.r,c.qty,c.item]))].join('|'),was={};old.forEach(b=>{was[key(b)]=b});
       if(old.length)await rest('saw_bars?job_id=eq.'+job.id,Object.assign({method:'DELETE'},QUIET));
-      const rows=m.bars.map((b,i)=>{const o=was[key(b)];return Object.assign({sort_order:i,job_id:job.id,done:!!(o&&o.done),skipped:o&&o.done?(o.skipped||[]):[],done_by:o&&o.done?o.done_by:null,done_at:o&&o.done?o.done_at:null},b)});
+      const rows=m.bars.map((b,i)=>{const o=was[key(b)];return Object.assign({sort_order:i,job_id:job.id,done:!!(o&&o.done),done_cuts:o?(o.done_cuts||[]):[],done_by:o&&o.done?o.done_by:null,done_at:o&&o.done?o.done_at:null},b)});
       for(let i=0;i<rows.length;i+=400)await rest('saw_bars',Object.assign({method:'POST',body:JSON.stringify(rows.slice(i,i+400))},QUIET));
       if(m.cutFile){patch.cut_pdf=await upload(job.id,'cut',m.cutFile);patch.cut_report_at=m.cutMeta.report_at||null}
     }
     await rest('saw_jobs?id=eq.'+job.id,Object.assign({method:'PATCH',body:JSON.stringify(patch)},QUIET));
     if(m.src==='vquote')dropWait(q.quote_num);
-    S.imp=null;S.busy=false;toast('Quote '+(q.quote_num||'')+' is on the saw bench.');loadJobs();
+    S.imp=null;S.adding=false;S.busy=false;toast('Quote '+(q.quote_num||'')+' is on the '+(S.section?SEC[S.section].name:'')+' list.');loadJobs();
   }catch(e){S.busy=false;render();toast(e.status===401||e.status===403?'Not loaded — only supervisors and managers can load sheets. Sign in again if that is you.':'Not loaded — '+(e.message||'check the connection')+'. Try again.',true)}
 }
 
@@ -1109,7 +1221,10 @@ document.addEventListener('click',function(ev){
   if(a==='reload')loadJobs();
   else if(a==='signout'){const s=readSess();if(s)fetch(SB+'/auth/v1/logout',{method:'POST',headers:{apikey:ANON,Authorization:'Bearer '+s.access_token}}).catch(()=>{});localStorage.removeItem('wm_session');localStorage.removeItem('wm_user');S.view='jobs';S.jobs=[];render()}
   else if(a==='showdone'){S.showDone=v==='1';loadJobs()}
-  else if(a==='open')openJob(id);
+  else if(a==='openrow')openRow(id||0,b.dataset.q,b.dataset.jn);
+  else if(a==='section'){setSection(v);render()}
+  else if(a==='home'){setSection(null);render()}
+  else if(a==='adding'){S.adding=!S.adding;S.imp=null;render()}
   else if(a==='back'){S.view='jobs';S.job=null;loadJobs()}
   else if(a==='tab'){S.tab=v;render()}
   else if(a==='filter'){S.filter=v;render()}
@@ -1128,6 +1243,7 @@ document.addEventListener('click',function(ev){
   }
   else if(a==='fulltoggle'){try{localStorage.setItem('wm_saw_full',fullList()?'0':'1')}catch(e){}render(true);const on=$('.g.on');if(fullList()&&on)on.click()}
   else if(a==='tick')tickBar(id);
+  else if(a==='cutrow')tickCut(id,+v);
   else if(a==='hold')toggleHold(v);
   else if(a==='vqload')vqFind(v);
   else if(a==='vqdrop'){dropWait(v);render()}
@@ -1135,7 +1251,7 @@ document.addEventListener('click',function(ev){
   else if(a==='itemsfold'){try{localStorage.setItem('wm_saw_items',localStorage.getItem('wm_saw_items')==='0'?'1':'0')}catch(e){}render(true)}
   else if(a==='sheets')sheetsDialog();
   else if(a==='choose'){const f=$('#files');if(f)f.click()}
-  else if(a==='impcancel'){S.imp=null;render()}
+  else if(a==='impcancel'){S.imp=null;S.adding=false;render()}
   else if(a==='impgo')commitImport();
 });
 document.addEventListener('change',function(ev){if(ev.target.id==='files'&&ev.target.files.length)takeFiles(ev.target.files)});
